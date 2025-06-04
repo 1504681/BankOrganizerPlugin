@@ -1,0 +1,8 @@
+{
+  "plugins": ["com.debugplugin.DebugPlugin"],
+  "displayName": "Debug Enemy List",
+  "author": "1504681",
+  "description": "Shows all NPCs on screen with their tile positions",
+  "tags": ["npcs", "debug", "overlay", "enemy"],
+  "version": "1.0.0"
+}
