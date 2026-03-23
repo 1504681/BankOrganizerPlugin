@@ -22,8 +22,21 @@ dependencies {
 	annotationProcessor 'org.projectlombok:lombok:1.18.30'
 
 	testImplementation 'junit:junit:4.12'
+	testImplementation 'org.mockito:mockito-core:3.1.0'
+	testImplementation 'com.google.inject.extensions:guice-testlib:4.1.0'
 	testImplementation group: 'net.runelite', name:'client', version: runeLiteVersion
 	testImplementation group: 'net.runelite', name:'jshell', version: runeLiteVersion
+}
+
+configurations.all {
+	resolutionStrategy.eachDependency { details ->
+		if (details.requested.group == 'org.lwjgl') {
+			details.useVersion details.requested.version
+		}
+	}
+	exclude group: 'org.lwjgl', module: 'lwjgl-opengl'
+	exclude group: 'org.lwjgl', module: 'lwjgl-opencl'
+	exclude group: 'org.lwjgl', module: 'lwjgl-openal'
 }
 
 group = 'com.debugplugin'
@@ -32,6 +45,10 @@ version = '1.0.0'
 tasks.withType(JavaCompile).configureEach {
 	options.encoding = 'UTF-8'
 	options.release.set(11)
+}
+
+test {
+	jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
 }
 
 tasks.register('shadowJar', Jar) {
