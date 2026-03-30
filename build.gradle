@@ -3,7 +3,11 @@ plugins {
 }
 
 repositories {
-	mavenLocal()
+	mavenLocal {
+		content {
+			excludeGroup("org.lwjgl")
+		}
+	}
 	maven {
 		url = 'https://repo.runelite.net'
 		content {
@@ -14,6 +18,7 @@ repositories {
 }
 
 def runeLiteVersion = 'latest.release'
+def pluginMainClass = 'com.bankorganizer.BankOrganizerLauncher'
 
 dependencies {
 	compileOnly group: 'net.runelite', name:'client', version: runeLiteVersion
@@ -34,9 +39,6 @@ configurations.all {
 			details.useVersion details.requested.version
 		}
 	}
-	exclude group: 'org.lwjgl', module: 'lwjgl-opengl'
-	exclude group: 'org.lwjgl', module: 'lwjgl-opencl'
-	exclude group: 'org.lwjgl', module: 'lwjgl-openal'
 }
 
 group = 'com.debugplugin'
@@ -51,10 +53,35 @@ test {
 	jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
 }
 
+sourceSets.main.resources {
+	exclude 'runelite_plugin.json'
+}
+
+tasks.register('run', JavaExec) {
+	classpath = sourceSets.test.runtimeClasspath
+	mainClass = pluginMainClass
+
+	jvmArgs "-ea"
+	args "--developer-mode", "--debug"
+}
+
+tasks.register('installPlugin', Jar) {
+	from sourceSets.main.output
+	from('src/main/resources') {
+		include 'runelite_plugin.json'
+	}
+
+	archiveFileName.set("${rootProject.name}-${project.version}.jar")
+	destinationDirectory.set(file("${System.getProperty('user.home')}/.runelite/externalPlugins"))
+
+	group = BasePlugin.BUILD_GROUP
+	description = 'Build and install the plugin to the RuneLite external plugins folder'
+}
+
 tasks.register('shadowJar', Jar) {
 	dependsOn configurations.testRuntimeClasspath
 	manifest {
-		attributes('Main-Class': 'com.example.ExamplePluginTest', 'Multi-Release': true)
+		attributes('Main-Class': pluginMainClass, 'Multi-Release': true)
 	}
 
 	duplicatesStrategy = DuplicatesStrategy.EXCLUDE
