@@ -439,9 +439,11 @@ public class ItemCategorizer
 	}
 
 	/**
-	 * Determine the gear sub-category for an item (only meaningful if category is GEAR).
+	 * Determine the gear sub-category using equipment stats.
+	 * Falls back to keyword matching if stats unavailable.
 	 */
-	public GearSubCategory getGearSubCategory(String itemName, int itemId)
+	public GearSubCategory getGearSubCategory(String itemName, int itemId,
+		net.runelite.http.api.item.ItemEquipmentStats stats)
 	{
 		// Check ID map first
 		GearSubCategory idSub = gearSubIdMap.get(itemId);
@@ -450,9 +452,111 @@ public class ItemCategorizer
 			return idSub;
 		}
 
+		// Use equipment stats if available
+		if (stats != null)
+		{
+			return classifyByStats(stats);
+		}
+
+		// Fallback to keywords
+		return classifyByKeywords(itemName);
+	}
+
+	/**
+	 * Overload without stats for backwards compatibility.
+	 */
+	public GearSubCategory getGearSubCategory(String itemName, int itemId)
+	{
+		return getGearSubCategory(itemName, itemId, null);
+	}
+
+	private GearSubCategory classifyByStats(net.runelite.http.api.item.ItemEquipmentStats stats)
+	{
+		int meleeAttack = Math.max(stats.getAstab(), Math.max(stats.getAslash(), stats.getAcrush()));
+		int rangedAttack = stats.getArange();
+		int magicAttack = stats.getAmagic();
+		int meleeStr = stats.getStr();
+		int rangedStr = stats.getRstr();
+		int magicDmg = stats.getMdmg();
+		int slot = stats.getSlot();
+
+		// Weapon slots: 3 (weapon), also check two-handed
+		boolean isWeapon = (slot == 3) || stats.isTwoHanded();
+
+		// Magic damage % > 0 is always mage
+		if (magicDmg > 0)
+		{
+			return isWeapon ? GearSubCategory.MAGE_WEAPON : GearSubCategory.MAGE_ARMOR;
+		}
+
+		// Determine dominant style by attack bonuses
+		if (isWeapon)
+		{
+			if (rangedAttack > meleeAttack && rangedAttack > magicAttack)
+			{
+				return GearSubCategory.RANGED_WEAPON;
+			}
+			if (magicAttack > meleeAttack && magicAttack > rangedAttack)
+			{
+				return GearSubCategory.MAGE_WEAPON;
+			}
+			if (meleeAttack > 0 || meleeStr > 0)
+			{
+				return GearSubCategory.MELEE_WEAPON;
+			}
+			// No clear attack bonus — check strength
+			if (rangedStr > 0) return GearSubCategory.RANGED_WEAPON;
+			return GearSubCategory.MELEE_WEAPON;
+		}
+		else
+		{
+			// Armor: check offensive bonuses to determine style affinity
+			if (rangedAttack > 0 && rangedAttack > meleeAttack && rangedAttack > magicAttack)
+			{
+				return GearSubCategory.RANGED_ARMOR;
+			}
+			if (magicAttack > 0 && magicAttack > meleeAttack && magicAttack > rangedAttack)
+			{
+				return GearSubCategory.MAGE_ARMOR;
+			}
+			if (rangedStr > 0 && rangedStr > meleeStr)
+			{
+				return GearSubCategory.RANGED_ARMOR;
+			}
+			if (meleeStr > 0)
+			{
+				return GearSubCategory.MELEE_ARMOR;
+			}
+
+			// Check defensive bonuses as tiebreaker
+			int meleeDef = Math.max(stats.getDstab(), Math.max(stats.getDslash(), stats.getDcrush()));
+			int rangedDef = stats.getDrange();
+			int magicDef = stats.getDmagic();
+
+			// If magic def is negative (typical of melee armor like platebody)
+			if (magicDef < 0 && meleeDef > 0)
+			{
+				return GearSubCategory.MELEE_ARMOR;
+			}
+			// High magic def with low melee def = mage armor
+			if (magicDef > meleeDef && rangedDef < meleeDef)
+			{
+				return GearSubCategory.MAGE_ARMOR;
+			}
+			// Ranged armor typically has negative melee def
+			if (meleeDef < 0 && rangedDef > 0)
+			{
+				return GearSubCategory.RANGED_ARMOR;
+			}
+
+			return GearSubCategory.GENERAL;
+		}
+	}
+
+	private GearSubCategory classifyByKeywords(String itemName)
+	{
 		String lowerName = itemName.toLowerCase();
 
-		// Check weapon keywords first (more specific)
 		for (String kw : MELEE_WEAPON_KEYWORDS)
 		{
 			if (lowerName.contains(kw)) return GearSubCategory.MELEE_WEAPON;
@@ -465,8 +569,6 @@ public class ItemCategorizer
 		{
 			if (lowerName.contains(kw)) return GearSubCategory.MAGE_WEAPON;
 		}
-
-		// Check armor keywords
 		for (String kw : MELEE_ARMOR_KEYWORDS)
 		{
 			if (lowerName.contains(kw)) return GearSubCategory.MELEE_ARMOR;

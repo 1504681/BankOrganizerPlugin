@@ -204,7 +204,7 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			if (tabCategory == ItemCategory.GEAR)
 			{
-				GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId);
+				GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId, getEquipmentStats(item.itemId));
 				return categorizer.getGearSortOrder(sub, gearMode);
 			}
 			else if (tabCategory == ItemCategory.TELEPORTS)
@@ -237,7 +237,7 @@ public class BankOrganizerPlugin extends Plugin
 				String subCatName = "";
 				if (tabCategory == ItemCategory.GEAR)
 				{
-					subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
+					subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId, getEquipmentStats(idealItem.itemId)).getDisplayName();
 				}
 				else if (tabCategory == ItemCategory.TELEPORTS)
 				{
@@ -590,6 +590,19 @@ public class BankOrganizerPlugin extends Plugin
 		}
 	}
 
+	/**
+	 * Get equipment stats for an item, or null if not equipable.
+	 */
+	private net.runelite.http.api.item.ItemEquipmentStats getEquipmentStats(int itemId)
+	{
+		net.runelite.http.api.item.ItemStats stats = itemManager.getItemStats(itemId, false);
+		if (stats != null && stats.isEquipable() && stats.getEquipment() != null)
+		{
+			return stats.getEquipment();
+		}
+		return null;
+	}
+
 	private void refreshPanel()
 	{
 		Map<ItemCategory, Integer> tabMappings = getTabMappings();
@@ -776,7 +789,7 @@ public class BankOrganizerPlugin extends Plugin
 			{
 				if (tabCategory == ItemCategory.GEAR)
 				{
-					GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId);
+					GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId, getEquipmentStats(item.itemId));
 					return categorizer.getGearSortOrder(sub, gearMode);
 				}
 				else if (tabCategory == ItemCategory.TELEPORTS)
@@ -808,7 +821,7 @@ public class BankOrganizerPlugin extends Plugin
 					String subCatName = "";
 					if (tabCategory == ItemCategory.GEAR)
 					{
-						subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
+						subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId, getEquipmentStats(idealItem.itemId)).getDisplayName();
 					}
 					else if (tabCategory == ItemCategory.TELEPORTS)
 					{
