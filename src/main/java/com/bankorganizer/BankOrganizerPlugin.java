@@ -167,52 +167,121 @@ public class BankOrganizerPlugin extends Plugin
 			return;
 		}
 
-		// Check if the current ordering step was completed
-		if (currentOrderStep >= orderSteps.size())
-		{
-			return;
-		}
+		// Re-scan and recompute remaining steps after each bank change
+		recomputeOrderSteps();
+	}
 
-		OrderStep step = orderSteps.get(currentOrderStep);
-
-		// Read the bank widget to check if the item is now at the target slot
+	private void recomputeOrderSteps()
+	{
 		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
-		if (bankItemContainer == null)
-		{
-			return;
-		}
-
+		if (bankItemContainer == null) return;
 		Widget[] children = bankItemContainer.getDynamicChildren();
-		if (children == null || step.targetSlot >= children.length)
+		if (children == null) return;
+
+		int currentTab = client.getVarbitValue(4150);
+		ItemCategory tabCategory = getCategoryForTab(currentTab);
+		if (tabCategory == null) return;
+
+		// Collect current items
+		List<BankItem> currentItems = new ArrayList<>();
+		for (int slot = 0; slot < children.length; slot++)
 		{
-			return;
+			Widget child = children[slot];
+			if (child == null || child.isHidden()) continue;
+			int itemId = child.getItemId();
+			if (itemId <= 0) continue;
+			String name = itemManager.getItemComposition(itemId).getName();
+			if (name == null || name.equals("null")) continue;
+			currentItems.add(new BankItem(itemId, name, slot));
 		}
 
-		Widget targetWidget = children[step.targetSlot];
-		if (targetWidget != null && targetWidget.getItemId() == step.itemId)
-		{
-			log.info("Ordering step {} complete: {} moved to slot {}",
-				currentOrderStep + 1, step.itemName, step.targetSlot);
+		// Compute ideal order
+		List<BankItem> idealOrder = new ArrayList<>(currentItems);
+		GearSortMode gearMode = config.gearSortMode();
+		TeleportSortMode teleportMode = config.teleportSortMode();
 
-			if (currentOrderStep < orderSteps.size() - 1)
+		idealOrder.sort(Comparator.comparingInt(item ->
+		{
+			if (tabCategory == ItemCategory.GEAR)
 			{
-				currentOrderStep++;
-				SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+				GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId);
+				return categorizer.getGearSortOrder(sub, gearMode);
 			}
-			else
+			else if (tabCategory == ItemCategory.TELEPORTS)
 			{
-				// All done!
-				log.info("Ordering complete!");
-				orderingActive = false;
-				SwingUtilities.invokeLater(() ->
+				TeleportSubCategory sub = categorizer.getTeleportSubCategory(item.name, item.itemId);
+				return categorizer.getTeleportSortOrder(sub, teleportMode);
+			}
+			return 0;
+		}));
+
+		// Find remaining steps
+		List<OrderStep> newSteps = new ArrayList<>();
+		List<BankItem> working = new ArrayList<>(currentItems);
+
+		for (int targetSlot = 0; targetSlot < idealOrder.size(); targetSlot++)
+		{
+			BankItem idealItem = idealOrder.get(targetSlot);
+			int currentSlot = -1;
+			for (int j = 0; j < working.size(); j++)
+			{
+				if (working.get(j).itemId == idealItem.itemId)
 				{
-					panel.updateOrderingState();
-					javax.swing.JOptionPane.showMessageDialog(null,
-						"All items are now in order!",
-						"Ordering Complete",
-						javax.swing.JOptionPane.INFORMATION_MESSAGE);
-				});
+					currentSlot = j;
+					break;
+				}
 			}
+
+			if (currentSlot != targetSlot && currentSlot >= 0)
+			{
+				String subCatName = "";
+				if (tabCategory == ItemCategory.GEAR)
+				{
+					subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
+				}
+				else if (tabCategory == ItemCategory.TELEPORTS)
+				{
+					subCatName = categorizer.getTeleportSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
+				}
+
+				// The item to insert before (what's currently at the target slot)
+				BankItem targetItem = working.get(targetSlot);
+
+				newSteps.add(new OrderStep(
+					idealItem.itemId,
+					idealItem.name,
+					targetSlot,
+					"Insert " + idealItem.name + " before " + targetItem.name,
+					subCatName,
+					targetItem.itemId
+				));
+
+				BankItem removed = working.remove(currentSlot);
+				working.add(targetSlot, removed);
+			}
+		}
+
+		if (newSteps.isEmpty())
+		{
+			log.info("Ordering complete!");
+			orderingActive = false;
+			orderSteps.clear();
+			currentOrderStep = 0;
+			SwingUtilities.invokeLater(() ->
+			{
+				panel.updateOrderingState();
+				javax.swing.JOptionPane.showMessageDialog(null,
+					"All items are now in order!",
+					"Ordering Complete",
+					javax.swing.JOptionPane.INFORMATION_MESSAGE);
+			});
+		}
+		else
+		{
+			orderSteps = newSteps;
+			currentOrderStep = 0;
+			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+			log.info("Ordering: {} steps remaining", newSteps.size());
 		}
 	}
 
@@ -746,15 +815,18 @@ public class BankOrganizerPlugin extends Plugin
 						subCatName = categorizer.getTeleportSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
 					}
 
-					String targetItemName = targetSlot < currentItems.size() ?
-						currentItems.get(targetSlot).name : "position " + (targetSlot + 1);
+					BankItem targetItem = targetSlot < currentItems.size() ?
+						currentItems.get(targetSlot) : null;
+					String targetItemName = targetItem != null ? targetItem.name : "position " + (targetSlot + 1);
+					int targetItemId = targetItem != null ? targetItem.itemId : -1;
 
 					steps.add(new OrderStep(
 						idealItem.itemId,
 						idealItem.name,
 						targetSlot,
 						"Insert " + idealItem.name + " before " + targetItemName,
-						subCatName
+						subCatName,
+						targetItemId
 					));
 
 					// Simulate the insert in our working list
@@ -817,14 +889,16 @@ public class BankOrganizerPlugin extends Plugin
 		public final int targetSlot;
 		public final String instruction;
 		public final String subCategory;
+		public final int targetItemId; // The item to insert before
 
-		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory)
+		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory, int targetItemId)
 		{
 			this.itemId = itemId;
 			this.itemName = itemName;
 			this.targetSlot = targetSlot;
 			this.instruction = instruction;
 			this.subCategory = subCategory;
+			this.targetItemId = targetItemId;
 		}
 	}
 }

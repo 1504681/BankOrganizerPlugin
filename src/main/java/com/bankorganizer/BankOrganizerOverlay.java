@@ -238,30 +238,35 @@ public class BankOrganizerOverlay extends Overlay
 			}
 		}
 
-		// Also highlight target position
-		if (step.targetSlot < children.length)
+		// Highlight the destination item (the item to insert before) by item ID
+		if (step.targetItemId > 0)
 		{
-			Widget targetChild = children[step.targetSlot];
-			if (targetChild != null && !targetChild.isHidden())
+			for (Widget targetChild : children)
 			{
-				Rectangle targetBounds = targetChild.getBounds();
-				if (targetBounds != null && targetBounds.width > 0
-					&& (containerBounds == null || containerBounds.contains(targetBounds)))
-				{
-					Color targetColor = new Color(255, 255, 0, 120);
-					graphics.setColor(targetColor);
-					graphics.setStroke(new BasicStroke(2));
-					graphics.draw(targetBounds);
+				if (targetChild == null || targetChild.isHidden()) continue;
+				if (targetChild.getItemId() != step.targetItemId) continue;
 
-					Font oldFont = graphics.getFont();
-					graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
-					graphics.setColor(new Color(255, 255, 100));
-					String label = "INSERT HERE";
-					int textX = targetBounds.x + (targetBounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
-					int textY = targetBounds.y - 3;
-					graphics.drawString(label, textX, textY);
-					graphics.setFont(oldFont);
-				}
+				Rectangle targetBounds = targetChild.getBounds();
+				if (targetBounds == null || targetBounds.width <= 0) continue;
+				if (containerBounds != null && !containerBounds.contains(targetBounds)) continue;
+
+				Color targetFill = new Color(255, 255, 0, 50);
+				Color targetBorder = new Color(255, 255, 0, 200);
+				graphics.setColor(targetFill);
+				graphics.fill(targetBounds);
+				graphics.setColor(targetBorder);
+				graphics.setStroke(new BasicStroke(2));
+				graphics.draw(targetBounds);
+
+				Font oldFont = graphics.getFont();
+				graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
+				graphics.setColor(new Color(255, 255, 100));
+				String label = "INSERT BEFORE";
+				int textX = targetBounds.x + (targetBounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
+				int textY = targetBounds.y - 3;
+				graphics.drawString(label, textX, textY);
+				graphics.setFont(oldFont);
+				break;
 			}
 		}
 
