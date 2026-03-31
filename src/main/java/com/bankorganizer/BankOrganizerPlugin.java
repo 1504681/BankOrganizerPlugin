@@ -354,7 +354,7 @@ public class BankOrganizerPlugin extends Plugin
 
 		if (currentCategory == ItemCategory.RAW_MATERIALS)
 		{
-			subNames = ItemCategorizer.MATERIAL_GROUP_NAMES;
+			subNames = ItemCategorizer.SKILL_NAMES;
 			subColors = ItemCategorizer.SKILL_COLORS; // Reuse skill colors
 			currentSubIdx = categorizer.getMaterialGroupIndex(
 				itemName != null ? itemName : "", itemId);
@@ -567,9 +567,9 @@ public class BankOrganizerPlugin extends Plugin
 			// Then check material group names
 			if (!found)
 			{
-				for (int i = 0; i < ItemCategorizer.MATERIAL_GROUP_NAMES.length; i++)
+				for (int i = 0; i < ItemCategorizer.SKILL_NAMES.length; i++)
 				{
-					if (ItemCategorizer.MATERIAL_GROUP_NAMES[i].equals(subName))
+					if (ItemCategorizer.SKILL_NAMES[i].equals(subName))
 					{
 						categorizer.setSubCategoryOverride(itemId, i);
 						saveSubOverridesToConfig();
@@ -1135,9 +1135,9 @@ public class BankOrganizerPlugin extends Plugin
 				else if (tabCategory == ItemCategory.RAW_MATERIALS)
 				{
 					int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
-					if (grpIdx < ItemCategorizer.MATERIAL_GROUP_NAMES.length)
+					if (grpIdx < ItemCategorizer.SKILL_NAMES.length)
 					{
-						phase = "Grouping " + ItemCategorizer.MATERIAL_GROUP_NAMES[grpIdx];
+						phase = "Grouping " + ItemCategorizer.SKILL_NAMES[grpIdx];
 					}
 				}
 				else if (tabCategory == ItemCategory.GEAR)
@@ -1327,9 +1327,9 @@ public class BankOrganizerPlugin extends Plugin
 		else if (tabCategory == ItemCategory.RAW_MATERIALS)
 		{
 			int idx = categorizer.getMaterialGroupIndex(item.name, item.itemId);
-			if (idx < ItemCategorizer.MATERIAL_GROUP_NAMES.length)
+			if (idx < ItemCategorizer.SKILL_NAMES.length)
 			{
-				return ItemCategorizer.MATERIAL_GROUP_NAMES[idx];
+				return ItemCategorizer.SKILL_NAMES[idx];
 			}
 		}
 		else if (tabCategory == ItemCategory.SKILLING)

@@ -1150,31 +1150,31 @@ public class ItemCategorizer
 		int typeOrder = 0;
 		int tierOrder = 50;
 
-		// === MINING + SMITHING (group 0) ===
-		// Ores
+		// Use SAME skill indices as SKILL_NAMES so overrides are shared:
+		// Farming=0, RC=1, WC=2, Fishing=3, Mining=4, Prayer=5, Crafting=9, etc.
+
+		// === MINING + SMITHING (skill 4 = Mining) ===
 		if (lower.contains(" ore") || lower.equals("clay") || lower.equals("coal"))
 		{
-			skillGroup = 0; typeOrder = 0; tierOrder = getOreTier(lower);
+			skillGroup = 4; typeOrder = 0; tierOrder = getOreTier(lower);
 		}
-		// Bars
 		else if (lower.contains(" bar"))
 		{
-			skillGroup = 0; typeOrder = 1; tierOrder = getBarTier(lower);
+			skillGroup = 4; typeOrder = 1; tierOrder = getBarTier(lower);
 		}
-		// Gems (uncut)
 		else if (lower.contains("uncut") || isGem(lower))
 		{
-			skillGroup = 0; typeOrder = 2; tierOrder = getGemTier(lower);
+			skillGroup = 4; typeOrder = 2; tierOrder = getGemTier(lower);
 		}
 
-		// === WOODCUTTING + FLETCHING + FIREMAKING + CONSTRUCTION (group 1) ===
+		// === WOODCUTTING + FLETCHING + CONSTRUCTION (skill 2 = WC) ===
 		else if (lower.contains("logs") || lower.equals("logs"))
 		{
-			skillGroup = 1; typeOrder = 0; tierOrder = getLogTier(lower);
+			skillGroup = 2; typeOrder = 0; tierOrder = getLogTier(lower);
 		}
 		else if (lower.contains("plank"))
 		{
-			skillGroup = 1; typeOrder = 1;
+			skillGroup = 2; typeOrder = 1;
 			if (lower.contains("mahogany")) tierOrder = 3;
 			else if (lower.contains("teak")) tierOrder = 2;
 			else if (lower.contains("oak")) tierOrder = 1;
@@ -1183,57 +1183,57 @@ public class ItemCategorizer
 		else if (lower.contains("arrow shaft") || lower.contains("bow string")
 			|| lower.contains("feather") || lower.contains("headless"))
 		{
-			skillGroup = 1; typeOrder = 2;
+			skillGroup = 2; typeOrder = 2;
 		}
 
-		// === CRAFTING (group 2) ===
+		// === CRAFTING (skill 9) ===
 		else if (lower.contains("hide") || lower.contains("leather"))
 		{
-			skillGroup = 2; typeOrder = 0; tierOrder = getHideTier(lower);
+			skillGroup = 9; typeOrder = 0; tierOrder = getHideTier(lower);
 		}
 		else if (lower.contains("wool") || lower.contains("flax")
 			|| lower.contains("sinew") || lower.contains("sand")
 			|| lower.contains("molten glass") || lower.contains("thread"))
 		{
-			skillGroup = 2; typeOrder = 1;
+			skillGroup = 9; typeOrder = 1;
 		}
 
-		// === FARMING + HERBLORE (group 3) ===
+		// === FARMING + HERBLORE (skill 0 = Farming) ===
 		else if (lower.contains("seed"))
 		{
-			skillGroup = 3; typeOrder = 0; tierOrder = getSeedTier(lower);
+			skillGroup = 0; typeOrder = 0; tierOrder = getSeedTier(lower);
 		}
 		else if (lower.contains("grimy") || lower.contains("herb"))
 		{
-			skillGroup = 3; typeOrder = 1; tierOrder = getHerbTier(lower);
+			skillGroup = 0; typeOrder = 1; tierOrder = getHerbTier(lower);
 		}
 		else if (lower.contains("compost") || lower.contains("plant cure"))
 		{
-			skillGroup = 3; typeOrder = 2;
+			skillGroup = 0; typeOrder = 2;
 		}
 
-		// === RUNECRAFTING (group 4) ===
+		// === RUNECRAFTING (skill 1) ===
 		else if (lower.contains("essence"))
 		{
-			skillGroup = 4; typeOrder = 0; tierOrder = getEssenceTier(lower);
+			skillGroup = 1; typeOrder = 0; tierOrder = getEssenceTier(lower);
 		}
 
-		// === FISHING + COOKING (group 5) ===
+		// === FISHING + COOKING (skill 3 = Fishing) ===
 		else if (lower.contains("raw "))
 		{
-			skillGroup = 5; typeOrder = 0;
+			skillGroup = 3; typeOrder = 0;
 		}
 
-		// === HUNTER (group 6) ===
+		// === HUNTER (skill 15 = Hunting) ===
 		else if (lower.contains("fur") || lower.contains("kebbit"))
 		{
-			skillGroup = 6; typeOrder = 0;
+			skillGroup = 15; typeOrder = 0;
 		}
 
-		// === BONES / PRAYER (group 7) ===
+		// === BONES / PRAYER (skill 5) ===
 		else if (lower.contains("bone") || lower.contains("ashes"))
 		{
-			skillGroup = 7; typeOrder = 0;
+			skillGroup = 5; typeOrder = 0;
 		}
 
 		// Pack: skillGroup(8) | typeOrder(4) | tierOrder(8) | itemId(16)
@@ -1566,12 +1566,8 @@ public class ItemCategorizer
 	/**
 	 * Get the skill group index for a skilling item. Returns 0-17 for known skills, 99 for unknown.
 	 */
-	// Material group names for display
-	public static final String[] MATERIAL_GROUP_NAMES = {
-		"Mining/Smithing", "Woodcutting/Fletching", "Crafting",
-		"Farming/Herblore", "Runecrafting", "Fishing/Cooking",
-		"Hunter", "Prayer"
-	};
+	// Materials use the same SKILL_NAMES indices — no separate names needed.
+	// getMaterialGroupIndex returns skill indices directly.
 
 	public int getSkillGroupIndex(String itemName, int itemId)
 	{
