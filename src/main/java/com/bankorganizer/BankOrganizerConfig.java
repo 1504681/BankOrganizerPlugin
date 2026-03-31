@@ -128,6 +128,26 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(keyName = "subCategoryOverrides", name = "", description = "")
 	void setSubCategoryOverrides(String json);
 
+	// --- Profile management ---
+
+	@ConfigItem(keyName = "activeProfile", name = "", description = "", hidden = true)
+	default String activeProfile() { return "Default Layout"; }
+
+	@ConfigItem(keyName = "activeProfile", name = "", description = "")
+	void setActiveProfile(String name);
+
+	@ConfigItem(keyName = "profileList", name = "", description = "", hidden = true)
+	default String profileList() { return "Default Layout"; }
+
+	@ConfigItem(keyName = "profileList", name = "", description = "")
+	void setProfileList(String names);
+
+	@ConfigItem(keyName = "profileData", name = "", description = "", hidden = true)
+	default String profileData() { return ""; }
+
+	@ConfigItem(keyName = "profileData", name = "", description = "")
+	void setProfileData(String data);
+
 	// --- Custom regex ---
 
 	@ConfigItem(keyName = "regexTeleports", name = "Teleports Regex", description = "Custom regex for Teleports category", position = 0, section = regexSection)

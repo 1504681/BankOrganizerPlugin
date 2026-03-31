@@ -14,7 +14,9 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
@@ -62,14 +64,95 @@ public class BankOrganizerPanel extends PluginPanel
 		title.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
 		title.setAlignmentX(Component.LEFT_ALIGNMENT);
 		mainPanel.add(title);
-		mainPanel.add(Box.createVerticalStrut(2));
+		mainPanel.add(Box.createVerticalStrut(4));
 
-		JLabel presetLabel = new JLabel("Default Layout");
-		presetLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-		presetLabel.setFont(FontManager.getRunescapeSmallFont());
-		presetLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		mainPanel.add(presetLabel);
-		mainPanel.add(Box.createVerticalStrut(8));
+		// Profile selector
+		JPanel profileSection = createSection("Profile");
+
+		JComboBox<String> profileDropdown = new JComboBox<>();
+		profileDropdown.setFont(FontManager.getRunescapeSmallFont());
+		profileDropdown.setAlignmentX(Component.LEFT_ALIGNMENT);
+		profileDropdown.setMaximumSize(new Dimension(Integer.MAX_VALUE, 24));
+		refreshProfileDropdown(profileDropdown);
+		profileDropdown.addActionListener(e ->
+		{
+			String selected = (String) profileDropdown.getSelectedItem();
+			if (selected != null)
+			{
+				plugin.switchProfile(selected);
+			}
+		});
+		profileSection.add(profileDropdown);
+		profileSection.add(Box.createVerticalStrut(4));
+
+		JPanel profileBtnGrid = new JPanel(new GridLayout(2, 2, 3, 3));
+		profileBtnGrid.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		profileBtnGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JButton newDefaultBtn = makeButton("New Default", false);
+		newDefaultBtn.addActionListener(e ->
+		{
+			String name = JOptionPane.showInputDialog(this, "Profile name:", "New Profile", JOptionPane.PLAIN_MESSAGE);
+			if (name != null && !name.trim().isEmpty())
+			{
+				plugin.createProfile(name.trim(), false);
+				refreshProfileDropdown(profileDropdown);
+				profileDropdown.setSelectedItem(name.trim());
+			}
+		});
+		profileBtnGrid.add(newDefaultBtn);
+
+		JButton newBlankBtn = makeButton("New Blank", false);
+		newBlankBtn.addActionListener(e ->
+		{
+			String name = JOptionPane.showInputDialog(this, "Profile name:", "New Blank Profile", JOptionPane.PLAIN_MESSAGE);
+			if (name != null && !name.trim().isEmpty())
+			{
+				plugin.createProfile(name.trim(), true);
+				refreshProfileDropdown(profileDropdown);
+				profileDropdown.setSelectedItem(name.trim());
+			}
+		});
+		profileBtnGrid.add(newBlankBtn);
+
+		JButton exportProfileBtn = makeButton("Export Profile", false);
+		exportProfileBtn.addActionListener(e -> plugin.exportProfile());
+		profileBtnGrid.add(exportProfileBtn);
+
+		JButton importProfileBtn = makeButton("Import Profile", false);
+		importProfileBtn.addActionListener(e ->
+		{
+			plugin.importProfile();
+			refreshProfileDropdown(profileDropdown);
+		});
+		profileBtnGrid.add(importProfileBtn);
+
+		profileSection.add(profileBtnGrid);
+		profileSection.add(Box.createVerticalStrut(3));
+
+		JButton deleteProfileBtn = makeButton("Delete Profile", true);
+		deleteProfileBtn.setBackground(BTN_DANGER);
+		deleteProfileBtn.addActionListener(e ->
+		{
+			String current = plugin.getActiveProfileName();
+			if ("Default Layout".equals(current))
+			{
+				JOptionPane.showMessageDialog(this, "Cannot delete the Default Layout profile.",
+					"Delete Profile", JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+			int confirm = JOptionPane.showConfirmDialog(this,
+				"Delete profile '" + current + "'?", "Delete Profile", JOptionPane.YES_NO_OPTION);
+			if (confirm == JOptionPane.YES_OPTION)
+			{
+				plugin.deleteProfile(current);
+				refreshProfileDropdown(profileDropdown);
+			}
+		});
+		profileSection.add(deleteProfileBtn);
+
+		mainPanel.add(profileSection);
+		mainPanel.add(Box.createVerticalStrut(4));
 
 		// === OVERLAYS SECTION ===
 		JPanel overlaySection = createSection("Overlays");
@@ -289,6 +372,16 @@ public class BankOrganizerPanel extends PluginPanel
 			btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
 		}
 		return btn;
+	}
+
+	private void refreshProfileDropdown(JComboBox<String> dropdown)
+	{
+		dropdown.removeAllItems();
+		for (String name : plugin.getProfileNames())
+		{
+			dropdown.addItem(name);
+		}
+		dropdown.setSelectedItem(plugin.getActiveProfileName());
 	}
 
 	private JButton makeFilterButton(String text, ItemCategory category)

@@ -73,6 +73,7 @@ public class BankOrganizerPlugin extends Plugin
 	private BankOrganizerPanel panel;
 	private NavigationButton navButton;
 	private ItemCategorizer categorizer;
+	private ProfileManager profileManager;
 
 	private Map<Integer, ItemCategory> misplacedItems = new HashMap<>();
 	private Map<Integer, String> misplacedItemNames = new HashMap<>();
@@ -155,6 +156,8 @@ public class BankOrganizerPlugin extends Plugin
 	protected void startUp()
 	{
 		categorizer = new ItemCategorizer();
+		profileManager = new ProfileManager(config);
+		profileManager.loadProfiles();
 		updateRegexFromConfig();
 		loadOverridesFromConfig();
 		loadSubOverridesFromConfig();
@@ -812,6 +815,148 @@ public class BankOrganizerPlugin extends Plugin
 			return stats.getEquipment();
 		}
 		return null;
+	}
+
+	// === Profile management ===
+
+	public List<String> getProfileNames()
+	{
+		return profileManager.getProfileNames();
+	}
+
+	public String getActiveProfileName()
+	{
+		return profileManager.getActiveProfileName();
+	}
+
+	public void switchProfile(String name)
+	{
+		// Save current state first
+		profileManager.saveCurrentState(
+			buildOverrideString(categorizer.getManualOverrides()),
+			buildSubOverrideString(categorizer.getSubCategoryOverrides())
+		);
+
+		BankOrganizerProfile profile = profileManager.switchProfile(name);
+
+		// Load new profile's overrides
+		config.setManualOverrides(profile.getCategoryOverrides());
+		config.setSubCategoryOverrides(profile.getSubCategoryOverrides());
+		loadOverridesFromConfig();
+		loadSubOverridesFromConfig();
+		updateRegexFromConfig();
+
+		log.info("Switched to profile: {}", name);
+	}
+
+	public void createProfile(String name, boolean blank)
+	{
+		// Save current state first
+		profileManager.saveCurrentState(
+			buildOverrideString(categorizer.getManualOverrides()),
+			buildSubOverrideString(categorizer.getSubCategoryOverrides())
+		);
+
+		BankOrganizerProfile profile;
+		if (blank)
+		{
+			profile = profileManager.createBlank(name);
+		}
+		else
+		{
+			profile = profileManager.createFromDefault(name);
+		}
+
+		// Switch to new profile
+		profileManager.switchProfile(name);
+		config.setManualOverrides(profile.getCategoryOverrides());
+		config.setSubCategoryOverrides(profile.getSubCategoryOverrides());
+		loadOverridesFromConfig();
+		loadSubOverridesFromConfig();
+
+		log.info("Created {} profile: {}", blank ? "blank" : "default", name);
+	}
+
+	public void deleteProfile(String name)
+	{
+		profileManager.deleteProfile(name);
+
+		// Reload default profile
+		BankOrganizerProfile profile = profileManager.getActiveProfile();
+		config.setManualOverrides(profile.getCategoryOverrides());
+		config.setSubCategoryOverrides(profile.getSubCategoryOverrides());
+		loadOverridesFromConfig();
+		loadSubOverridesFromConfig();
+	}
+
+	public void exportProfile()
+	{
+		// Save current state first
+		profileManager.saveCurrentState(
+			buildOverrideString(categorizer.getManualOverrides()),
+			buildSubOverrideString(categorizer.getSubCategoryOverrides())
+		);
+
+		String encoded = profileManager.exportProfile();
+		java.awt.Toolkit.getDefaultToolkit()
+			.getSystemClipboard()
+			.setContents(new java.awt.datatransfer.StringSelection(encoded), null);
+
+		javax.swing.JOptionPane.showMessageDialog(null,
+			"Profile '" + profileManager.getActiveProfileName() + "' copied to clipboard!",
+			"Export Profile", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	public void importProfile()
+	{
+		try
+		{
+			String clipText = (String) java.awt.Toolkit.getDefaultToolkit()
+				.getSystemClipboard()
+				.getData(java.awt.datatransfer.DataFlavor.stringFlavor);
+
+			BankOrganizerProfile profile = profileManager.importProfile(clipText);
+			if (profile != null)
+			{
+				javax.swing.JOptionPane.showMessageDialog(null,
+					"Imported profile: " + profile.getName(),
+					"Import Profile", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+			}
+			else
+			{
+				javax.swing.JOptionPane.showMessageDialog(null,
+					"Invalid profile data in clipboard.",
+					"Import Profile", javax.swing.JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		catch (Exception e)
+		{
+			javax.swing.JOptionPane.showMessageDialog(null,
+				"Failed to read clipboard.",
+				"Import Profile", javax.swing.JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
+	private String buildOverrideString(Map<Integer, ItemCategory> overrides)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<Integer, ItemCategory> entry : overrides.entrySet())
+		{
+			if (sb.length() > 0) sb.append(",");
+			sb.append(entry.getKey()).append(":").append(entry.getValue().name());
+		}
+		return sb.toString();
+	}
+
+	private String buildSubOverrideString(Map<Integer, Integer> overrides)
+	{
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<Integer, Integer> entry : overrides.entrySet())
+		{
+			if (sb.length() > 0) sb.append(",");
+			sb.append(entry.getKey()).append(":").append(entry.getValue());
+		}
+		return sb.toString();
 	}
 
 	private void categorizeAllVisibleItems(ItemCategory category)
