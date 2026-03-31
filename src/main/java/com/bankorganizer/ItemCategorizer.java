@@ -1375,12 +1375,15 @@ public class ItemCategorizer
 			return ((long) 99 << 28) | (itemId & 0xFFFF);
 		}
 
-		// Subcategory override sets the skill group, but keyword matching
-		// still determines tier within that group
+		// Subcategory override takes full priority — early return
 		Integer subOverride = subCategoryOverrides.get(itemId);
+		if (subOverride != null)
+		{
+			return ((long) subOverride << 28) | (itemId & 0xFFFF);
+		}
 
 		String lower = itemName.toLowerCase();
-		int skillOrder = subOverride != null ? subOverride : 99;
+		int skillOrder = 99;
 		int tierOrder = 50;
 
 		// === FARMING (skill 0) ===
