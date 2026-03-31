@@ -1001,11 +1001,16 @@ public class BankOrganizerPlugin extends Plugin
 						currentItems.get(idealPos).name, currentItems.get(idealPos).itemId);
 				}
 
-				// Optionally skip items without subcategory (skill 99)
+				// Skip items without subcategory (group 99)
 				if (tabCategory == ItemCategory.SKILLING)
 				{
 					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 					if (skillIdx >= 99) continue;
+				}
+				else if (tabCategory == ItemCategory.RAW_MATERIALS)
+				{
+					int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
+					if (grpIdx >= 99) continue;
 				}
 
 				BankItem currentAtTarget = currentItems.get(idealPos);
@@ -1019,6 +1024,14 @@ public class BankOrganizerPlugin extends Plugin
 					if (skillIdx < ItemCategorizer.SKILL_NAMES.length)
 					{
 						phase = "Grouping " + ItemCategorizer.SKILL_NAMES[skillIdx] + " items";
+					}
+				}
+				else if (tabCategory == ItemCategory.RAW_MATERIALS)
+				{
+					int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
+					if (grpIdx < ItemCategorizer.MATERIAL_GROUP_NAMES.length)
+					{
+						phase = "Grouping " + ItemCategorizer.MATERIAL_GROUP_NAMES[grpIdx];
 					}
 				}
 				else if (tabCategory == ItemCategory.GEAR)
@@ -1071,6 +1084,11 @@ public class BankOrganizerPlugin extends Plugin
 							{
 								int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 								if (skillIdx >= 99) continue;
+							}
+							else if (tabCategory == ItemCategory.RAW_MATERIALS)
+							{
+								int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
+								if (grpIdx >= 99) continue;
 							}
 							BankItem currentAtTarget = currentItems.get(pos);
 							nextStep = new OrderStep(
@@ -1199,6 +1217,22 @@ public class BankOrganizerPlugin extends Plugin
 		else if (tabCategory == ItemCategory.TELEPORTS)
 		{
 			return categorizer.getTeleportSubCategory(item.name, item.itemId).getDisplayName();
+		}
+		else if (tabCategory == ItemCategory.RAW_MATERIALS)
+		{
+			int idx = categorizer.getMaterialGroupIndex(item.name, item.itemId);
+			if (idx < ItemCategorizer.MATERIAL_GROUP_NAMES.length)
+			{
+				return ItemCategorizer.MATERIAL_GROUP_NAMES[idx];
+			}
+		}
+		else if (tabCategory == ItemCategory.SKILLING)
+		{
+			int idx = categorizer.getSkillGroupIndex(item.name, item.itemId);
+			if (idx < ItemCategorizer.SKILL_NAMES.length)
+			{
+				return ItemCategorizer.SKILL_NAMES[idx];
+			}
 		}
 		return "";
 	}

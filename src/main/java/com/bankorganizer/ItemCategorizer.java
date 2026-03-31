@@ -1138,62 +1138,107 @@ public class ItemCategorizer
 
 	public long getMaterialFullSortKey(String itemName, int itemId)
 	{
+		// Check subcategory override
+		Integer subOverride = subCategoryOverrides.get(itemId);
+		if (subOverride != null)
+		{
+			return ((long) subOverride << 28) | (itemId & 0xFFFF);
+		}
+
 		String lower = itemName.toLowerCase();
-		int typeOrder = 99;
+		int skillGroup = 99;
+		int typeOrder = 0;
 		int tierOrder = 50;
 
+		// === MINING + SMITHING (group 0) ===
 		// Ores
 		if (lower.contains(" ore") || lower.equals("clay") || lower.equals("coal"))
 		{
-			typeOrder = 0;
-			tierOrder = getOreTier(lower);
+			skillGroup = 0; typeOrder = 0; tierOrder = getOreTier(lower);
 		}
 		// Bars
 		else if (lower.contains(" bar"))
 		{
-			typeOrder = 1;
-			tierOrder = getBarTier(lower);
+			skillGroup = 0; typeOrder = 1; tierOrder = getBarTier(lower);
 		}
-		// Logs
-		else if (lower.contains("logs") || lower.equals("logs"))
-		{
-			typeOrder = 2;
-			tierOrder = getLogTier(lower);
-		}
-		// Hides/leather
-		else if (lower.contains("hide") || lower.contains("leather"))
-		{
-			typeOrder = 3;
-			tierOrder = getHideTier(lower);
-		}
-		// Gems
+		// Gems (uncut)
 		else if (lower.contains("uncut") || isGem(lower))
 		{
-			typeOrder = 4;
-			tierOrder = getGemTier(lower);
-		}
-		// Seeds
-		else if (lower.contains("seed"))
-		{
-			typeOrder = 5;
-			tierOrder = getSeedTier(lower);
-		}
-		// Herbs (grimy first, then clean)
-		else if (lower.contains("grimy") || lower.contains("herb"))
-		{
-			typeOrder = 6;
-			tierOrder = getHerbTier(lower);
-		}
-		// Essence
-		else if (lower.contains("essence"))
-		{
-			typeOrder = 7;
-			tierOrder = getEssenceTier(lower);
+			skillGroup = 0; typeOrder = 2; tierOrder = getGemTier(lower);
 		}
 
-		// Pack: typeOrder(8) | tierOrder(12)
-		// Pack with item ID for uniqueness
-		return ((long) typeOrder << 28) | ((long)(tierOrder & 0xFFF) << 16) | (itemId & 0xFFFF);
+		// === WOODCUTTING + FLETCHING + FIREMAKING + CONSTRUCTION (group 1) ===
+		else if (lower.contains("logs") || lower.equals("logs"))
+		{
+			skillGroup = 1; typeOrder = 0; tierOrder = getLogTier(lower);
+		}
+		else if (lower.contains("plank"))
+		{
+			skillGroup = 1; typeOrder = 1;
+			if (lower.contains("mahogany")) tierOrder = 3;
+			else if (lower.contains("teak")) tierOrder = 2;
+			else if (lower.contains("oak")) tierOrder = 1;
+			else tierOrder = 0;
+		}
+		else if (lower.contains("arrow shaft") || lower.contains("bow string")
+			|| lower.contains("feather") || lower.contains("headless"))
+		{
+			skillGroup = 1; typeOrder = 2;
+		}
+
+		// === CRAFTING (group 2) ===
+		else if (lower.contains("hide") || lower.contains("leather"))
+		{
+			skillGroup = 2; typeOrder = 0; tierOrder = getHideTier(lower);
+		}
+		else if (lower.contains("wool") || lower.contains("flax")
+			|| lower.contains("sinew") || lower.contains("sand")
+			|| lower.contains("molten glass") || lower.contains("thread"))
+		{
+			skillGroup = 2; typeOrder = 1;
+		}
+
+		// === FARMING + HERBLORE (group 3) ===
+		else if (lower.contains("seed"))
+		{
+			skillGroup = 3; typeOrder = 0; tierOrder = getSeedTier(lower);
+		}
+		else if (lower.contains("grimy") || lower.contains("herb"))
+		{
+			skillGroup = 3; typeOrder = 1; tierOrder = getHerbTier(lower);
+		}
+		else if (lower.contains("compost") || lower.contains("plant cure"))
+		{
+			skillGroup = 3; typeOrder = 2;
+		}
+
+		// === RUNECRAFTING (group 4) ===
+		else if (lower.contains("essence"))
+		{
+			skillGroup = 4; typeOrder = 0; tierOrder = getEssenceTier(lower);
+		}
+
+		// === FISHING + COOKING (group 5) ===
+		else if (lower.contains("raw "))
+		{
+			skillGroup = 5; typeOrder = 0;
+		}
+
+		// === HUNTER (group 6) ===
+		else if (lower.contains("fur") || lower.contains("kebbit"))
+		{
+			skillGroup = 6; typeOrder = 0;
+		}
+
+		// === BONES / PRAYER (group 7) ===
+		else if (lower.contains("bone") || lower.contains("ashes"))
+		{
+			skillGroup = 7; typeOrder = 0;
+		}
+
+		// Pack: skillGroup(8) | typeOrder(4) | tierOrder(8) | itemId(16)
+		return ((long) skillGroup << 28) | ((long)(typeOrder & 0xF) << 24)
+			| ((long)(tierOrder & 0xFF) << 16) | (itemId & 0xFFFF);
 	}
 
 	private int getOreTier(String lower)
@@ -1521,14 +1566,29 @@ public class ItemCategorizer
 	/**
 	 * Get the skill group index for a skilling item. Returns 0-17 for known skills, 99 for unknown.
 	 */
+	// Material group names for display
+	public static final String[] MATERIAL_GROUP_NAMES = {
+		"Mining/Smithing", "Woodcutting/Fletching", "Crafting",
+		"Farming/Herblore", "Runecrafting", "Fishing/Cooking",
+		"Hunter", "Prayer"
+	};
+
 	public int getSkillGroupIndex(String itemName, int itemId)
 	{
 		Integer subOverride = subCategoryOverrides.get(itemId);
 		if (subOverride != null) return subOverride;
 
-		// Use the same logic as getSkillingFullSortKey but just return the skillOrder
 		long key = getSkillingFullSortKey(itemName, itemId);
-		return (int)(key >> 12);
+		return (int)(key >> 28);
+	}
+
+	public int getMaterialGroupIndex(String itemName, int itemId)
+	{
+		Integer subOverride = subCategoryOverrides.get(itemId);
+		if (subOverride != null) return subOverride;
+
+		long key = getMaterialFullSortKey(itemName, itemId);
+		return (int)(key >> 28);
 	}
 
 	private int getTalismanOrder(String lower)
