@@ -203,8 +203,7 @@ public class BankOrganizerPlugin extends Plugin
 
 	private void recomputeOrderSteps()
 	{
-		// Delay by one tick to ensure widget children are updated after the bank change
-		clientThread.invokeLater(() -> computeNextOrderStep());
+		computeNextOrderStep();
 	}
 
 	// === Right-click category assignment ===
@@ -875,6 +874,14 @@ public class BankOrganizerPlugin extends Plugin
 					&& currentItems.get(idealPos).itemId == idealItem.itemId)
 				{
 					continue;
+				}
+
+				// Log the mismatch for debugging
+				if (idealPos < currentItems.size())
+				{
+					log.debug("Pos {}: expected {} (ID:{}), got {} (ID:{})",
+						idealPos, idealItem.name, idealItem.itemId,
+						currentItems.get(idealPos).name, currentItems.get(idealPos).itemId);
 				}
 
 				// Skip "everything else" items (skill 99)
