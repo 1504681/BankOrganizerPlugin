@@ -1368,22 +1368,19 @@ public class ItemCategorizer
 
 	public long getSkillingFullSortKey(String itemName, int itemId)
 	{
-		// Check subcategory override first
-		Integer subOverride = subCategoryOverrides.get(itemId);
-		if (subOverride != null)
-		{
-			return ((long) subOverride << 12) | (itemId & 0xFFF);
-		}
-
 		// If this item is categorized as something other than Skilling, push to end
 		ItemCategory cat = categorize(itemName, itemId);
 		if (cat != ItemCategory.SKILLING)
 		{
-			return ((long) 99 << 12) | (itemId & 0xFFF);
+			return ((long) 99 << 28) | (itemId & 0xFFFF);
 		}
 
+		// Subcategory override sets the skill group, but keyword matching
+		// still determines tier within that group
+		Integer subOverride = subCategoryOverrides.get(itemId);
+
 		String lower = itemName.toLowerCase();
-		int skillOrder = 99;
+		int skillOrder = subOverride != null ? subOverride : 99;
 		int tierOrder = 50;
 
 		// === FARMING (skill 0) ===
