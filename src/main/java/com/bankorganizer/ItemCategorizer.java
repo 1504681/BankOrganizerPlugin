@@ -356,6 +356,20 @@ public class ItemCategorizer
 		itemIdMap.put(29893, ItemCategory.TELEPORTS); // Quetzal whistle (enhanced)
 		itemIdMap.put(25818, ItemCategory.TELEPORTS); // Pendant of passage
 		itemIdMap.put(11061, ItemCategory.TELEPORTS); // (moved from QUEST_MISC)
+		// Crystal teleport seed (uncharged teleport crystal)
+		itemIdMap.put(23956, ItemCategory.TELEPORTS); // Crystal teleport seed
+		itemIdMap.put(6099, ItemCategory.TELEPORTS);  // Crystal teleport seed (older ID)
+
+		// === CURRENCY ===
+		itemIdMap.put(995, ItemCategory.CURRENCY);    // Coins
+		itemIdMap.put(13204, ItemCategory.CURRENCY);  // Platinum token
+		itemIdMap.put(6529, ItemCategory.CURRENCY);   // Tokkul
+		itemIdMap.put(6306, ItemCategory.CURRENCY);   // Trading sticks
+		itemIdMap.put(26792, ItemCategory.CURRENCY);  // Numulite (override from RAW_MATERIALS)
+		itemIdMap.put(8901, ItemCategory.CURRENCY);   // Warrior guild token
+		itemIdMap.put(21129, ItemCategory.CURRENCY);  // Hallowed mark
+		itemIdMap.put(22820, ItemCategory.CURRENCY);  // Molch pearl
+		itemIdMap.put(24712, ItemCategory.CURRENCY);  // Stardust
 
 		// === SKILLING (user-contributed) ===
 		itemIdMap.put(31043, ItemCategory.SKILLING);  // Forestry item
@@ -821,7 +835,8 @@ public class ItemCategorizer
 		if (sub == TeleportSubCategory.OTHER)
 		{
 			// Teleport crystals go near bottom of "other" (just before jewelry)
-			if (lower.contains("teleport crystal") || lower.contains("eternal teleport"))
+			if (lower.contains("teleport crystal") || lower.contains("crystal teleport seed")
+				|| lower.contains("eternal teleport"))
 			{
 				return ((long) 4 << 28) | 0xFFF0 | (itemId & 0xF);
 			}
@@ -961,11 +976,33 @@ public class ItemCategorizer
 		if (lower.contains("harmony")) return 68;
 		if (lower.contains("west ardougne")) return 69;
 
-		// Teleport scrolls (tier 80-99)
-		if (lower.contains("scroll"))
+		// Treasure trail teleport scrolls (tier 80-99)
+		if (lower.contains("digsite teleport")) return 80;
+		if (lower.contains("feldip hills")) return 81;
+		if (lower.contains("iorwerth")) return 82;
+		if (lower.contains("lumberyard")) return 83;
+		if (lower.contains("lunar isle")) return 84;
+		if (lower.contains("mort'ton") || lower.contains("mortton")) return 85;
+		if (lower.contains("mos le'harmless") || lower.contains("mos leharmless")) return 86;
+		if (lower.contains("nardah")) return 87;
+		if (lower.contains("pest control")) return 88;
+		if (lower.contains("piscatoris")) return 89;
+		if (lower.contains("tai bwo")) return 90;
+
+		// Other teleport scrolls (tier 100-119)
+		if (lower.contains("chasm")) return 100;
+		if (lower.contains("colossal wyrm")) return 101;
+		if (lower.contains("guthixian")) return 102;
+		if (lower.contains("key master")) return 103;
+		if (lower.contains("revenant")) return 104;
+		if (lower.contains("spider cave")) return 105;
+		if (lower.contains("watson")) return 106;
+		if (lower.contains("zul-andra") || lower.contains("zulandra")) return 107;
+
+		// Any other scroll
+		if (lower.contains("scroll") || lower.contains("teleport"))
 		{
-			// Sort scrolls alphabetically within the scroll group
-			return 80 + Math.abs(lower.hashCode() % 19);
+			return 120;
 		}
 
 		return 50;

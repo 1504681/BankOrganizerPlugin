@@ -545,6 +545,7 @@ public class BankOrganizerPlugin extends Plugin
 		patterns.put(ItemCategory.SKILLING, config.regexSkilling());
 		patterns.put(ItemCategory.RAW_MATERIALS, config.regexRawMaterials());
 		patterns.put(ItemCategory.HIGH_ALCH, config.regexHighAlch());
+		patterns.put(ItemCategory.CURRENCY, config.regexCurrency());
 		categorizer.setRegexPatterns(patterns);
 	}
 
