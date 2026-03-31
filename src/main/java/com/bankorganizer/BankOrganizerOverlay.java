@@ -1,9 +1,13 @@
 package com.bankorganizer;
 
+import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.Stroke;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.api.Client;
@@ -35,15 +39,16 @@ public class BankOrganizerOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		if (!plugin.isScanActive())
-		{
-			// Still draw tab colors even without a scan
-			drawTabColors(graphics);
-			return null;
-		}
-
 		drawTabColors(graphics);
-		drawMisplacedItems(graphics);
+
+		if (plugin.isOrderingActive())
+		{
+			drawOrderingHighlight(graphics);
+		}
+		else if (plugin.isScanActive())
+		{
+			drawMisplacedItems(graphics);
+		}
 
 		return null;
 	}
@@ -172,5 +177,94 @@ public class BankOrganizerOverlay extends Overlay
 			graphics.setColor(borderColor);
 			graphics.draw(bounds);
 		}
+	}
+
+	private void drawOrderingHighlight(Graphics2D graphics)
+	{
+		List<BankOrganizerPlugin.OrderStep> steps = plugin.getOrderSteps();
+		int currentStep = plugin.getCurrentOrderStep();
+		if (currentStep >= steps.size())
+		{
+			return;
+		}
+
+		BankOrganizerPlugin.OrderStep step = steps.get(currentStep);
+
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null || bankItemContainer.isHidden())
+		{
+			return;
+		}
+
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null)
+		{
+			return;
+		}
+
+		Rectangle containerBounds = bankItemContainer.getBounds();
+		Stroke oldStroke = graphics.getStroke();
+
+		for (Widget child : children)
+		{
+			if (child == null || child.isHidden()) continue;
+			int itemId = child.getItemId();
+			if (itemId <= 0) continue;
+
+			Rectangle bounds = child.getBounds();
+			if (bounds == null || bounds.width <= 0) continue;
+			if (containerBounds != null && !containerBounds.contains(bounds)) continue;
+
+			if (itemId == step.itemId)
+			{
+				// Highlight the item to move with a pulsing green border
+				Color highlight = new Color(0, 255, 100, 180);
+				Color fill = new Color(0, 255, 100, 50);
+				graphics.setColor(fill);
+				graphics.fill(bounds);
+				graphics.setColor(highlight);
+				graphics.setStroke(new BasicStroke(2));
+				graphics.draw(bounds);
+
+				// Draw label above
+				Font oldFont = graphics.getFont();
+				graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
+				graphics.setColor(Color.WHITE);
+				String label = "MOVE THIS";
+				int textX = bounds.x + (bounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
+				int textY = bounds.y - 3;
+				graphics.drawString(label, textX, textY);
+				graphics.setFont(oldFont);
+			}
+		}
+
+		// Also highlight target position
+		if (step.targetSlot < children.length)
+		{
+			Widget targetChild = children[step.targetSlot];
+			if (targetChild != null && !targetChild.isHidden())
+			{
+				Rectangle targetBounds = targetChild.getBounds();
+				if (targetBounds != null && targetBounds.width > 0
+					&& (containerBounds == null || containerBounds.contains(targetBounds)))
+				{
+					Color targetColor = new Color(255, 255, 0, 120);
+					graphics.setColor(targetColor);
+					graphics.setStroke(new BasicStroke(2));
+					graphics.draw(targetBounds);
+
+					Font oldFont = graphics.getFont();
+					graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
+					graphics.setColor(new Color(255, 255, 100));
+					String label = "INSERT HERE";
+					int textX = targetBounds.x + (targetBounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
+					int textY = targetBounds.y - 3;
+					graphics.drawString(label, textX, textY);
+					graphics.setFont(oldFont);
+				}
+			}
+		}
+
+		graphics.setStroke(oldStroke);
 	}
 }

@@ -26,8 +26,15 @@ public class BankOrganizerPanel extends PluginPanel
 {
 	private final BankOrganizerPlugin plugin;
 	private final JPanel resultsPanel;
+	private final JPanel orderingPanel;
+	private final JLabel orderingStepLabel;
+	private final JLabel orderingSubCatLabel;
+	private final JLabel orderingProgressLabel;
+	private final JButton categorizeButton;
+	private final JButton orderButton;
+	private final JButton nextStepButton;
+	private final JButton stopOrderButton;
 	private final List<JButton> filterButtons = new ArrayList<>();
-	private ItemCategory activeFilterSelection = null;
 
 	public BankOrganizerPanel(BankOrganizerPlugin plugin)
 	{
@@ -55,17 +62,95 @@ public class BankOrganizerPanel extends PluginPanel
 		presetLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		presetLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		mainPanel.add(presetLabel);
-		mainPanel.add(Box.createVerticalStrut(15));
+		mainPanel.add(Box.createVerticalStrut(10));
 
-		// Scan button
+		// === Action buttons ===
 		JButton scanButton = new JButton("Scan Current Tab");
 		scanButton.setAlignmentX(Component.LEFT_ALIGNMENT);
 		scanButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 		scanButton.addActionListener(e -> plugin.scanCurrentTab());
 		mainPanel.add(scanButton);
+		mainPanel.add(Box.createVerticalStrut(5));
+
+		categorizeButton = new JButton("Start Categorizing");
+		categorizeButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		categorizeButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		categorizeButton.addActionListener(e -> toggleCategorizeMode());
+		mainPanel.add(categorizeButton);
+		mainPanel.add(Box.createVerticalStrut(5));
+
+		orderButton = new JButton("Start Ordering Items");
+		orderButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		orderButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		orderButton.addActionListener(e -> plugin.startOrdering());
+		mainPanel.add(orderButton);
 		mainPanel.add(Box.createVerticalStrut(10));
 
-		// Category filter section
+		// === Ordering guide panel ===
+		orderingPanel = new JPanel();
+		orderingPanel.setLayout(new BoxLayout(orderingPanel, BoxLayout.Y_AXIS));
+		orderingPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		orderingPanel.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createLineBorder(new Color(80, 180, 80), 1),
+			new EmptyBorder(8, 8, 8, 8)
+		));
+		orderingPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		orderingPanel.setVisible(false);
+
+		JLabel orderingTitle = new JLabel("Ordering Guide");
+		orderingTitle.setForeground(new Color(80, 180, 80));
+		orderingTitle.setFont(orderingTitle.getFont().deriveFont(13f));
+		orderingPanel.add(orderingTitle);
+		orderingPanel.add(Box.createVerticalStrut(3));
+
+		JLabel insertNote = new JLabel("(Make sure Insert mode is ON)");
+		insertNote.setForeground(new Color(255, 200, 100));
+		insertNote.setFont(insertNote.getFont().deriveFont(10f));
+		orderingPanel.add(insertNote);
+		orderingPanel.add(Box.createVerticalStrut(5));
+
+		orderingSubCatLabel = new JLabel("");
+		orderingSubCatLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		orderingPanel.add(orderingSubCatLabel);
+		orderingPanel.add(Box.createVerticalStrut(3));
+
+		orderingStepLabel = new JLabel("");
+		orderingStepLabel.setForeground(Color.WHITE);
+		orderingStepLabel.setFont(orderingStepLabel.getFont().deriveFont(12f));
+		orderingPanel.add(orderingStepLabel);
+		orderingPanel.add(Box.createVerticalStrut(5));
+
+		orderingProgressLabel = new JLabel("");
+		orderingProgressLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		orderingPanel.add(orderingProgressLabel);
+		orderingPanel.add(Box.createVerticalStrut(8));
+
+		JPanel orderBtnPanel = new JPanel(new GridBagLayout());
+		orderBtnPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		orderBtnPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		GridBagConstraints obgc = new GridBagConstraints();
+		obgc.fill = GridBagConstraints.HORIZONTAL;
+		obgc.weightx = 1.0;
+		obgc.insets = new Insets(0, 0, 0, 4);
+
+		nextStepButton = new JButton("Next");
+		nextStepButton.addActionListener(e -> plugin.advanceOrderStep());
+		obgc.gridx = 0;
+		orderBtnPanel.add(nextStepButton, obgc);
+
+		stopOrderButton = new JButton("Stop");
+		stopOrderButton.addActionListener(e -> plugin.stopOrdering());
+		obgc.gridx = 1;
+		obgc.insets = new Insets(0, 0, 0, 0);
+		orderBtnPanel.add(stopOrderButton, obgc);
+
+		orderingPanel.add(orderBtnPanel);
+
+		mainPanel.add(orderingPanel);
+		mainPanel.add(Box.createVerticalStrut(10));
+
+		// === Category filter section ===
 		JLabel filterLabel = new JLabel("Filter by Category:");
 		filterLabel.setForeground(Color.WHITE);
 		filterLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -81,14 +166,12 @@ public class BankOrganizerPanel extends PluginPanel
 		gbc.insets = new Insets(2, 2, 2, 2);
 		gbc.weightx = 1.0;
 
-		// "All" button
 		JButton allButton = createFilterButton("All", null);
 		gbc.gridx = 0;
 		gbc.gridy = 0;
 		filterPanel.add(allButton, gbc);
 		filterButtons.add(allButton);
 
-		// Category buttons in 2-column grid
 		int col = 1;
 		int row = 0;
 		for (ItemCategory category : ItemCategory.values())
@@ -110,7 +193,7 @@ public class BankOrganizerPanel extends PluginPanel
 		mainPanel.add(filterPanel);
 		mainPanel.add(Box.createVerticalStrut(15));
 
-		// Results section
+		// === Results section ===
 		JLabel resultsLabel = new JLabel("Misplaced Items:");
 		resultsLabel.setForeground(Color.WHITE);
 		resultsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -132,6 +215,22 @@ public class BankOrganizerPanel extends PluginPanel
 		add(mainPanel, BorderLayout.CENTER);
 	}
 
+	private void toggleCategorizeMode()
+	{
+		boolean newMode = !plugin.isCategorizeMode();
+		plugin.setCategorizeMode(newMode);
+		if (newMode)
+		{
+			categorizeButton.setText("Stop Categorizing");
+			categorizeButton.setBackground(new Color(100, 60, 60));
+		}
+		else
+		{
+			categorizeButton.setText("Start Categorizing");
+			categorizeButton.setBackground(null);
+		}
+	}
+
 	private JButton createFilterButton(String text, ItemCategory category)
 	{
 		JButton button = new JButton(text);
@@ -139,7 +238,6 @@ public class BankOrganizerPanel extends PluginPanel
 		button.setFont(button.getFont().deriveFont(11f));
 		button.addActionListener(e ->
 		{
-			activeFilterSelection = category;
 			plugin.setActiveFilter(category);
 		});
 		return button;
@@ -162,9 +260,9 @@ public class BankOrganizerPanel extends PluginPanel
 		{
 			for (Map.Entry<Integer, ItemCategory> entry : misplacedItems.entrySet())
 			{
-				int slot = entry.getKey();
+				int itemId = entry.getKey();
 				ItemCategory correctCategory = entry.getValue();
-				String itemName = itemNames.getOrDefault(slot, "Unknown");
+				String itemName = itemNames.getOrDefault(itemId, "Unknown");
 
 				Integer tabNum = tabMappings.get(correctCategory);
 				String tabStr = tabNum != null ? "Tab " + tabNum : "?";
@@ -190,5 +288,33 @@ public class BankOrganizerPanel extends PluginPanel
 
 		resultsPanel.revalidate();
 		resultsPanel.repaint();
+	}
+
+	public void updateOrderingState()
+	{
+		if (plugin.isOrderingActive())
+		{
+			orderingPanel.setVisible(true);
+			List<BankOrganizerPlugin.OrderStep> steps = plugin.getOrderSteps();
+			int current = plugin.getCurrentOrderStep();
+
+			if (current < steps.size())
+			{
+				BankOrganizerPlugin.OrderStep step = steps.get(current);
+				orderingStepLabel.setText(step.instruction);
+				orderingSubCatLabel.setText("Group: " + step.subCategory);
+				orderingProgressLabel.setText("Step " + (current + 1) + " / " + steps.size());
+			}
+		}
+		else
+		{
+			orderingPanel.setVisible(false);
+			orderingStepLabel.setText("");
+			orderingSubCatLabel.setText("");
+			orderingProgressLabel.setText("");
+		}
+
+		revalidate();
+		repaint();
 	}
 }

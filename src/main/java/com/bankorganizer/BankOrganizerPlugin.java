@@ -1,14 +1,21 @@
 package com.bankorganizer;
 
 import java.awt.image.BufferedImage;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.runelite.api.Client;
+import net.runelite.api.MenuAction;
+import net.runelite.api.MenuEntry;
+import net.runelite.api.events.MenuEntryAdded;
+import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
@@ -22,6 +29,7 @@ import net.runelite.client.plugins.PluginDescriptor;
 import net.runelite.client.ui.ClientToolbar;
 import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
+import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
@@ -32,6 +40,8 @@ import net.runelite.client.util.ImageUtil;
 public class BankOrganizerPlugin extends Plugin
 {
 	private static final Logger log = LoggerFactory.getLogger(BankOrganizerPlugin.class);
+	private static final String MENU_SET_PREFIX = "Set: ";
+	private static final String MENU_REMOVE_OVERRIDE = "Remove Override";
 
 	@Inject
 	private Client client;
@@ -61,19 +71,30 @@ public class BankOrganizerPlugin extends Plugin
 	private NavigationButton navButton;
 	private ItemCategorizer categorizer;
 
-	// Keyed by item ID, not slot index
 	private Map<Integer, ItemCategory> misplacedItems = new HashMap<>();
 	private Map<Integer, String> misplacedItemNames = new HashMap<>();
 	private ItemCategory activeFilter;
 	private boolean scanActive = false;
+	private boolean categorizeMode = false;
+
+	// Ordering state
+	private boolean orderingActive = false;
+	private List<OrderStep> orderSteps = new ArrayList<>();
+	private int currentOrderStep = 0;
 
 	public Map<Integer, ItemCategory> getMisplacedItems() { return misplacedItems; }
 	public Map<Integer, String> getMisplacedItemNames() { return misplacedItemNames; }
 	public ItemCategory getActiveFilter() { return activeFilter; }
 	public void setActiveFilter(ItemCategory activeFilter) { this.activeFilter = activeFilter; }
 	public boolean isScanActive() { return scanActive; }
+	public boolean isCategorizeMode() { return categorizeMode; }
+	public void setCategorizeMode(boolean mode) { this.categorizeMode = mode; }
+	public boolean isOrderingActive() { return orderingActive; }
+	public List<OrderStep> getOrderSteps() { return orderSteps; }
+	public int getCurrentOrderStep() { return currentOrderStep; }
 	public ItemCategorizer getCategorizer() { return categorizer; }
 	public ItemManager getItemManager() { return itemManager; }
+	public BankOrganizerConfig getConfig() { return config; }
 
 	@Provides
 	BankOrganizerConfig provideConfig(ConfigManager configManager)
@@ -86,6 +107,7 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		categorizer = new ItemCategorizer();
 		updateRegexFromConfig();
+		loadOverridesFromConfig();
 
 		panel = new BankOrganizerPanel(this);
 
@@ -120,6 +142,8 @@ public class BankOrganizerPlugin extends Plugin
 		misplacedItems.clear();
 		misplacedItemNames.clear();
 		scanActive = false;
+		categorizeMode = false;
+		orderingActive = false;
 
 		log.info("Bank Organizer stopped!");
 	}
@@ -132,6 +156,159 @@ public class BankOrganizerPlugin extends Plugin
 			updateRegexFromConfig();
 		}
 	}
+
+	// === Right-click category assignment ===
+
+	@Subscribe
+	public void onMenuEntryAdded(MenuEntryAdded event)
+	{
+		if (!categorizeMode)
+		{
+			return;
+		}
+
+		// Only add to bank item container actions
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null)
+		{
+			return;
+		}
+
+		// Check if this menu is for a bank item (Examine option on bank items)
+		String option = event.getOption();
+		if (!"Examine".equals(option))
+		{
+			return;
+		}
+
+		int widgetId = event.getActionParam1();
+		if (widgetId != bankItemContainer.getId())
+		{
+			return;
+		}
+
+		int itemId = event.getIdentifier();
+		if (itemId <= 0)
+		{
+			return;
+		}
+
+		// Add "Remove Override" if has override
+		if (categorizer.hasManualOverride(itemId))
+		{
+			client.createMenuEntry(-1)
+				.setOption(MENU_REMOVE_OVERRIDE)
+				.setTarget(event.getTarget())
+				.setIdentifier(itemId)
+				.setType(MenuAction.RUNELITE)
+				.setParam0(event.getActionParam0())
+				.setParam1(widgetId);
+		}
+
+		// Add category options in reverse order (they stack, last added = top)
+		ItemCategory[] categories = ItemCategory.values();
+		for (int i = categories.length - 1; i >= 0; i--)
+		{
+			ItemCategory cat = categories[i];
+			String colorTag = ColorUtil.colorTag(cat.getColor());
+			client.createMenuEntry(-1)
+				.setOption(colorTag + MENU_SET_PREFIX + cat.getDisplayName())
+				.setTarget(event.getTarget())
+				.setIdentifier(itemId)
+				.setType(MenuAction.RUNELITE)
+				.setParam0(event.getActionParam0())
+				.setParam1(widgetId);
+		}
+	}
+
+	@Subscribe
+	public void onMenuOptionClicked(MenuOptionClicked event)
+	{
+		if (!categorizeMode)
+		{
+			return;
+		}
+
+		String option = event.getMenuOption();
+		if (option == null)
+		{
+			return;
+		}
+
+		// Strip color tags for comparison
+		String stripped = option.replaceAll("<[^>]+>", "");
+
+		if (MENU_REMOVE_OVERRIDE.equals(stripped))
+		{
+			int itemId = event.getId();
+			categorizer.removeManualOverride(itemId);
+			saveOverridesToConfig();
+			log.info("Removed category override for item ID {}", itemId);
+			return;
+		}
+
+		if (stripped.startsWith(MENU_SET_PREFIX))
+		{
+			String categoryName = stripped.substring(MENU_SET_PREFIX.length());
+			int itemId = event.getId();
+
+			for (ItemCategory cat : ItemCategory.values())
+			{
+				if (cat.getDisplayName().equals(categoryName))
+				{
+					categorizer.setManualOverride(itemId, cat);
+					saveOverridesToConfig();
+					log.info("Set item ID {} to category {}", itemId, cat);
+					break;
+				}
+			}
+		}
+	}
+
+	// === Override persistence ===
+
+	private void loadOverridesFromConfig()
+	{
+		String json = config.manualOverrides();
+		if (json == null || json.isEmpty())
+		{
+			return;
+		}
+
+		Map<Integer, ItemCategory> overrides = new HashMap<>();
+		// Simple parsing: "itemId:CATEGORY,itemId:CATEGORY,..."
+		for (String entry : json.split(","))
+		{
+			String[] parts = entry.split(":");
+			if (parts.length == 2)
+			{
+				try
+				{
+					int id = Integer.parseInt(parts[0].trim());
+					ItemCategory cat = ItemCategory.valueOf(parts[1].trim());
+					overrides.put(id, cat);
+				}
+				catch (Exception ignored)
+				{
+				}
+			}
+		}
+		categorizer.loadManualOverrides(overrides);
+	}
+
+	private void saveOverridesToConfig()
+	{
+		Map<Integer, ItemCategory> overrides = categorizer.getManualOverrides();
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<Integer, ItemCategory> entry : overrides.entrySet())
+		{
+			if (sb.length() > 0) sb.append(",");
+			sb.append(entry.getKey()).append(":").append(entry.getValue().name());
+		}
+		config.setManualOverrides(sb.toString());
+	}
+
+	// === Config helpers ===
 
 	private void updateRegexFromConfig()
 	{
@@ -180,6 +357,8 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		return client.getVarbitValue(4150);
 	}
+
+	// === Scan ===
 
 	public void scanCurrentTab()
 	{
@@ -235,7 +414,6 @@ public class BankOrganizerPlugin extends Plugin
 
 				if (expectedCategory != null && correctCategory != expectedCategory)
 				{
-					// Key by item ID so highlights follow items when they move
 					newMisplaced.put(itemId, correctCategory);
 					newNames.put(itemId, itemName);
 				}
@@ -257,5 +435,174 @@ public class BankOrganizerPlugin extends Plugin
 
 			log.info("Scan complete: {} misplaced items found", newMisplaced.size());
 		});
+	}
+
+	// === Ordering ===
+
+	public void startOrdering()
+	{
+		clientThread.invokeLater(() ->
+		{
+			Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+			if (bankWidget == null || bankWidget.isHidden())
+			{
+				log.debug("Bank is not open");
+				return;
+			}
+
+			int currentTab = getCurrentBankTab();
+			ItemCategory tabCategory = getCategoryForTab(currentTab);
+			if (tabCategory == null)
+			{
+				log.debug("No category mapped to current tab");
+				return;
+			}
+
+			Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+			if (bankItemContainer == null) return;
+			Widget[] children = bankItemContainer.getDynamicChildren();
+			if (children == null) return;
+
+			// Collect all items in the tab with their current positions
+			List<BankItem> currentItems = new ArrayList<>();
+			for (int slot = 0; slot < children.length; slot++)
+			{
+				Widget child = children[slot];
+				if (child == null || child.isHidden()) continue;
+				int itemId = child.getItemId();
+				if (itemId <= 0) continue;
+				String name = itemManager.getItemComposition(itemId).getName();
+				if (name == null || name.equals("null")) continue;
+				currentItems.add(new BankItem(itemId, name, slot));
+			}
+
+			// Sort items into ideal order
+			List<BankItem> idealOrder = new ArrayList<>(currentItems);
+			GearSortMode gearMode = config.gearSortMode();
+			TeleportSortMode teleportMode = config.teleportSortMode();
+
+			idealOrder.sort(Comparator.comparingInt(item ->
+			{
+				if (tabCategory == ItemCategory.GEAR)
+				{
+					GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId);
+					return categorizer.getGearSortOrder(sub, gearMode);
+				}
+				else if (tabCategory == ItemCategory.TELEPORTS)
+				{
+					TeleportSubCategory sub = categorizer.getTeleportSubCategory(item.name, item.itemId);
+					return categorizer.getTeleportSortOrder(sub, teleportMode);
+				}
+				return 0;
+			}));
+
+			// Generate order steps: find items that need to move
+			List<OrderStep> steps = new ArrayList<>();
+			for (int targetSlot = 0; targetSlot < idealOrder.size(); targetSlot++)
+			{
+				BankItem idealItem = idealOrder.get(targetSlot);
+				// Find where this item currently is in the working order
+				int currentSlot = -1;
+				for (int j = 0; j < currentItems.size(); j++)
+				{
+					if (currentItems.get(j).itemId == idealItem.itemId)
+					{
+						currentSlot = j;
+						break;
+					}
+				}
+
+				if (currentSlot != targetSlot && currentSlot >= 0)
+				{
+					String subCatName = "";
+					if (tabCategory == ItemCategory.GEAR)
+					{
+						subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
+					}
+					else if (tabCategory == ItemCategory.TELEPORTS)
+					{
+						subCatName = categorizer.getTeleportSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
+					}
+
+					String targetItemName = targetSlot < currentItems.size() ?
+						currentItems.get(targetSlot).name : "position " + (targetSlot + 1);
+
+					steps.add(new OrderStep(
+						idealItem.itemId,
+						idealItem.name,
+						targetSlot,
+						"Insert " + idealItem.name + " before " + targetItemName,
+						subCatName
+					));
+
+					// Simulate the insert in our working list
+					BankItem removed = currentItems.remove(currentSlot);
+					currentItems.add(targetSlot, removed);
+				}
+			}
+
+			orderSteps = steps;
+			currentOrderStep = 0;
+			orderingActive = !steps.isEmpty();
+
+			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+
+			log.info("Ordering: {} steps to reorder {} tab", steps.size(), tabCategory.getDisplayName());
+		});
+	}
+
+	public void advanceOrderStep()
+	{
+		if (currentOrderStep < orderSteps.size() - 1)
+		{
+			currentOrderStep++;
+			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+		}
+		else
+		{
+			stopOrdering();
+		}
+	}
+
+	public void stopOrdering()
+	{
+		orderingActive = false;
+		orderSteps.clear();
+		currentOrderStep = 0;
+		SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+	}
+
+	// === Helper classes ===
+
+	public static class BankItem
+	{
+		public final int itemId;
+		public final String name;
+		public final int slot;
+
+		public BankItem(int itemId, String name, int slot)
+		{
+			this.itemId = itemId;
+			this.name = name;
+			this.slot = slot;
+		}
+	}
+
+	public static class OrderStep
+	{
+		public final int itemId;
+		public final String itemName;
+		public final int targetSlot;
+		public final String instruction;
+		public final String subCategory;
+
+		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory)
+		{
+			this.itemId = itemId;
+			this.itemName = itemName;
+			this.targetSlot = targetSlot;
+			this.instruction = instruction;
+			this.subCategory = subCategory;
+		}
 	}
 }

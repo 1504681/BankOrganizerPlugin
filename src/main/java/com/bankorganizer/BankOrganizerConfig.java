@@ -16,11 +16,20 @@ public interface BankOrganizerConfig extends Config
 	String tabMappingSection = "tabMappings";
 
 	@ConfigSection(
-		name = "Custom Regex",
-		description = "Custom regex patterns per category for additional item matching",
+		name = "Sorting",
+		description = "How items are sorted within tabs",
 		position = 1
 	)
+	String sortingSection = "sorting";
+
+	@ConfigSection(
+		name = "Custom Regex",
+		description = "Custom regex patterns per category for additional item matching",
+		position = 2
+	)
 	String regexSection = "customRegex";
+
+	// --- Tab mappings ---
 
 	@ConfigItem(keyName = "tab1Category", name = "Tab 1", description = "Category for bank tab 1", position = 0, section = tabMappingSection)
 	default ItemCategory tab1Category() { return ItemCategory.TELEPORTS; }
@@ -48,6 +57,24 @@ public interface BankOrganizerConfig extends Config
 
 	@ConfigItem(keyName = "tab9Category", name = "Tab 9", description = "Category for bank tab 9", position = 8, section = tabMappingSection)
 	default ItemCategory tab9Category() { return ItemCategory.QUEST_MISC; }
+
+	// --- Sorting ---
+
+	@ConfigItem(keyName = "gearSortMode", name = "Gear Sort Mode", description = "How gear is sorted within the Gear tab", position = 0, section = sortingSection)
+	default GearSortMode gearSortMode() { return GearSortMode.COMBAT_STYLE; }
+
+	@ConfigItem(keyName = "teleportSortMode", name = "Teleport Sort Mode", description = "How teleport items are sorted within the Teleports tab", position = 1, section = sortingSection)
+	default TeleportSortMode teleportSortMode() { return TeleportSortMode.RUNES_FIRST; }
+
+	// --- Manual overrides (stored as JSON string) ---
+
+	@ConfigItem(keyName = "manualOverrides", name = "", description = "", hidden = true)
+	default String manualOverrides() { return ""; }
+
+	@ConfigItem(keyName = "manualOverrides", name = "", description = "")
+	void setManualOverrides(String json);
+
+	// --- Custom regex ---
 
 	@ConfigItem(keyName = "regexTeleports", name = "Teleports Regex", description = "Custom regex for Teleports category", position = 0, section = regexSection)
 	default String regexTeleports() { return ""; }
