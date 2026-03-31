@@ -619,9 +619,8 @@ public class BankOrganizerPlugin extends Plugin
 			categoryKey = categorizer.getFoodFullSortKey(item.name, item.itemId);
 		}
 
-		// Use item ID as tiebreaker so items with identical stats have a stable order
-		// Shift category key left by 16 bits and add item ID in the low bits
-		return (categoryKey << 16) | (item.itemId & 0xFFFF);
+		// All sort key methods now include item ID for guaranteed uniqueness
+		return categoryKey;
 	}
 
 	private net.runelite.http.api.item.ItemEquipmentStats getEquipmentStats(int itemId)

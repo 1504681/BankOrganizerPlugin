@@ -725,7 +725,8 @@ public class ItemCategorizer
 		if (invertedStat < 0) invertedStat = 0;
 
 		// Pack into long with enough bits: subOrder (8 bits) | slotOrder (8 bits) | invertedStat (20 bits)
-		return ((long) subOrder << 28) | ((long) slotOrder << 20) | (invertedStat & 0xFFFFF);
+		// Pack: subOrder(8) | slotOrder(8) | invertedStat(20) | itemId(16) for uniqueness
+		return ((long) subOrder << 44) | ((long) slotOrder << 36) | ((long)(invertedStat & 0xFFFFF) << 16) | (itemId & 0xFFFF);
 	}
 
 	public int getGearSortOrder(GearSubCategory sub, GearSortMode mode)
@@ -821,20 +822,20 @@ public class ItemCategorizer
 		if (lower.contains("construct") && (lower.contains("cape") || lower.contains("hood")))
 		{
 			int trimOrder = lower.contains("(t)") ? 0 : 1;
-			return ((long) 1 << 28) | trimOrder;
+			return ((long) 1 << 44) | ((long) trimOrder << 16) | (itemId & 0xFFFF);
 		}
 
 		// Tier 2: Farming skillcape
 		if (lower.contains("farming") && (lower.contains("cape") || lower.contains("hood")))
 		{
 			int trimOrder = lower.contains("(t)") ? 0 : 1;
-			return ((long) 2 << 28) | trimOrder;
+			return ((long) 2 << 44) | ((long) trimOrder << 16) | (itemId & 0xFFFF);
 		}
 
-		// Tier 3: Other teleport skillcapes (crafting, quest, etc.)
+		// Tier 3: Other teleport skillcapes
 		if ((lower.contains("cape") || lower.contains("hood")) && lower.contains("(t)") || lower.contains("skillcape"))
 		{
-			return ((long) 3 << 28) | (itemId & 0xFFFF);
+			return ((long) 3 << 44) | (itemId & 0xFFFF);
 		}
 
 		// Tier 4: Other teleport items (ectophial, xeric's talisman, chronicles, etc.)
@@ -845,9 +846,9 @@ public class ItemCategorizer
 			if (lower.contains("teleport crystal") || lower.contains("crystal teleport seed")
 				|| lower.contains("eternal teleport"))
 			{
-				return ((long) 4 << 28) | 0xFFF0 | (itemId & 0xF);
+				return ((long) 4 << 44) | ((long) 0xFFF << 16) | (itemId & 0xFFFF);
 			}
-			return ((long) 4 << 28) | (itemId & 0xFFFF);
+			return ((long) 4 << 44) | (itemId & 0xFFFF);
 		}
 
 		// Tier 5+: Runes, Jewelry, Tablets — ordered by mode preference
@@ -870,7 +871,8 @@ public class ItemCategorizer
 		}
 
 		// Pack: tier 5+ base | subOrder(8) | typeOrder(12) | chargeOrder(8)
-		return ((long) 5 << 28) | ((long) subOrder << 20) | ((long) typeOrder << 8) | (chargeOrder & 0xFF);
+		// Pack with itemId for uniqueness
+		return ((long) 5 << 44) | ((long) subOrder << 36) | ((long) typeOrder << 24) | ((long)(chargeOrder & 0xFF) << 16) | (itemId & 0xFFFF);
 	}
 
 	private int getRuneSortOrder(int itemId)
@@ -1028,7 +1030,8 @@ public class ItemCategorizer
 	{
 		int healAmount = getFoodHealAmount(itemName.toLowerCase());
 		// Invert so highest healing sorts first
-		return 999 - healAmount;
+		// Pack with item ID for uniqueness
+		return ((long)(999 - healAmount) << 16) | (itemId & 0xFFFF);
 	}
 
 	private int getFoodHealAmount(String lower)
@@ -1077,8 +1080,8 @@ public class ItemCategorizer
 		int potionPriority = getPotionPriority(lower);
 		int doseOrder = getChargeOrder(itemName); // Reuse charge extraction — (4) before (3) etc.
 
-		// Pack: isDivine(4) | potionPriority(12) | doseOrder(8)
-		return ((long) isDivine << 20) | ((long) potionPriority << 8) | (doseOrder & 0xFF);
+		// Pack: isDivine(4) | potionPriority(12) | doseOrder(8) | itemId(16)
+		return ((long) isDivine << 36) | ((long) potionPriority << 24) | ((long)(doseOrder & 0xFF) << 16) | (itemId & 0xFFFF);
 	}
 
 	private int getPotionPriority(String lower)
@@ -1189,7 +1192,8 @@ public class ItemCategorizer
 		}
 
 		// Pack: typeOrder(8) | tierOrder(12)
-		return ((long) typeOrder << 12) | (tierOrder & 0xFFF);
+		// Pack with item ID for uniqueness
+		return ((long) typeOrder << 28) | ((long)(tierOrder & 0xFFF) << 16) | (itemId & 0xFFFF);
 	}
 
 	private int getOreTier(String lower)
@@ -1505,7 +1509,8 @@ public class ItemCategorizer
 		else
 		{ skillOrder = 99; }
 
-		return ((long) skillOrder << 12) | (tierOrder & 0xFFF);
+		// Pack: skillOrder(8) | tierOrder(12) | itemId(16) for guaranteed uniqueness
+		return ((long) skillOrder << 28) | ((long)(tierOrder & 0xFFF) << 16) | (itemId & 0xFFFF);
 	}
 
 	/**
