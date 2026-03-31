@@ -87,6 +87,8 @@ public class BankOrganizerPlugin extends Plugin
 	private boolean orderingActive = false;
 	private List<OrderStep> orderSteps = new ArrayList<>();
 	private int currentOrderStep = 0;
+	private int lastStepItemId = -1;
+	private int stuckCounter = 0;
 	private boolean previewMode = false;
 	private boolean overlayEnabled = false;
 	private List<PreviewItem> previewItems = new ArrayList<>();
@@ -1021,14 +1023,60 @@ public class BankOrganizerPlugin extends Plugin
 
 		if (nextStep != null)
 		{
-			List<OrderStep> steps = new ArrayList<>();
-			steps.add(nextStep);
-			orderSteps = steps;
-			currentOrderStep = 0;
+			// Detect stuck loop — same item suggested for 10+ ticks
+			if (nextStep.itemId == lastStepItemId)
+			{
+				stuckCounter++;
+				if (stuckCounter > 10)
+				{
+					// Skip this item and find the next one
+					log.warn("Stuck on item {} (ID:{}), skipping", nextStep.itemName, nextStep.itemId);
+					// Mark this position as handled by continuing past it
+					// Find the NEXT out-of-place item after this one
+					OrderStep skippedStep = nextStep;
+					nextStep = null;
+					for (int pos = skippedStep.targetSlot + 1; pos < n; pos++)
+					{
+						if (pos < currentItems.size() && pos < idealOrder.size()
+							&& currentItems.get(pos).itemId != idealOrder.get(pos).itemId)
+						{
+							BankItem idealItem = idealOrder.get(pos);
+							if (tabCategory == ItemCategory.SKILLING)
+							{
+								int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
+								if (skillIdx >= 99) continue;
+							}
+							BankItem currentAtTarget = currentItems.get(pos);
+							nextStep = new OrderStep(
+								idealItem.itemId, idealItem.name, pos,
+								"Insert " + idealItem.name + " before " + currentAtTarget.name,
+								getSubCategoryName(idealItem, tabCategory),
+								currentAtTarget.itemId,
+								"Sorting", perm[pos] != pos ? 1 : 0
+							);
+							break;
+						}
+					}
+					stuckCounter = 0;
+				}
+			}
+			else
+			{
+				lastStepItemId = nextStep.itemId;
+				stuckCounter = 0;
+			}
 
-			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
-			log.info("Ordering: {} items out of place. Next: {}",
-				nextStep.totalOutOfPlace, nextStep.instruction);
+			if (nextStep != null)
+			{
+				List<OrderStep> steps = new ArrayList<>();
+				steps.add(nextStep);
+				orderSteps = steps;
+				currentOrderStep = 0;
+
+				SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+				log.info("Ordering: {} items out of place. Next: {}",
+					nextStep.totalOutOfPlace, nextStep.instruction);
+			}
 		}
 		else
 		{
