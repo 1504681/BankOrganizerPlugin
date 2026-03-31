@@ -203,6 +203,7 @@ public class BankOrganizerPlugin extends Plugin
 
 	private void recomputeOrderSteps()
 	{
+		log.debug("Recomputing order steps (bank changed)");
 		computeNextOrderStep();
 	}
 
