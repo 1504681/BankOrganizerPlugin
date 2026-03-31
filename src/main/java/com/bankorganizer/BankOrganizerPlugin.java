@@ -861,73 +861,63 @@ public class BankOrganizerPlugin extends Plugin
 
 		OrderStep nextStep = null;
 
-		// Insert using LIS strategy — find items already in correct relative order
+		// Simple front-to-back: find first wrong position and insert correct item
+		// This builds a sorted prefix that never gets disturbed by subsequent inserts
 		{
-			Set<Integer> lisIndices = computeLIS(perm);
-
-			// Find first ideal position whose correct item is NOT in the LIS
 			for (int idealPos = 0; idealPos < n; idealPos++)
 			{
 				BankItem idealItem = idealOrder.get(idealPos);
-				// Find where this item currently is
-				int currentPos = -1;
-				for (int j = 0; j < n; j++)
+
+				// Skip if already in correct position
+				if (idealPos < currentItems.size()
+					&& currentItems.get(idealPos).itemId == idealItem.itemId)
 				{
-					if (currentItems.get(j).itemId == idealItem.itemId)
-					{
-						currentPos = j;
-						break;
-					}
+					continue;
 				}
 
-				if (currentPos == idealPos) continue; // Already correct
-
-				// Skip "everything else" items (skill 99) — don't bother reordering unknowns
+				// Skip "everything else" items (skill 99)
 				if (tabCategory == ItemCategory.SKILLING)
 				{
 					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 					if (skillIdx >= 99) continue;
 				}
 
-				if (currentPos >= 0 && !lisIndices.contains(currentPos))
+				BankItem currentAtTarget = currentItems.get(idealPos);
+				String subCatName = getSubCategoryName(idealItem, tabCategory);
+
+				// Build phase description
+				String phase = "Sorting";
+				if (tabCategory == ItemCategory.SKILLING)
 				{
-					BankItem currentAtTarget = currentItems.get(idealPos);
-					String subCatName = getSubCategoryName(idealItem, tabCategory);
-
-					// Build phase description
-					String phase = "Sorting";
-					if (tabCategory == ItemCategory.SKILLING)
+					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
+					if (skillIdx < ItemCategorizer.SKILL_NAMES.length)
 					{
-						int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
-						if (skillIdx < ItemCategorizer.SKILL_NAMES.length)
-						{
-							phase = "Grouping " + ItemCategorizer.SKILL_NAMES[skillIdx] + " items";
-						}
+						phase = "Grouping " + ItemCategorizer.SKILL_NAMES[skillIdx] + " items";
 					}
-					else if (tabCategory == ItemCategory.GEAR)
-					{
-						phase = "Grouping " + subCatName;
-					}
-					else if (tabCategory == ItemCategory.TELEPORTS)
-					{
-						phase = "Grouping " + subCatName;
-					}
-
-					int outOfPlace = 0;
-					for (int k = 0; k < n; k++)
-					{
-						if (perm[k] != k) outOfPlace++;
-					}
-
-					nextStep = new OrderStep(
-						idealItem.itemId, idealItem.name, idealPos,
-						"Insert " + idealItem.name + " before " + currentAtTarget.name,
-						subCatName,
-						currentAtTarget.itemId,
-						phase, outOfPlace
-					);
-					break;
 				}
+				else if (tabCategory == ItemCategory.GEAR)
+				{
+				phase = "Grouping " + subCatName;
+				}
+				else if (tabCategory == ItemCategory.TELEPORTS)
+				{
+					phase = "Grouping " + subCatName;
+				}
+
+				int outOfPlace = 0;
+				for (int k = 0; k < n; k++)
+				{
+					if (perm[k] != k) outOfPlace++;
+				}
+
+				nextStep = new OrderStep(
+					idealItem.itemId, idealItem.name, idealPos,
+					"Insert " + idealItem.name + " before " + currentAtTarget.name,
+					subCatName,
+					currentAtTarget.itemId,
+					phase, outOfPlace
+				);
+				break;
 			}
 		}
 
