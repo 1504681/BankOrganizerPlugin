@@ -966,11 +966,12 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			// No actionable steps found (remaining items are all "everything else")
 			// Treat as complete
-			int skipped = 0;
+			int skippedCount = 0;
 			for (int i = 0; i < n; i++)
 			{
-				if (perm[i] != i) skipped++;
+				if (perm[i] != i) skippedCount++;
 			}
+			final int skipped = skippedCount;
 			log.info("Ordering done — {} unsorted items skipped (unknown subcategory)", skipped);
 			orderingActive = false;
 			orderSteps.clear();
