@@ -67,7 +67,10 @@ public class ItemCategorizer
 		11118, 11120, 11122, 11124, 11126, 11128,
 		21146, 21149, 21151, 21153, 21155,
 		21166, 21169, 21171, 21173, 21175,
-		11190, 11191, 11192, 11193, 11194
+		11190, 11191, 11192, 11193, 11194,
+		// Slayer rings (1-8 charges + eternal)
+		13281, 13282, 13283, 13284, 13285, 13286, 13287, 13288,
+		21268 // Eternal slayer ring
 	));
 
 	public ItemCategorizer()
@@ -612,11 +615,16 @@ public class ItemCategorizer
 		if (lowerName.contains("glory(") || lowerName.contains("dueling(")
 			|| lowerName.contains("necklace(") || lowerName.contains("bracelet(")
 			|| lowerName.contains("wealth(") || lowerName.contains("passage(")
-			|| lowerName.contains("pendant(") || lowerName.contains("amulet("))
+			|| lowerName.contains("pendant(") || lowerName.contains("amulet(")
+			|| lowerName.contains("slayer ring") || lowerName.contains("ring of returning"))
 		{
 			return TeleportSubCategory.JEWELRY;
 		}
 		if (lowerName.contains("teleport") && !lowerName.contains("("))
+		{
+			return TeleportSubCategory.TABLETS;
+		}
+		if (lowerName.contains("scroll"))
 		{
 			return TeleportSubCategory.TABLETS;
 		}
@@ -812,6 +820,11 @@ public class ItemCategorizer
 		TeleportSubCategory sub = getTeleportSubCategory(itemName, itemId);
 		if (sub == TeleportSubCategory.OTHER)
 		{
+			// Teleport crystals go near bottom of "other" (just before jewelry)
+			if (lower.contains("teleport crystal") || lower.contains("eternal teleport"))
+			{
+				return ((long) 4 << 28) | 0xFFF0 | (itemId & 0xF);
+			}
 			return ((long) 4 << 28) | (itemId & 0xFFFF);
 		}
 
@@ -904,13 +917,57 @@ public class ItemCategorizer
 	private int getTabletOrder(String itemName)
 	{
 		String lower = itemName.toLowerCase();
-		if (lower.contains("varrock")) return 0;
-		if (lower.contains("lumbridge")) return 1;
-		if (lower.contains("falador")) return 2;
-		if (lower.contains("camelot")) return 3;
-		if (lower.contains("ardougne")) return 4;
-		if (lower.contains("watchtower")) return 5;
-		if (lower.contains("house")) return 6;
+
+		// Normal spellbook tablets (tier 0-19)
+		if (lower.contains("varrock teleport")) return 0;
+		if (lower.contains("lumbridge teleport")) return 1;
+		if (lower.contains("falador teleport")) return 2;
+		if (lower.contains("camelot teleport")) return 3;
+		if (lower.contains("ardougne teleport")) return 4;
+		if (lower.contains("watchtower teleport")) return 5;
+		if (lower.contains("teleport to house")) return 6;
+		if (lower.contains("bones to")) return 7;
+		if (lower.contains("enchant")) return 8;
+
+		// Redirected house tablets (tier 20-39)
+		if (lower.contains("rimmington")) return 20;
+		if (lower.contains("taverley")) return 21;
+		if (lower.contains("pollnivneach")) return 22;
+		if (lower.contains("hosidius")) return 23;
+		if (lower.contains("rellekka")) return 24;
+		if (lower.contains("brimhaven")) return 25;
+		if (lower.contains("yanille")) return 26;
+		if (lower.contains("prifddinas")) return 27;
+
+		// Ancient magicks tablets (tier 40-59)
+		if (lower.contains("paddewwa")) return 40;
+		if (lower.contains("senntisten")) return 41;
+		if (lower.contains("kharyrll")) return 42;
+		if (lower.contains("lassar")) return 43;
+		if (lower.contains("dareeyak")) return 44;
+		if (lower.contains("carrallangar")) return 45;
+		if (lower.contains("annakarl")) return 46;
+		if (lower.contains("ghorrock")) return 47;
+
+		// Arceuus tablets (tier 60-79)
+		if (lower.contains("arceuus") || lower.contains("cemetery")) return 60;
+		if (lower.contains("barrows")) return 61;
+		if (lower.contains("ape atoll")) return 62;
+		if (lower.contains("battlefront")) return 63;
+		if (lower.contains("mind altar")) return 64;
+		if (lower.contains("respawn")) return 65;
+		if (lower.contains("salve graveyard")) return 66;
+		if (lower.contains("fenkenstrains")) return 67;
+		if (lower.contains("harmony")) return 68;
+		if (lower.contains("west ardougne")) return 69;
+
+		// Teleport scrolls (tier 80-99)
+		if (lower.contains("scroll"))
+		{
+			// Sort scrolls alphabetically within the scroll group
+			return 80 + Math.abs(lower.hashCode() % 19);
+		}
+
 		return 50;
 	}
 
