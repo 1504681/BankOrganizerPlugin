@@ -769,12 +769,53 @@ public class ItemCategorizer
 		return order.length;
 	}
 
+	// Rune pouch IDs (all variants)
+	private static final Set<Integer> RUNE_POUCH_IDS = new HashSet<>(Arrays.asList(
+		12791, 27281 // Rune pouch, Divine rune pouch
+	));
+
 	/**
-	 * Full sort key for teleport items: sub-category, then type grouping, then charges descending.
+	 * Full sort key for teleport items.
+	 * Priority: rune pouch → skill capes → other teleport items → runes/jewelry/tablets
 	 */
 	public long getTeleportFullSortKey(String itemName, int itemId, TeleportSortMode mode)
 	{
+		String lower = itemName.toLowerCase();
+
+		// Tier 0: Rune pouch (highest priority)
+		if (RUNE_POUCH_IDS.contains(itemId) || lower.contains("rune pouch"))
+		{
+			return 0;
+		}
+
+		// Tier 1: Construction skillcape
+		if (lower.contains("construct") && (lower.contains("cape") || lower.contains("hood")))
+		{
+			int trimOrder = lower.contains("(t)") ? 0 : 1;
+			return ((long) 1 << 28) | trimOrder;
+		}
+
+		// Tier 2: Farming skillcape
+		if (lower.contains("farming") && (lower.contains("cape") || lower.contains("hood")))
+		{
+			int trimOrder = lower.contains("(t)") ? 0 : 1;
+			return ((long) 2 << 28) | trimOrder;
+		}
+
+		// Tier 3: Other teleport skillcapes (crafting, quest, etc.)
+		if ((lower.contains("cape") || lower.contains("hood")) && lower.contains("(t)") || lower.contains("skillcape"))
+		{
+			return ((long) 3 << 28) | (itemId & 0xFFFF);
+		}
+
+		// Tier 4: Other teleport items (ectophial, xeric's talisman, chronicles, etc.)
 		TeleportSubCategory sub = getTeleportSubCategory(itemName, itemId);
+		if (sub == TeleportSubCategory.OTHER)
+		{
+			return ((long) 4 << 28) | (itemId & 0xFFFF);
+		}
+
+		// Tier 5+: Runes, Jewelry, Tablets — ordered by mode preference
 		int subOrder = getTeleportSortOrder(sub, mode);
 		int typeOrder = 0;
 		int chargeOrder = 0;
@@ -793,8 +834,8 @@ public class ItemCategorizer
 			typeOrder = getTabletOrder(itemName);
 		}
 
-		// Pack: subOrder(8) | typeOrder(12) | chargeOrder(8)
-		return ((long) subOrder << 20) | ((long) typeOrder << 8) | (chargeOrder & 0xFF);
+		// Pack: tier 5+ base | subOrder(8) | typeOrder(12) | chargeOrder(8)
+		return ((long) 5 << 28) | ((long) subOrder << 20) | ((long) typeOrder << 8) | (chargeOrder & 0xFF);
 	}
 
 	private int getRuneSortOrder(int itemId)
@@ -857,7 +898,7 @@ public class ItemCategorizer
 			int charges = Integer.parseInt(m.group(1));
 			return 99 - charges; // Invert so higher charges = lower sort key
 		}
-		return 50; // Uncharged/no charge indicator
+		return 100; // Uncharged sorts LAST (after all charged variants)
 	}
 
 	private int getTabletOrder(String itemName)
