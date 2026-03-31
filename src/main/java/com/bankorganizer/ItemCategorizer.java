@@ -1342,7 +1342,9 @@ public class ItemCategorizer
 		{
 			typeOrder = 1; tierOrder = 0;
 		}
-		else if (lower.contains("pouch") && !lower.contains("rune"))
+		else if (lower.contains("pouch") && !lower.contains("rune") && !lower.contains("fur")
+			&& (lower.contains("small") || lower.contains("medium") || lower.contains("large")
+				|| lower.contains("giant") || lower.contains("essence")))
 		{
 			typeOrder = 1; tierOrder = 1 + getPouchTier(lower);
 		}
