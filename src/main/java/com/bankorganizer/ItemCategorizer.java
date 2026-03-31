@@ -1337,7 +1337,29 @@ public class ItemCategorizer
 		"Farming", "Runecrafting", "Woodcutting", "Fishing", "Mining",
 		"Prayer", "Agility", "Firemaking", "Thieving", "Crafting",
 		"Construction", "Smithing", "Fletching", "Herblore", "Cooking",
-		"Hunting", "Slayer"
+		"Hunting", "Slayer", "Sailing"
+	};
+
+	// Skill colors matching OSRS skill guide colors
+	public static final java.awt.Color[] SKILL_COLORS = {
+		new java.awt.Color(100, 180, 60),   // Farming - green
+		new java.awt.Color(180, 160, 50),   // Runecrafting - dark gold
+		new java.awt.Color(120, 80, 40),    // Woodcutting - brown
+		new java.awt.Color(70, 130, 180),   // Fishing - steel blue
+		new java.awt.Color(100, 110, 130),  // Mining - slate grey
+		new java.awt.Color(210, 210, 210),  // Prayer - white/light
+		new java.awt.Color(50, 60, 140),    // Agility - dark blue
+		new java.awt.Color(220, 140, 40),   // Firemaking - orange
+		new java.awt.Color(140, 60, 140),   // Thieving - purple
+		new java.awt.Color(160, 120, 70),   // Crafting - tan
+		new java.awt.Color(130, 100, 70),   // Construction - brown
+		new java.awt.Color(110, 120, 130),  // Smithing - grey
+		new java.awt.Color(0, 150, 130),    // Fletching - teal
+		new java.awt.Color(20, 140, 50),    // Herblore - green
+		new java.awt.Color(120, 50, 120),   // Cooking - dark purple
+		new java.awt.Color(130, 120, 60),   // Hunting - olive
+		new java.awt.Color(100, 50, 50),    // Slayer - dark red
+		new java.awt.Color(60, 140, 200),   // Sailing - ocean blue
 	};
 
 	public long getSkillingFullSortKey(String itemName, int itemId)
@@ -1462,11 +1484,30 @@ public class ItemCategorizer
 		else if (lower.contains("saw") || lower.contains("plank sack"))
 		{ skillOrder = 10; tierOrder = 0; }
 
+		// === SAILING (skill 17) ===
+		else if (lower.contains("sailing") || lower.contains("ship")
+			|| lower.contains("hull") || lower.contains("rigging")
+			|| lower.contains("figurehead") || lower.contains("cannon ball"))
+		{ skillOrder = 17; }
+
 		// === EVERYTHING ELSE ===
 		else
 		{ skillOrder = 99; }
 
 		return ((long) skillOrder << 12) | (tierOrder & 0xFFF);
+	}
+
+	/**
+	 * Get the skill group index for a skilling item. Returns 0-17 for known skills, 99 for unknown.
+	 */
+	public int getSkillGroupIndex(String itemName, int itemId)
+	{
+		Integer subOverride = subCategoryOverrides.get(itemId);
+		if (subOverride != null) return subOverride;
+
+		// Use the same logic as getSkillingFullSortKey but just return the skillOrder
+		long key = getSkillingFullSortKey(itemName, itemId);
+		return (int)(key >> 12);
 	}
 
 	private int getTalismanOrder(String lower)

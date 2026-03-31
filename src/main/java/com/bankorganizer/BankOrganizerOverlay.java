@@ -270,10 +270,10 @@ public class BankOrganizerOverlay extends Overlay
 
 			if (itemId == step.itemId)
 			{
-				Color highlight = step.isSwap
+				Color highlight = false
 					? new Color(0, 200, 255, 180)   // Cyan for swap
 					: new Color(0, 255, 100, 180);   // Green for insert
-				Color fill = step.isSwap
+				Color fill = false
 					? new Color(0, 200, 255, 50)
 					: new Color(0, 255, 100, 50);
 				graphics.setColor(fill);
@@ -285,7 +285,7 @@ public class BankOrganizerOverlay extends Overlay
 				Font oldFont = graphics.getFont();
 				graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
 				graphics.setColor(Color.WHITE);
-				String label = step.isSwap ? "SWAP" : "MOVE";
+				String label = false ? "SWAP" : "MOVE";
 				int textX = bounds.x + (bounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
 				int textY = bounds.y - 3;
 				graphics.drawString(label, textX, textY);
@@ -305,10 +305,10 @@ public class BankOrganizerOverlay extends Overlay
 				if (targetBounds == null || targetBounds.width <= 0) continue;
 				if (containerBounds != null && !containerBounds.contains(targetBounds)) continue;
 
-				Color targetFill = step.isSwap
+				Color targetFill = false
 					? new Color(0, 200, 255, 50)   // Cyan for swap target too
 					: new Color(255, 255, 0, 50);
-				Color targetBorder = step.isSwap
+				Color targetBorder = false
 					? new Color(0, 200, 255, 200)
 					: new Color(255, 255, 0, 200);
 				graphics.setColor(targetFill);
@@ -319,8 +319,8 @@ public class BankOrganizerOverlay extends Overlay
 
 				Font oldFont = graphics.getFont();
 				graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
-				graphics.setColor(step.isSwap ? new Color(100, 220, 255) : new Color(255, 255, 100));
-				String label = step.isSwap ? "SWAP" : "INSERT BEFORE";
+				graphics.setColor(false ? new Color(100, 220, 255) : new Color(255, 255, 100));
+				String label = false ? "SWAP" : "INSERT BEFORE";
 				int textX = targetBounds.x + (targetBounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
 				int textY = targetBounds.y - 3;
 				graphics.drawString(label, textX, textY);

@@ -276,8 +276,11 @@ public class BankOrganizerPlugin extends Plugin
 			String[] skillNames = ItemCategorizer.SKILL_NAMES;
 			for (int i = skillNames.length - 1; i >= 0; i--)
 			{
+				java.awt.Color skillColor = i < ItemCategorizer.SKILL_COLORS.length
+						? ItemCategorizer.SKILL_COLORS[i]
+						: getColorForCategory(ItemCategory.SKILLING);
 				client.createMenuEntry(-1)
-					.setOption(ColorUtil.colorTag(getColorForCategory(ItemCategory.SKILLING))
+					.setOption(ColorUtil.colorTag(skillColor)
 						+ "Sub: " + skillNames[i])
 					.setTarget(event.getTarget())
 					.setIdentifier(itemId)
@@ -878,14 +881,50 @@ public class BankOrganizerPlugin extends Plugin
 				}
 
 				if (currentPos == idealPos) continue; // Already correct
+
+				// Skip "everything else" items (skill 99) — don't bother reordering unknowns
+				if (tabCategory == ItemCategory.SKILLING)
+				{
+					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
+					if (skillIdx >= 99) continue;
+				}
+
 				if (currentPos >= 0 && !lisIndices.contains(currentPos))
 				{
 					BankItem currentAtTarget = currentItems.get(idealPos);
+					String subCatName = getSubCategoryName(idealItem, tabCategory);
+
+					// Build phase description
+					String phase = "Sorting";
+					if (tabCategory == ItemCategory.SKILLING)
+					{
+						int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
+						if (skillIdx < ItemCategorizer.SKILL_NAMES.length)
+						{
+							phase = "Grouping " + ItemCategorizer.SKILL_NAMES[skillIdx] + " items";
+						}
+					}
+					else if (tabCategory == ItemCategory.GEAR)
+					{
+						phase = "Grouping " + subCatName;
+					}
+					else if (tabCategory == ItemCategory.TELEPORTS)
+					{
+						phase = "Grouping " + subCatName;
+					}
+
+					int outOfPlace = 0;
+					for (int k = 0; k < n; k++)
+					{
+						if (perm[k] != k) outOfPlace++;
+					}
+
 					nextStep = new OrderStep(
 						idealItem.itemId, idealItem.name, idealPos,
-						"[INSERT] Insert " + idealItem.name + " before " + currentAtTarget.name,
-						getSubCategoryName(idealItem, tabCategory),
-						currentAtTarget.itemId, false
+						"Insert " + idealItem.name + " before " + currentAtTarget.name,
+						subCatName,
+						currentAtTarget.itemId,
+						phase, outOfPlace
 					);
 					break;
 				}
@@ -894,13 +933,6 @@ public class BankOrganizerPlugin extends Plugin
 
 		if (nextStep != null)
 		{
-			// Count remaining out-of-place items
-			int outOfPlace = 0;
-			for (int i = 0; i < n; i++)
-			{
-				if (perm[i] != i) outOfPlace++;
-			}
-
 			List<OrderStep> steps = new ArrayList<>();
 			steps.add(nextStep);
 			orderSteps = steps;
@@ -908,7 +940,7 @@ public class BankOrganizerPlugin extends Plugin
 
 			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
 			log.info("Ordering: {} items out of place. Next: {}",
-				outOfPlace, nextStep.instruction);
+				nextStep.totalOutOfPlace, nextStep.instruction);
 		}
 	}
 
@@ -1092,9 +1124,11 @@ public class BankOrganizerPlugin extends Plugin
 		public final String instruction;
 		public final String subCategory;
 		public final int targetItemId;
-		public final boolean isSwap;
+		public final String phaseDescription;
+		public final int totalOutOfPlace;
 
-		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory, int targetItemId, boolean isSwap)
+		public OrderStep(int itemId, String itemName, int targetSlot, String instruction,
+			String subCategory, int targetItemId, String phaseDescription, int totalOutOfPlace)
 		{
 			this.itemId = itemId;
 			this.itemName = itemName;
@@ -1102,13 +1136,8 @@ public class BankOrganizerPlugin extends Plugin
 			this.instruction = instruction;
 			this.subCategory = subCategory;
 			this.targetItemId = targetItemId;
-			this.isSwap = isSwap;
-		}
-
-		// Backwards compatible constructor
-		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory, int targetItemId)
-		{
-			this(itemId, itemName, targetSlot, instruction, subCategory, targetItemId, false);
+			this.phaseDescription = phaseDescription;
+			this.totalOutOfPlace = totalOutOfPlace;
 		}
 	}
 
