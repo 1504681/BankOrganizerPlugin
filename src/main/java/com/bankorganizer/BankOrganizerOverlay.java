@@ -41,15 +41,17 @@ public class BankOrganizerOverlay extends Overlay
 	{
 		drawTabColors(graphics);
 
+		// Overlay toggle always takes priority — draws on all items
+		if (plugin.isOverlayEnabled())
+		{
+			drawAllItemCategories(graphics);
+		}
+
 		if (plugin.isOrderingActive())
 		{
 			drawOrderingHighlight(graphics);
 		}
-		else if (plugin.isOverlayEnabled())
-		{
-			drawAllItemCategories(graphics);
-		}
-		else if (plugin.isScanActive())
+		else if (!plugin.isOverlayEnabled() && plugin.isScanActive())
 		{
 			drawMisplacedItems(graphics);
 		}
