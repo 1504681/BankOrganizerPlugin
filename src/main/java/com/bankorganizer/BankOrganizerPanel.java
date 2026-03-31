@@ -64,6 +64,27 @@ public class BankOrganizerPanel extends PluginPanel
 		mainPanel.add(presetLabel);
 		mainPanel.add(Box.createVerticalStrut(10));
 
+		// === Preview toggle at top ===
+		JButton previewButton = new JButton("Preview Order");
+		previewButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		previewButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		previewButton.addActionListener(e ->
+		{
+			plugin.togglePreview();
+			if (plugin.isPreviewMode())
+			{
+				previewButton.setText("Hide Preview");
+				previewButton.setBackground(new Color(60, 100, 60));
+			}
+			else
+			{
+				previewButton.setText("Preview Order");
+				previewButton.setBackground(null);
+			}
+		});
+		mainPanel.add(previewButton);
+		mainPanel.add(Box.createVerticalStrut(5));
+
 		// === Action buttons ===
 		JButton scanButton = new JButton("Scan Current Tab");
 		scanButton.setAlignmentX(Component.LEFT_ALIGNMENT);

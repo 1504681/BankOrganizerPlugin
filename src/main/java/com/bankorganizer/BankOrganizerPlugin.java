@@ -83,6 +83,8 @@ public class BankOrganizerPlugin extends Plugin
 	private boolean orderingActive = false;
 	private List<OrderStep> orderSteps = new ArrayList<>();
 	private int currentOrderStep = 0;
+	private boolean previewMode = false;
+	private List<PreviewItem> previewItems = new ArrayList<>();
 
 	public Map<Integer, ItemCategory> getMisplacedItems() { return misplacedItems; }
 	public Map<Integer, String> getMisplacedItemNames() { return misplacedItemNames; }
@@ -97,6 +99,8 @@ public class BankOrganizerPlugin extends Plugin
 	public ItemCategorizer getCategorizer() { return categorizer; }
 	public ItemManager getItemManager() { return itemManager; }
 	public BankOrganizerConfig getConfig() { return config; }
+	public boolean isPreviewMode() { return previewMode; }
+	public List<PreviewItem> getPreviewItems() { return previewItems; }
 
 	@Provides
 	BankOrganizerConfig provideConfig(ConfigManager configManager)
@@ -200,12 +204,12 @@ public class BankOrganizerPlugin extends Plugin
 		GearSortMode gearMode = config.gearSortMode();
 		TeleportSortMode teleportMode = config.teleportSortMode();
 
-		idealOrder.sort(Comparator.comparingInt(item ->
+		idealOrder.sort(Comparator.comparingLong(item ->
 		{
 			if (tabCategory == ItemCategory.GEAR)
 			{
-				GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId, getEquipmentStats(item.itemId));
-				return categorizer.getGearSortOrder(sub, gearMode);
+				return categorizer.getGearFullSortKey(item.name, item.itemId,
+					getEquipmentStats(item.itemId), gearMode);
 			}
 			else if (tabCategory == ItemCategory.TELEPORTS)
 			{
@@ -879,6 +883,88 @@ public class BankOrganizerPlugin extends Plugin
 		SwingUtilities.invokeLater(() -> panel.updateOrderingState());
 	}
 
+	public void togglePreview()
+	{
+		previewMode = !previewMode;
+		if (previewMode)
+		{
+			computePreview();
+		}
+		else
+		{
+			previewItems.clear();
+		}
+	}
+
+	private void computePreview()
+	{
+		clientThread.invokeLater(() ->
+		{
+			Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+			if (bankWidget == null || bankWidget.isHidden()) return;
+
+			int currentTab = client.getVarbitValue(4150);
+			ItemCategory tabCategory = getCategoryForTab(currentTab);
+			if (tabCategory == null) return;
+
+			Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+			if (bankItemContainer == null) return;
+			Widget[] children = bankItemContainer.getDynamicChildren();
+			if (children == null) return;
+
+			List<BankItem> items = new ArrayList<>();
+			for (int slot = 0; slot < children.length; slot++)
+			{
+				Widget child = children[slot];
+				if (child == null || child.isHidden()) continue;
+				int itemId = child.getItemId();
+				if (itemId <= 0) continue;
+				String name = itemManager.getItemComposition(itemId).getName();
+				if (name == null || name.equals("null")) continue;
+				items.add(new BankItem(itemId, name, slot));
+			}
+
+			GearSortMode gearMode = config.gearSortMode();
+			TeleportSortMode teleportMode = config.teleportSortMode();
+
+			List<BankItem> sorted = new ArrayList<>(items);
+			sorted.sort(Comparator.comparingLong(item ->
+			{
+				if (tabCategory == ItemCategory.GEAR)
+				{
+					return categorizer.getGearFullSortKey(item.name, item.itemId,
+						getEquipmentStats(item.itemId), gearMode);
+				}
+				else if (tabCategory == ItemCategory.TELEPORTS)
+				{
+					TeleportSubCategory sub = categorizer.getTeleportSubCategory(item.name, item.itemId);
+					return categorizer.getTeleportSortOrder(sub, teleportMode);
+				}
+				return 0;
+			}));
+
+			List<PreviewItem> preview = new ArrayList<>();
+			for (int i = 0; i < sorted.size(); i++)
+			{
+				BankItem item = sorted.get(i);
+				String subCat = "";
+				if (tabCategory == ItemCategory.GEAR)
+				{
+					subCat = categorizer.getGearSubCategory(item.name, item.itemId,
+						getEquipmentStats(item.itemId)).getDisplayName();
+				}
+				else if (tabCategory == ItemCategory.TELEPORTS)
+				{
+					subCat = categorizer.getTeleportSubCategory(item.name, item.itemId).getDisplayName();
+				}
+				preview.add(new PreviewItem(item.itemId, item.name, subCat, i));
+			}
+
+			previewItems = preview;
+			log.info("Preview computed: {} items", preview.size());
+		});
+	}
+
 	// === Helper classes ===
 
 	public static class BankItem
@@ -912,6 +998,22 @@ public class BankOrganizerPlugin extends Plugin
 			this.instruction = instruction;
 			this.subCategory = subCategory;
 			this.targetItemId = targetItemId;
+		}
+	}
+
+	public static class PreviewItem
+	{
+		public final int itemId;
+		public final String name;
+		public final String subCategory;
+		public final int position; // ideal position index
+
+		public PreviewItem(int itemId, String name, String subCategory, int position)
+		{
+			this.itemId = itemId;
+			this.name = name;
+			this.subCategory = subCategory;
+			this.position = position;
 		}
 	}
 }

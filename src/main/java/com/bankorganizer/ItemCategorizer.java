@@ -628,11 +628,80 @@ public class ItemCategorizer
 	 * Get the sort priority for a gear item given a sort mode.
 	 * Lower numbers sort first.
 	 */
+	// Equipment slot sort order: weapon, head, amulet, cape, body, legs, shield, gloves, boots, ring, ammo
+	private static final int[] SLOT_ORDER = new int[14];
+	static
+	{
+		SLOT_ORDER[3] = 0;   // Weapon
+		SLOT_ORDER[0] = 1;   // Head
+		SLOT_ORDER[2] = 2;   // Amulet/Neck
+		SLOT_ORDER[1] = 3;   // Cape
+		SLOT_ORDER[4] = 4;   // Body
+		SLOT_ORDER[7] = 5;   // Legs
+		SLOT_ORDER[5] = 6;   // Shield
+		SLOT_ORDER[9] = 7;   // Gloves
+		SLOT_ORDER[10] = 8;  // Boots
+		SLOT_ORDER[12] = 9;  // Ring
+		SLOT_ORDER[13] = 10; // Ammo
+	}
+
+	/**
+	 * Get a full sort key for a gear item: sub-category, then slot, then stat strength.
+	 * Returns a long where higher bits = sub-category, middle bits = slot, lower bits = inverted stat.
+	 * Lower values sort first.
+	 */
+	public long getGearFullSortKey(String itemName, int itemId,
+		net.runelite.http.api.item.ItemEquipmentStats stats, GearSortMode mode)
+	{
+		GearSubCategory sub = getGearSubCategory(itemName, itemId, stats);
+		int subOrder = getGearSortOrder(sub, mode);
+
+		int slotOrder = 0;
+		int statValue = 0;
+
+		if (stats != null)
+		{
+			int slot = stats.getSlot();
+			if (slot >= 0 && slot < SLOT_ORDER.length)
+			{
+				slotOrder = SLOT_ORDER[slot];
+			}
+
+			// Get the relevant stat for ordering within slot (highest = first)
+			switch (sub)
+			{
+				case MELEE_WEAPON:
+				case MELEE_ARMOR:
+					// Melee: strength first, then best accuracy as tiebreaker
+					statValue = stats.getStr() * 1000
+						+ Math.max(stats.getAstab(), Math.max(stats.getAslash(), stats.getAcrush()));
+					break;
+				case RANGED_WEAPON:
+				case RANGED_ARMOR:
+					// Ranged: ranged strength first, then ranged accuracy
+					statValue = stats.getRstr() * 1000 + stats.getArange();
+					break;
+				case MAGE_WEAPON:
+				case MAGE_ARMOR:
+					// Mage: magic damage first, then magic accuracy
+					statValue = stats.getMdmg() * 1000 + stats.getAmagic();
+					break;
+				default:
+					statValue = 0;
+			}
+		}
+
+		// Invert stat so higher stats sort first (lower key value = sorted first)
+		int invertedStat = 999999 - statValue;
+
+		// Pack: subOrder (8 bits) | slotOrder (8 bits) | invertedStat (remaining)
+		return ((long) subOrder << 24) | ((long) slotOrder << 16) | (invertedStat & 0xFFFF);
+	}
+
 	public int getGearSortOrder(GearSubCategory sub, GearSortMode mode)
 	{
 		if (mode == GearSortMode.COMBAT_STYLE)
 		{
-			// Melee weapon+armor, Ranged weapon+armor, Mage weapon+armor, General
 			switch (sub)
 			{
 				case MELEE_WEAPON: return 0;

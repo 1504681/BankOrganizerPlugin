@@ -41,7 +41,11 @@ public class BankOrganizerOverlay extends Overlay
 	{
 		drawTabColors(graphics);
 
-		if (plugin.isOrderingActive())
+		if (plugin.isPreviewMode())
+		{
+			drawPreview(graphics);
+		}
+		else if (plugin.isOrderingActive())
 		{
 			drawOrderingHighlight(graphics);
 		}
@@ -271,5 +275,100 @@ public class BankOrganizerOverlay extends Overlay
 		}
 
 		graphics.setStroke(oldStroke);
+	}
+
+	private void drawPreview(Graphics2D graphics)
+	{
+		java.util.List<BankOrganizerPlugin.PreviewItem> previewItems = plugin.getPreviewItems();
+		if (previewItems == null || previewItems.isEmpty())
+		{
+			return;
+		}
+
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null || bankItemContainer.isHidden())
+		{
+			return;
+		}
+
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null)
+		{
+			return;
+		}
+
+		Rectangle containerBounds = bankItemContainer.getBounds();
+
+		// Build a map of itemId -> preview position
+		java.util.Map<Integer, BankOrganizerPlugin.PreviewItem> previewMap = new java.util.HashMap<>();
+		for (BankOrganizerPlugin.PreviewItem item : previewItems)
+		{
+			previewMap.put(item.itemId, item);
+		}
+
+		// Find each item's current slot index
+		int slotIndex = 0;
+		for (Widget child : children)
+		{
+			if (child == null || child.isHidden())
+			{
+				slotIndex++;
+				continue;
+			}
+
+			int itemId = child.getItemId();
+			if (itemId <= 0)
+			{
+				slotIndex++;
+				continue;
+			}
+
+			BankOrganizerPlugin.PreviewItem preview = previewMap.get(itemId);
+			if (preview == null)
+			{
+				slotIndex++;
+				continue;
+			}
+
+			Rectangle bounds = child.getBounds();
+			if (bounds == null || bounds.width <= 0)
+			{
+				slotIndex++;
+				continue;
+			}
+			if (containerBounds != null && !containerBounds.contains(bounds))
+			{
+				slotIndex++;
+				continue;
+			}
+
+			boolean inPlace = (preview.position == slotIndex);
+
+			// Draw position number and color based on whether it's in the right spot
+			Color bgColor = inPlace
+				? new Color(0, 200, 0, 60)   // Green = correct
+				: new Color(255, 100, 0, 60); // Orange = needs moving
+
+			Color borderColor = inPlace
+				? new Color(0, 200, 0, 150)
+				: new Color(255, 100, 0, 150);
+
+			graphics.setColor(bgColor);
+			graphics.fill(bounds);
+			graphics.setColor(borderColor);
+			graphics.draw(bounds);
+
+			// Draw position number
+			Font oldFont = graphics.getFont();
+			graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 9f));
+			graphics.setColor(Color.WHITE);
+			String posLabel = String.valueOf(preview.position + 1);
+			int textX = bounds.x + 2;
+			int textY = bounds.y + 10;
+			graphics.drawString(posLabel, textX, textY);
+			graphics.setFont(oldFont);
+
+			slotIndex++;
+		}
 	}
 }
