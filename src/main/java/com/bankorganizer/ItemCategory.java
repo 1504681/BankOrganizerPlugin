@@ -9,7 +9,12 @@ public enum ItemCategory
 	TELEPORTS("Teleports", new Color(0, 150, 255), Arrays.asList(
 		"teleport", "teletab", "glory(", "dueling(", "games necklace(",
 		"ring of wealth(", "skills necklace(", "combat bracelet(",
-		"passage(", "burning amulet(", "digsite pendant("
+		"passage(", "burning amulet(", "digsite pendant(",
+		"ectophial", "sceptre", "talisman", "medallion", "lyre",
+		"slayer ring(", "seed pod", "chronicle", "ring of shadows",
+		"ring of returning", "camulet", "quetzal whistle",
+		"skull sceptre", "pharaoh", "basalt", "lunar seal",
+		"kharedst", "memoirs"
 	)),
 	GEAR("Combat", new Color(220, 50, 50), Arrays.asList(
 		"helm", "full helm", "med helm", "platebody", "platelegs", "plateskirt",

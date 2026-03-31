@@ -229,40 +229,145 @@ public class ItemCategorizer
 		itemIdMap.put(11858, ItemCategory.SKILLING); // Graceful boots
 		itemIdMap.put(11860, ItemCategory.SKILLING); // Graceful cape
 
-		// === RAW MATERIALS ===
-		itemIdMap.put(1436, ItemCategory.RAW_MATERIALS);
-		itemIdMap.put(7936, ItemCategory.RAW_MATERIALS);
-		itemIdMap.put(314, ItemCategory.RAW_MATERIALS);
-		itemIdMap.put(526, ItemCategory.RAW_MATERIALS);
-		itemIdMap.put(23490, ItemCategory.RAW_MATERIALS); // Scythe of vitur (uncharged)
-		itemIdMap.put(26792, ItemCategory.RAW_MATERIALS);
-		itemIdMap.put(28599, ItemCategory.RAW_MATERIALS); // Scorching bow (uncharged)
+		// === MATERIALS ===
+		itemIdMap.put(1436, ItemCategory.RAW_MATERIALS);  // Rune essence
+		itemIdMap.put(7936, ItemCategory.RAW_MATERIALS);  // Pure essence
+		itemIdMap.put(314, ItemCategory.RAW_MATERIALS);   // Feather
+		itemIdMap.put(526, ItemCategory.RAW_MATERIALS);   // Bones
+		itemIdMap.put(28931, ItemCategory.RAW_MATERIALS); // Moonlight grub
+		itemIdMap.put(11115, ItemCategory.RAW_MATERIALS); // Mort myre fungus
+		itemIdMap.put(13439, ItemCategory.RAW_MATERIALS); // Volcanic ash
+		itemIdMap.put(26792, ItemCategory.RAW_MATERIALS); // Numulite
+		itemIdMap.put(21930, ItemCategory.RAW_MATERIALS); // Amylase crystal
+		itemIdMap.put(28599, ItemCategory.RAW_MATERIALS); // Calcified deposit
+		itemIdMap.put(23490, ItemCategory.RAW_MATERIALS); // Daeyalt essence
+		itemIdMap.put(5075, ItemCategory.RAW_MATERIALS);  // Bird nest (seeds)
+		itemIdMap.put(11232, ItemCategory.RAW_MATERIALS); // Justi faceguard
+		itemIdMap.put(31475, ItemCategory.RAW_MATERIALS); // Blue dragonhide
+		itemIdMap.put(13391, ItemCategory.RAW_MATERIALS); // Drift net
 
 		// === HIGH ALCH ===
-		itemIdMap.put(1393, ItemCategory.HIGH_ALCH); // Staff of fire
+		itemIdMap.put(1393, ItemCategory.HIGH_ALCH);  // Iron warhammer
+		itemIdMap.put(1071, ItemCategory.HIGH_ALCH);  // Green d'hide chaps
+		itemIdMap.put(1085, ItemCategory.HIGH_ALCH);  // Blue d'hide body
+		itemIdMap.put(1371, ItemCategory.HIGH_ALCH);  // Iron battleaxe
+		itemIdMap.put(9342, ItemCategory.HIGH_ALCH);  // Onyx bolts (e)
+		itemIdMap.put(1428, ItemCategory.HIGH_ALCH);  // Bronze halberd
+		itemIdMap.put(1432, ItemCategory.HIGH_ALCH);  // Iron halberd
+		itemIdMap.put(22263, ItemCategory.HIGH_ALCH); // Toktz-xil-ak
 
 		// === QUEST/MISC ===
+		itemIdMap.put(4129, ItemCategory.QUEST_MISC);  // Hazeel's mark
+		itemIdMap.put(11822, ItemCategory.QUEST_MISC); // Armadyl helmet
+		itemIdMap.put(12851, ItemCategory.QUEST_MISC); // Dragon defender
+		itemIdMap.put(2611, ItemCategory.QUEST_MISC);  // Rune platebody (Saradomin)
+		itemIdMap.put(11061, ItemCategory.QUEST_MISC); // Monkey greegree
+		itemIdMap.put(26421, ItemCategory.QUEST_MISC); // Thread of Elidinis
+		itemIdMap.put(4153, ItemCategory.QUEST_MISC);  // Granite maul
+		itemIdMap.put(1099, ItemCategory.QUEST_MISC);  // Red d'hide chaps
+		itemIdMap.put(829, ItemCategory.QUEST_MISC);   // Staff of fire
+		itemIdMap.put(13120, ItemCategory.QUEST_MISC); // Necklace of passage
+		itemIdMap.put(1109, ItemCategory.QUEST_MISC);  // Ghostly robe top
+		itemIdMap.put(855, ItemCategory.QUEST_MISC);   // Staff
+		itemIdMap.put(859, ItemCategory.QUEST_MISC);   // Magic staff
+		itemIdMap.put(4446, ItemCategory.QUEST_MISC);  // Dwarven rock cake
+		itemIdMap.put(26227, ItemCategory.QUEST_MISC); // Soulbane item
+		itemIdMap.put(1925, ItemCategory.QUEST_MISC);  // Bucket
+		itemIdMap.put(26528, ItemCategory.QUEST_MISC); // Quest item
+		itemIdMap.put(3753, ItemCategory.QUEST_MISC);  // Flail of Ivandis
+		itemIdMap.put(3755, ItemCategory.QUEST_MISC);  // Rod of Ivandis
+		itemIdMap.put(7342, ItemCategory.QUEST_MISC);  // Quest item
+		itemIdMap.put(7348, ItemCategory.QUEST_MISC);  // Quest item
+		itemIdMap.put(9142, ItemCategory.QUEST_MISC);  // Broad bolts
+		itemIdMap.put(2487, ItemCategory.QUEST_MISC);  // Quest item
+		itemIdMap.put(6328, ItemCategory.QUEST_MISC);  // Initiate hauberk
+		itemIdMap.put(11707, ItemCategory.QUEST_MISC); // Granite body
+		itemIdMap.put(1245, ItemCategory.QUEST_MISC);  // Berserker ring
+		itemIdMap.put(1247, ItemCategory.QUEST_MISC);  // Warrior ring
 		itemIdMap.put(12785, ItemCategory.QUEST_MISC); // Dark bow
+		itemIdMap.put(4081, ItemCategory.QUEST_MISC);  // Quest item
+		itemIdMap.put(22260, ItemCategory.QUEST_MISC); // Quest item
+		itemIdMap.put(7158, ItemCategory.QUEST_MISC);  // Quest item
 
-		// === User-contributed GEAR ===
-		itemIdMap.put(12610, ItemCategory.GEAR);  // Black chinchompa
-		itemIdMap.put(12006, ItemCategory.GEAR);  // Abyssal tentacle
-		itemIdMap.put(29031, ItemCategory.GEAR);  // Dual macuahuitl
-		itemIdMap.put(29033, ItemCategory.GEAR);  // Dual macuahuitl
-		itemIdMap.put(29043, ItemCategory.GEAR);  // Blue moon spear
-		itemIdMap.put(29045, ItemCategory.GEAR);  // Eclipse atlatl
-		itemIdMap.put(4153, ItemCategory.GEAR);   // Granite maul
-		itemIdMap.put(29594, ItemCategory.GEAR);  // Dual macuahuitl (or)
-		itemIdMap.put(11902, ItemCategory.GEAR);  // Staff of the dead
-		itemIdMap.put(11, ItemCategory.GEAR);     // Iron dagger
-		itemIdMap.put(13391, ItemCategory.GEAR);  // Smoke battlestaff
+		// === COMBAT (user-contributed) ===
+		itemIdMap.put(11, ItemCategory.GEAR);      // Iron dagger
+		itemIdMap.put(28947, ItemCategory.GEAR);   // Eclipse atlatl
+		itemIdMap.put(12610, ItemCategory.GEAR);   // Black chinchompa
+		itemIdMap.put(29283, ItemCategory.GEAR);   // Dual macuahuitl
+		itemIdMap.put(868, ItemCategory.GEAR);     // Rune crossbow
+		itemIdMap.put(28260, ItemCategory.GEAR);   // Tonalztics of ralos
+		itemIdMap.put(29031, ItemCategory.GEAR);   // Eclipse moon helm
+		itemIdMap.put(29033, ItemCategory.GEAR);   // Eclipse moon chestplate
+		itemIdMap.put(29037, ItemCategory.GEAR);   // Eclipse moon tassets
+		itemIdMap.put(7535, ItemCategory.GEAR);    // New crystal shield
+		itemIdMap.put(29043, ItemCategory.GEAR);   // Blue moon helm
+		itemIdMap.put(29045, ItemCategory.GEAR);   // Blue moon chestplate
+		itemIdMap.put(25981, ItemCategory.GEAR);   // Masori body (f)
+		itemIdMap.put(11902, ItemCategory.GEAR);   // Godsword blade
+		itemIdMap.put(29594, ItemCategory.GEAR);   // Blood moon helm
+		itemIdMap.put(24223, ItemCategory.GEAR);   // Ghrazi rapier
+		itemIdMap.put(28329, ItemCategory.GEAR);   // Bone shortbow
+		itemIdMap.put(30891, ItemCategory.GEAR);   // Soulreaper axe
+		itemIdMap.put(12006, ItemCategory.GEAR);   // Abyssal tentacle
 
-		// === User-contributed TELEPORTS ===
-		itemIdMap.put(22947, ItemCategory.TELEPORTS); // Sanguine scythe of vitur
-		itemIdMap.put(28327, ItemCategory.TELEPORTS); // Tonalztics of ralos
-		itemIdMap.put(25930, ItemCategory.TELEPORTS); // Osmumten's fang
-		itemIdMap.put(21389, ItemCategory.TELEPORTS); // Avernic defender
-		itemIdMap.put(9781, ItemCategory.TELEPORTS);  // Excalibur
+		// === TELEPORTS (user-contributed) ===
+		itemIdMap.put(28929, ItemCategory.TELEPORTS); // Quetzal whistle
+		itemIdMap.put(2572, ItemCategory.TELEPORTS);  // Ring of wealth
+		itemIdMap.put(13068, ItemCategory.TELEPORTS); // Xeric's talisman
+		itemIdMap.put(13069, ItemCategory.TELEPORTS); // Xeric's talisman (inert)
+		itemIdMap.put(9763, ItemCategory.TELEPORTS);  // Ectophial
+		itemIdMap.put(13103, ItemCategory.TELEPORTS); // Digsite pendant
+		itemIdMap.put(6707, ItemCategory.TELEPORTS);  // Camulet
+		itemIdMap.put(9781, ItemCategory.TELEPORTS);  // Enchanted lyre
+		itemIdMap.put(13111, ItemCategory.TELEPORTS); // Slayer ring (8)
+		itemIdMap.put(13115, ItemCategory.TELEPORTS); // Slayer ring (4)
+		itemIdMap.put(9790, ItemCategory.TELEPORTS);  // Skull sceptre
+		itemIdMap.put(13124, ItemCategory.TELEPORTS); // Burning amulet
+		itemIdMap.put(25930, ItemCategory.TELEPORTS); // Amulet of the eye
+		itemIdMap.put(13132, ItemCategory.TELEPORTS); // Ring of returning
+		itemIdMap.put(25932, ItemCategory.TELEPORTS); // Amulet of the eye (charged)
+		itemIdMap.put(13136, ItemCategory.TELEPORTS); // Skills necklace
+		itemIdMap.put(33104, ItemCategory.TELEPORTS); // Sanguine portal nexus
+		itemIdMap.put(9811, ItemCategory.TELEPORTS);  // Pharaoh's sceptre
+		itemIdMap.put(13140, ItemCategory.TELEPORTS); // Combat bracelet
+		itemIdMap.put(4695, ItemCategory.TELEPORTS);  // Games necklace(8)
+		itemIdMap.put(4696, ItemCategory.TELEPORTS);  // Games necklace(7)
+		itemIdMap.put(4697, ItemCategory.TELEPORTS);  // Games necklace(6)
+		itemIdMap.put(4698, ItemCategory.TELEPORTS);  // Games necklace(5)
+		itemIdMap.put(4699, ItemCategory.TELEPORTS);  // Games necklace(4)
+		itemIdMap.put(13660, ItemCategory.TELEPORTS); // Chronicle
+		itemIdMap.put(11872, ItemCategory.TELEPORTS); // Grand seed pod
+		itemIdMap.put(11873, ItemCategory.TELEPORTS); // Royal seed pod
+		itemIdMap.put(22114, ItemCategory.TELEPORTS); // Drakan's medallion
+		itemIdMap.put(19564, ItemCategory.TELEPORTS); // Pharaoh's sceptre (uncharged)
+		itemIdMap.put(26990, ItemCategory.TELEPORTS); // Ring of shadows
+		itemIdMap.put(22400, ItemCategory.TELEPORTS); // Xeric's talisman (charged)
+		itemIdMap.put(24709, ItemCategory.TELEPORTS); // Kharedst's memoirs
+		itemIdMap.put(21389, ItemCategory.TELEPORTS); // Teleport anchoring scroll
+		itemIdMap.put(32399, ItemCategory.TELEPORTS); // Pendant of Ates
+		itemIdMap.put(4251, ItemCategory.TELEPORTS);  // Elf teleport crystal
+		itemIdMap.put(22947, ItemCategory.TELEPORTS); // Stony basalt
+		itemIdMap.put(28327, ItemCategory.TELEPORTS); // Bone mace (teleport)
+		itemIdMap.put(30638, ItemCategory.TELEPORTS); // Lunar seal
+		itemIdMap.put(26818, ItemCategory.TELEPORTS); // Mask of Ranul
+		itemIdMap.put(29893, ItemCategory.TELEPORTS); // Quetzal whistle (enhanced)
+		itemIdMap.put(25818, ItemCategory.TELEPORTS); // Pendant of passage
+		itemIdMap.put(11061, ItemCategory.TELEPORTS); // (moved from QUEST_MISC)
+
+		// === SKILLING (user-contributed) ===
+		itemIdMap.put(31043, ItemCategory.SKILLING);  // Forestry item
+		itemIdMap.put(31052, ItemCategory.SKILLING);  // Forestry item
+		itemIdMap.put(13646, ItemCategory.SKILLING);  // Raw anglerfish
+		itemIdMap.put(10933, ItemCategory.SKILLING);  // Barronite deposit
+		itemIdMap.put(10941, ItemCategory.SKILLING);  // Barronite guard
+		itemIdMap.put(5339, ItemCategory.SKILLING);   // Seed dibber
+		itemIdMap.put(26848, ItemCategory.SKILLING);  // Giant pouch
+		itemIdMap.put(26856, ItemCategory.SKILLING);  // Colossal pouch
+		itemIdMap.put(26858, ItemCategory.SKILLING);  // Colossal pouch (degraded)
+		itemIdMap.put(25598, ItemCategory.SKILLING);  // Celestial ring
+
+		// === POTIONS (user-contributed) ===
+		itemIdMap.put(21163, ItemCategory.POTIONS); // Battlemage potion
 	}
 
 	private void initializeGearSubCategories()
