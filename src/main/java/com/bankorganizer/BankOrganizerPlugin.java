@@ -203,7 +203,8 @@ public class BankOrganizerPlugin extends Plugin
 
 	private void recomputeOrderSteps()
 	{
-		computeNextOrderStep();
+		// Delay by one tick to ensure widget children are updated after the bank change
+		clientThread.invokeLater(() -> computeNextOrderStep());
 	}
 
 	// === Right-click category assignment ===
