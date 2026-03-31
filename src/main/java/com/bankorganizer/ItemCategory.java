@@ -35,11 +35,16 @@ public enum ItemCategory
 		"wine", "stew", "potato", "mushroom", "sweetcorn",
 		"cooked"
 	)),
-	TOOLS("Tools", new Color(255, 255, 0), Arrays.asList(
-		"pickaxe", "hammer", "chisel", "knife", "saw", "tinderbox",
+	SKILLING("Skilling", new Color(255, 255, 0), Arrays.asList(
+		"pickaxe", "hammer", "chisel", "saw", "tinderbox",
 		"needle", "spade", "rake", "seed dibber", "secateurs",
 		"watering can", "trowel", "pestle and mortar",
-		"glassblowing pipe", "shears", "bucket"
+		"glassblowing pipe", "shears", "bucket",
+		"fish barrel", "herb sack", "gem bag", "coal bag", "plank sack",
+		"seed box", "log basket", "forestry kit", "tackle box",
+		"graceful", "lumberjack", "angler", "farmer",
+		"prospector", "pyromancer", "rogue",
+		"axe", "harpoon", "net", "rod", "compost"
 	)),
 	RAW_MATERIALS("Raw Materials", new Color(160, 82, 45), Arrays.asList(
 		" ore", "bronze bar", "iron bar", "steel bar", "mithril bar",

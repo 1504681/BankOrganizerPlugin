@@ -479,7 +479,7 @@ public class BankOrganizerPlugin extends Plugin
 		patterns.put(ItemCategory.GEAR, config.regexGear());
 		patterns.put(ItemCategory.POTIONS, config.regexPotions());
 		patterns.put(ItemCategory.FOOD, config.regexFood());
-		patterns.put(ItemCategory.TOOLS, config.regexTools());
+		patterns.put(ItemCategory.SKILLING, config.regexSkilling());
 		patterns.put(ItemCategory.RAW_MATERIALS, config.regexRawMaterials());
 		patterns.put(ItemCategory.HIGH_ALCH, config.regexHighAlch());
 		categorizer.setRegexPatterns(patterns);

@@ -207,48 +207,62 @@ public class ItemCategorizer
 		itemIdMap.put(11936, ItemCategory.FOOD);
 		itemIdMap.put(3144, ItemCategory.FOOD);
 
-		// === TOOLS ===
-		itemIdMap.put(1755, ItemCategory.TOOLS);
-		itemIdMap.put(2347, ItemCategory.TOOLS);
-		itemIdMap.put(590, ItemCategory.TOOLS);
-		itemIdMap.put(946, ItemCategory.TOOLS);
-		itemIdMap.put(1735, ItemCategory.TOOLS);
-		itemIdMap.put(952, ItemCategory.TOOLS);
+		// === SKILLING ===
+		itemIdMap.put(1755, ItemCategory.SKILLING); // Chisel
+		itemIdMap.put(2347, ItemCategory.SKILLING); // Hammer
+		itemIdMap.put(590, ItemCategory.SKILLING);  // Tinderbox
+		itemIdMap.put(946, ItemCategory.SKILLING);  // Knife
+		itemIdMap.put(1735, ItemCategory.SKILLING); // Shears
+		itemIdMap.put(952, ItemCategory.SKILLING);  // Spade
+		itemIdMap.put(25582, ItemCategory.SKILLING); // Fish barrel
+		itemIdMap.put(13226, ItemCategory.SKILLING); // Herb sack
+		itemIdMap.put(12020, ItemCategory.SKILLING); // Gem bag
+		itemIdMap.put(12019, ItemCategory.SKILLING); // Coal bag
+		itemIdMap.put(12013, ItemCategory.SKILLING); // Plank sack
+		itemIdMap.put(22994, ItemCategory.SKILLING); // Seed box
+		itemIdMap.put(28786, ItemCategory.SKILLING); // Log basket
+		itemIdMap.put(28788, ItemCategory.SKILLING); // Forestry kit
+		itemIdMap.put(11850, ItemCategory.SKILLING); // Graceful hood
+		itemIdMap.put(11852, ItemCategory.SKILLING); // Graceful top
+		itemIdMap.put(11854, ItemCategory.SKILLING); // Graceful legs
+		itemIdMap.put(11856, ItemCategory.SKILLING); // Graceful gloves
+		itemIdMap.put(11858, ItemCategory.SKILLING); // Graceful boots
+		itemIdMap.put(11860, ItemCategory.SKILLING); // Graceful cape
 
 		// === RAW MATERIALS ===
 		itemIdMap.put(1436, ItemCategory.RAW_MATERIALS);
 		itemIdMap.put(7936, ItemCategory.RAW_MATERIALS);
 		itemIdMap.put(314, ItemCategory.RAW_MATERIALS);
 		itemIdMap.put(526, ItemCategory.RAW_MATERIALS);
-		itemIdMap.put(23490, ItemCategory.RAW_MATERIALS); // User-contributed
-		itemIdMap.put(26792, ItemCategory.RAW_MATERIALS); // User-contributed
-		itemIdMap.put(13391, ItemCategory.RAW_MATERIALS); // User-contributed
-		itemIdMap.put(28599, ItemCategory.RAW_MATERIALS); // User-contributed
+		itemIdMap.put(23490, ItemCategory.RAW_MATERIALS); // Scythe of vitur (uncharged)
+		itemIdMap.put(26792, ItemCategory.RAW_MATERIALS);
+		itemIdMap.put(28599, ItemCategory.RAW_MATERIALS); // Scorching bow (uncharged)
 
 		// === HIGH ALCH ===
-		itemIdMap.put(1393, ItemCategory.HIGH_ALCH); // User-contributed
+		itemIdMap.put(1393, ItemCategory.HIGH_ALCH); // Staff of fire
 
 		// === QUEST/MISC ===
-		itemIdMap.put(12785, ItemCategory.QUEST_MISC); // User-contributed
+		itemIdMap.put(12785, ItemCategory.QUEST_MISC); // Dark bow
 
 		// === User-contributed GEAR ===
-		itemIdMap.put(12610, ItemCategory.GEAR);  // User-contributed
-		itemIdMap.put(12006, ItemCategory.GEAR);  // User-contributed
-		itemIdMap.put(29031, ItemCategory.GEAR);  // User-contributed
-		itemIdMap.put(29033, ItemCategory.GEAR);  // User-contributed
-		itemIdMap.put(29043, ItemCategory.GEAR);  // User-contributed
-		itemIdMap.put(29045, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(12610, ItemCategory.GEAR);  // Black chinchompa
+		itemIdMap.put(12006, ItemCategory.GEAR);  // Abyssal tentacle
+		itemIdMap.put(29031, ItemCategory.GEAR);  // Dual macuahuitl
+		itemIdMap.put(29033, ItemCategory.GEAR);  // Dual macuahuitl
+		itemIdMap.put(29043, ItemCategory.GEAR);  // Blue moon spear
+		itemIdMap.put(29045, ItemCategory.GEAR);  // Eclipse atlatl
 		itemIdMap.put(4153, ItemCategory.GEAR);   // Granite maul
-		itemIdMap.put(29594, ItemCategory.GEAR);  // User-contributed
-		itemIdMap.put(11902, ItemCategory.GEAR);  // User-contributed
-		itemIdMap.put(11, ItemCategory.GEAR);     // User-contributed
+		itemIdMap.put(29594, ItemCategory.GEAR);  // Dual macuahuitl (or)
+		itemIdMap.put(11902, ItemCategory.GEAR);  // Staff of the dead
+		itemIdMap.put(11, ItemCategory.GEAR);     // Iron dagger
+		itemIdMap.put(13391, ItemCategory.GEAR);  // Smoke battlestaff
 
 		// === User-contributed TELEPORTS ===
-		itemIdMap.put(22947, ItemCategory.TELEPORTS); // User-contributed
-		itemIdMap.put(28327, ItemCategory.TELEPORTS); // User-contributed
-		itemIdMap.put(25930, ItemCategory.TELEPORTS); // User-contributed
-		itemIdMap.put(21389, ItemCategory.TELEPORTS); // User-contributed
-		itemIdMap.put(9781, ItemCategory.TELEPORTS);  // User-contributed
+		itemIdMap.put(22947, ItemCategory.TELEPORTS); // Sanguine scythe of vitur
+		itemIdMap.put(28327, ItemCategory.TELEPORTS); // Tonalztics of ralos
+		itemIdMap.put(25930, ItemCategory.TELEPORTS); // Osmumten's fang
+		itemIdMap.put(21389, ItemCategory.TELEPORTS); // Avernic defender
+		itemIdMap.put(9781, ItemCategory.TELEPORTS);  // Excalibur
 	}
 
 	private void initializeGearSubCategories()

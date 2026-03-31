@@ -44,7 +44,7 @@ public interface BankOrganizerConfig extends Config
 	default ItemCategory tab4Category() { return ItemCategory.FOOD; }
 
 	@ConfigItem(keyName = "tab5Category", name = "Tab 5", description = "Category for bank tab 5", position = 4, section = tabMappingSection)
-	default ItemCategory tab5Category() { return ItemCategory.TOOLS; }
+	default ItemCategory tab5Category() { return ItemCategory.SKILLING; }
 
 	@ConfigItem(keyName = "tab6Category", name = "Tab 6", description = "Category for bank tab 6", position = 5, section = tabMappingSection)
 	default ItemCategory tab6Category() { return ItemCategory.RAW_MATERIALS; }
@@ -88,8 +88,8 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(keyName = "regexFood", name = "Food Regex", description = "Custom regex for Food category", position = 3, section = regexSection)
 	default String regexFood() { return ""; }
 
-	@ConfigItem(keyName = "regexTools", name = "Tools Regex", description = "Custom regex for Tools category", position = 4, section = regexSection)
-	default String regexTools() { return ""; }
+	@ConfigItem(keyName = "regexSkilling", name = "Skilling Regex", description = "Custom regex for Skilling category", position = 4, section = regexSection)
+	default String regexSkilling() { return ""; }
 
 	@ConfigItem(keyName = "regexRawMaterials", name = "Raw Materials Regex", description = "Custom regex for Raw Materials category", position = 5, section = regexSection)
 	default String regexRawMaterials() { return ""; }

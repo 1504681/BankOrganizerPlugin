@@ -44,7 +44,7 @@ public class ItemCategorizerTest
 	@Test
 	public void testKeywordMatchTools()
 	{
-		assertEquals(ItemCategory.TOOLS, categorizer.categorize("Rune pickaxe", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Rune pickaxe", 99999));
 	}
 
 	@Test
@@ -72,7 +72,7 @@ public class ItemCategorizerTest
 	@Test
 	public void testPickaxeMatchesTools()
 	{
-		assertEquals(ItemCategory.TOOLS, categorizer.categorize("Bronze pickaxe", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Bronze pickaxe", 99999));
 	}
 
 	@Test
