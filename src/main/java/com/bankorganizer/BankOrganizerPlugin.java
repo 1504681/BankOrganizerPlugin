@@ -84,6 +84,7 @@ public class BankOrganizerPlugin extends Plugin
 	private List<OrderStep> orderSteps = new ArrayList<>();
 	private int currentOrderStep = 0;
 	private boolean previewMode = false;
+	private boolean overlayEnabled = false;
 	private List<PreviewItem> previewItems = new ArrayList<>();
 
 	public Map<Integer, ItemCategory> getMisplacedItems() { return misplacedItems; }
@@ -99,8 +100,27 @@ public class BankOrganizerPlugin extends Plugin
 	public ItemCategorizer getCategorizer() { return categorizer; }
 	public ItemManager getItemManager() { return itemManager; }
 	public BankOrganizerConfig getConfig() { return config; }
+
+	public java.awt.Color getColorForCategory(ItemCategory category)
+	{
+		switch (category)
+		{
+			case TELEPORTS: return config.colorTeleports();
+			case GEAR: return config.colorCombat();
+			case POTIONS: return config.colorPotions();
+			case FOOD: return config.colorFood();
+			case SKILLING: return config.colorSkilling();
+			case RAW_MATERIALS: return config.colorMaterials();
+			case HIGH_ALCH: return config.colorHighAlch();
+			case CURRENCY: return config.colorCurrency();
+			case QUEST_MISC: return config.colorQuestMisc();
+			default: return category.getColor();
+		}
+	}
 	public boolean isPreviewMode() { return previewMode; }
 	public List<PreviewItem> getPreviewItems() { return previewItems; }
+	public boolean isOverlayEnabled() { return overlayEnabled; }
+	public void setOverlayEnabled(boolean enabled) { this.overlayEnabled = enabled; }
 
 	@Provides
 	BankOrganizerConfig provideConfig(ConfigManager configManager)

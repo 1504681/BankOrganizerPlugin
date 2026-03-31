@@ -65,24 +65,25 @@ public class BankOrganizerPanel extends PluginPanel
 		mainPanel.add(Box.createVerticalStrut(10));
 
 		// === Preview toggle at top ===
-		JButton previewButton = new JButton("Preview Order");
-		previewButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-		previewButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-		previewButton.addActionListener(e ->
+		JButton overlayToggle = new JButton("Show Overlays");
+		overlayToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		overlayToggle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		overlayToggle.addActionListener(e ->
 		{
-			plugin.togglePreview();
-			if (plugin.isPreviewMode())
+			boolean enabled = !plugin.isOverlayEnabled();
+			plugin.setOverlayEnabled(enabled);
+			if (enabled)
 			{
-				previewButton.setText("Hide Preview");
-				previewButton.setBackground(new Color(60, 100, 60));
+				overlayToggle.setText("Hide Overlays");
+				overlayToggle.setBackground(new Color(60, 100, 60));
 			}
 			else
 			{
-				previewButton.setText("Preview Order");
-				previewButton.setBackground(null);
+				overlayToggle.setText("Show Overlays");
+				overlayToggle.setBackground(null);
 			}
 		});
-		mainPanel.add(previewButton);
+		mainPanel.add(overlayToggle);
 		mainPanel.add(Box.createVerticalStrut(5));
 
 		// === Action buttons ===

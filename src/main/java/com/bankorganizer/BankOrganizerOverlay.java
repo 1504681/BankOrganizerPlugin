@@ -41,6 +41,11 @@ public class BankOrganizerOverlay extends Overlay
 	{
 		drawTabColors(graphics);
 
+		if (plugin.isOverlayEnabled())
+		{
+			drawAllItemCategories(graphics);
+		}
+
 		if (plugin.isPreviewMode())
 		{
 			drawPreview(graphics);
@@ -49,7 +54,7 @@ public class BankOrganizerOverlay extends Overlay
 		{
 			drawOrderingHighlight(graphics);
 		}
-		else if (plugin.isScanActive())
+		else if (plugin.isScanActive() && !plugin.isOverlayEnabled())
 		{
 			drawMisplacedItems(graphics);
 		}
@@ -101,13 +106,61 @@ public class BankOrganizerOverlay extends Overlay
 				continue;
 			}
 
-			Color color = category.getColor();
+			Color color = plugin.getColorForCategory(category);
 			Color barColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 160);
 
 			int barHeight = 3;
 			graphics.setColor(barColor);
 			graphics.fillRect(tabBounds.x, tabBounds.y + tabBounds.height - barHeight,
 				tabBounds.width, barHeight);
+		}
+	}
+
+	private void drawAllItemCategories(Graphics2D graphics)
+	{
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null || bankItemContainer.isHidden())
+		{
+			return;
+		}
+
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null)
+		{
+			return;
+		}
+
+		Rectangle containerBounds = bankItemContainer.getBounds();
+		ItemCategory activeFilter = plugin.getActiveFilter();
+
+		for (Widget child : children)
+		{
+			if (child == null || child.isHidden()) continue;
+			int itemId = child.getItemId();
+			if (itemId <= 0) continue;
+
+			Rectangle bounds = child.getBounds();
+			if (bounds == null || bounds.width <= 0) continue;
+			if (containerBounds != null && !containerBounds.contains(bounds)) continue;
+
+			String itemName = plugin.getItemManager().getItemComposition(itemId).getName();
+			if (itemName == null || itemName.equals("null")) continue;
+
+			ItemCategory category = plugin.getCategorizer().categorize(itemName, itemId);
+
+			if (activeFilter != null && activeFilter != category)
+			{
+				continue;
+			}
+
+			Color color = plugin.getColorForCategory(category);
+			Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 60);
+			Color borderColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 180);
+
+			graphics.setColor(fillColor);
+			graphics.fill(bounds);
+			graphics.setColor(borderColor);
+			graphics.draw(bounds);
 		}
 	}
 
@@ -172,7 +225,7 @@ public class BankOrganizerOverlay extends Overlay
 				continue;
 			}
 
-			Color color = correctCategory.getColor();
+			Color color = plugin.getColorForCategory(correctCategory);
 			Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 80);
 			Color borderColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 200);
 

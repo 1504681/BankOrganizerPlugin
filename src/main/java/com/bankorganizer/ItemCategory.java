@@ -26,13 +26,13 @@ public enum ItemCategory
 		"boots", "gloves", "vambraces", "bracelet", "amulet", "necklace", "ring",
 		"coif", "hood", "hat", "body", "chaps", "d'hide"
 	)),
-	POTIONS("Potions", new Color(0, 220, 130), Arrays.asList(
+	POTIONS("Potions", new Color(0, 200, 0), Arrays.asList(
 		"potion", "brew", "restore", "mix", "overload", "prayer renewal",
 		"antidote", "antifire", "antipoison", "antivenom", "battlemage",
 		"bastion", "saradomin brew", "super combat", "ranging potion",
 		"stamina", "energy"
 	)),
-	FOOD("Food", new Color(230, 120, 60), Arrays.asList(
+	FOOD("Food", new Color(160, 32, 240), Arrays.asList(
 		"shark", "lobster", "swordfish", "tuna", "salmon", "trout",
 		"monkfish", "manta ray", "dark crab", "anglerfish", "karambwan",
 		"bass", "pike", "shrimps", "anchovies", "sardine", "herring",
@@ -40,7 +40,7 @@ public enum ItemCategory
 		"wine", "stew", "potato", "mushroom", "sweetcorn",
 		"cooked"
 	)),
-	SKILLING("Skilling", new Color(100, 200, 255), Arrays.asList(
+	SKILLING("Skilling", new Color(255, 255, 0), Arrays.asList(
 		"pickaxe", "hammer", "chisel", "saw", "tinderbox",
 		"needle", "spade", "rake", "seed dibber", "secateurs",
 		"watering can", "trowel", "pestle and mortar",
@@ -51,14 +51,14 @@ public enum ItemCategory
 		"prospector", "pyromancer", "rogue",
 		"axe", "harpoon", "net", "rod", "compost"
 	)),
-	RAW_MATERIALS("Materials", new Color(180, 140, 100), Arrays.asList(
+	RAW_MATERIALS("Materials", new Color(255, 0, 200), Arrays.asList(
 		" ore", "bronze bar", "iron bar", "steel bar", "mithril bar",
 		"adamantite bar", "runite bar", "gold bar", "silver bar",
 		"logs", "hide", "leather", "essence",
 		"seed", "grimy", "herb", "feather", "bone",
 		"wool", "flax", "clay", "sand"
 	)),
-	HIGH_ALCH("High Alch", new Color(255, 180, 0), Arrays.asList()),
+	HIGH_ALCH("High Alch", new Color(255, 255, 255), Arrays.asList()),
 	CURRENCY("Currency", new Color(255, 215, 80), Arrays.asList(
 		"coins", "platinum token", "tokkul", "trading sticks",
 		"numulite", "pieces of eight", "warrior guild token",

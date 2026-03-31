@@ -1,5 +1,7 @@
 package com.bankorganizer;
 
+import java.awt.Color;
+import net.runelite.client.config.Alpha;
 import net.runelite.client.config.Config;
 import net.runelite.client.config.ConfigGroup;
 import net.runelite.client.config.ConfigItem;
@@ -23,9 +25,17 @@ public interface BankOrganizerConfig extends Config
 	String sortingSection = "sorting";
 
 	@ConfigSection(
+		name = "Colors",
+		description = "Customize overlay colors for each category",
+		position = 2,
+		closedByDefault = true
+	)
+	String colorsSection = "colors";
+
+	@ConfigSection(
 		name = "Custom Regex",
 		description = "Custom regex patterns per category for additional item matching",
-		position = 2
+		position = 3
 	)
 	String regexSection = "customRegex";
 
@@ -65,6 +75,44 @@ public interface BankOrganizerConfig extends Config
 
 	@ConfigItem(keyName = "teleportSortMode", name = "Teleport Sort Mode", description = "How teleport items are sorted within the Teleports tab", position = 1, section = sortingSection)
 	default TeleportSortMode teleportSortMode() { return TeleportSortMode.RUNES_FIRST; }
+
+	// --- Colors ---
+
+	@Alpha
+	@ConfigItem(keyName = "colorTeleports", name = "Teleports", description = "Overlay color for Teleports", position = 0, section = colorsSection)
+	default Color colorTeleports() { return new Color(0, 150, 255); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorCombat", name = "Combat", description = "Overlay color for Combat", position = 1, section = colorsSection)
+	default Color colorCombat() { return new Color(220, 50, 50); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorPotions", name = "Potions", description = "Overlay color for Potions", position = 2, section = colorsSection)
+	default Color colorPotions() { return new Color(0, 200, 0); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorFood", name = "Food", description = "Overlay color for Food", position = 3, section = colorsSection)
+	default Color colorFood() { return new Color(160, 32, 240); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorSkilling", name = "Skilling", description = "Overlay color for Skilling", position = 4, section = colorsSection)
+	default Color colorSkilling() { return new Color(255, 255, 0); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorMaterials", name = "Materials", description = "Overlay color for Materials", position = 5, section = colorsSection)
+	default Color colorMaterials() { return new Color(255, 0, 200); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorHighAlch", name = "High Alch", description = "Overlay color for High Alch", position = 6, section = colorsSection)
+	default Color colorHighAlch() { return new Color(255, 255, 255); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorCurrency", name = "Currency", description = "Overlay color for Currency", position = 7, section = colorsSection)
+	default Color colorCurrency() { return new Color(255, 215, 80); }
+
+	@Alpha
+	@ConfigItem(keyName = "colorQuestMisc", name = "Quest/Misc", description = "Overlay color for Quest/Misc", position = 8, section = colorsSection)
+	default Color colorQuestMisc() { return new Color(180, 100, 255); }
 
 	// --- Manual overrides (stored as JSON string) ---
 
