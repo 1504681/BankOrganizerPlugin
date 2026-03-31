@@ -204,10 +204,20 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		// Poll every tick when ordering is active because rearranging items
 		// within a tab doesn't trigger ItemContainerChanged
-		if (orderingActive)
-		{
-			recomputeOrderSteps();
-		}
+		if (!orderingActive) return;
+
+		// Only recompute if the bank is actually open
+		Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		if (bankWidget == null || bankWidget.isHidden()) return;
+
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null) return;
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null || children.length == 0) return;
+
+		// Check if the current widget items differ from our last known state
+		// to avoid unnecessary recomputes
+		recomputeOrderSteps();
 	}
 
 
@@ -856,6 +866,7 @@ public class BankOrganizerPlugin extends Plugin
 
 		if (allCorrect)
 		{
+			log.info("All {} items in correct order — ordering complete", n);
 			orderingActive = false;
 			orderSteps.clear();
 			currentOrderStep = 0;
@@ -950,6 +961,38 @@ public class BankOrganizerPlugin extends Plugin
 			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
 			log.info("Ordering: {} items out of place. Next: {}",
 				nextStep.totalOutOfPlace, nextStep.instruction);
+		}
+		else
+		{
+			// No actionable steps found (remaining items are all "everything else")
+			// Treat as complete
+			int skipped = 0;
+			for (int i = 0; i < n; i++)
+			{
+				if (perm[i] != i) skipped++;
+			}
+			log.info("Ordering done — {} unsorted items skipped (unknown subcategory)", skipped);
+			orderingActive = false;
+			orderSteps.clear();
+			currentOrderStep = 0;
+			SwingUtilities.invokeLater(() ->
+			{
+				panel.updateOrderingState();
+				if (skipped > 0)
+				{
+					javax.swing.JOptionPane.showMessageDialog(null,
+						"Ordering complete! " + skipped + " items with no subcategory were left in place.",
+						"Ordering Complete",
+						javax.swing.JOptionPane.INFORMATION_MESSAGE);
+				}
+				else
+				{
+					javax.swing.JOptionPane.showMessageDialog(null,
+						"All items are now in order!",
+						"Ordering Complete",
+						javax.swing.JOptionPane.INFORMATION_MESSAGE);
+				}
+			});
 		}
 	}
 
