@@ -7,6 +7,7 @@ import java.util.EnumMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
@@ -700,16 +701,14 @@ public class BankOrganizerPlugin extends Plugin
 	}
 
 	/**
-	 * Find the first item that's out of place and create a single step for it.
-	 * Called on start and after each bank change.
+	 * Compute the next ordering step using LIS-based optimal algorithm.
+	 * Perfect swaps first (2-cycles), then insert non-LIS items front-to-back.
+	 * Minimum total actions = (perfect swaps) + (n - LIS_length - 2*swaps).
 	 */
 	private void computeNextOrderStep()
 	{
 		Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
-		if (bankWidget == null || bankWidget.isHidden())
-		{
-			return;
-		}
+		if (bankWidget == null || bankWidget.isHidden()) return;
 
 		int currentTab = client.getVarbitValue(4150);
 		ItemCategory tabCategory = getCategoryForTab(currentTab);
@@ -733,6 +732,9 @@ public class BankOrganizerPlugin extends Plugin
 			currentItems.add(new BankItem(itemId, name, slot));
 		}
 
+		int n = currentItems.size();
+		if (n == 0) return;
+
 		// Compute ideal order
 		GearSortMode gearMode = config.gearSortMode();
 		TeleportSortMode teleportMode = config.teleportSortMode();
@@ -742,94 +744,24 @@ public class BankOrganizerPlugin extends Plugin
 			getItemSortKey(item, tabCategory, gearMode, teleportMode)
 		));
 
-		// Build a map of itemId -> current position and itemId -> ideal position
-		Map<Integer, Integer> currentPosMap = new HashMap<>();
+		// Build permutation: perm[i] = ideal position of item currently at position i
 		Map<Integer, Integer> idealPosMap = new HashMap<>();
-		for (int i = 0; i < currentItems.size(); i++)
-		{
-			currentPosMap.put(currentItems.get(i).itemId, i);
-		}
 		for (int i = 0; i < idealOrder.size(); i++)
 		{
 			idealPosMap.put(idealOrder.get(i).itemId, i);
 		}
 
-		// Count out-of-place items
-		int totalOutOfPlace = 0;
-		for (int i = 0; i < idealOrder.size() && i < currentItems.size(); i++)
+		int[] perm = new int[n];
+		boolean allCorrect = true;
+		for (int i = 0; i < n; i++)
 		{
-			if (idealOrder.get(i).itemId != currentItems.get(i).itemId)
-			{
-				totalOutOfPlace++;
-			}
+			Integer pos = idealPosMap.get(currentItems.get(i).itemId);
+			perm[i] = pos != null ? pos : i;
+			if (perm[i] != i) allCorrect = false;
 		}
 
-		OrderStep nextStep = null;
-
-		// Priority 1: Look for PERFECT swaps only
-		// Both items end up in their correct final positions after the swap
-		for (int i = 0; i < currentItems.size() && nextStep == null; i++)
+		if (allCorrect)
 		{
-			int currentItemId = currentItems.get(i).itemId;
-			Integer idealPos = idealPosMap.get(currentItemId);
-			if (idealPos == null || idealPos == i)
-			{
-				continue;
-			}
-
-			if (idealPos < currentItems.size())
-			{
-				int otherItemId = currentItems.get(idealPos).itemId;
-				Integer otherIdealPos = idealPosMap.get(otherItemId);
-
-				// Perfect swap: A goes to B's spot AND B goes to A's spot
-				if (otherIdealPos != null && otherIdealPos == i)
-				{
-					BankItem itemA = currentItems.get(i);
-					BankItem itemB = currentItems.get(idealPos);
-					String subCatName = getSubCategoryName(itemA, tabCategory);
-
-					nextStep = new OrderStep(
-						itemA.itemId,
-						itemA.name,
-						idealPos,
-						"[SWAP] Swap " + itemA.name + " with " + itemB.name,
-						subCatName,
-						itemB.itemId,
-						true
-					);
-				}
-			}
-		}
-
-		// Priority 2: Fall back to insert for the first out-of-place item
-		if (nextStep == null)
-		{
-			for (int i = 0; i < idealOrder.size() && i < currentItems.size(); i++)
-			{
-				if (idealOrder.get(i).itemId != currentItems.get(i).itemId)
-				{
-					BankItem idealItem = idealOrder.get(i);
-					BankItem currentAtTarget = currentItems.get(i);
-					String subCatName = getSubCategoryName(idealItem, tabCategory);
-
-					nextStep = new OrderStep(
-						idealItem.itemId,
-						idealItem.name,
-						i,
-						"[INSERT] Insert " + idealItem.name + " before " + currentAtTarget.name,
-						subCatName,
-						currentAtTarget.itemId,
-						false
-					);
-					break;
-				}
-			}
-		}
-
-		if (nextStep == null)
-		{
-			// Everything is in order!
 			orderingActive = false;
 			orderSteps.clear();
 			currentOrderStep = 0;
@@ -841,19 +773,135 @@ public class BankOrganizerPlugin extends Plugin
 					"Ordering Complete",
 					javax.swing.JOptionPane.INFORMATION_MESSAGE);
 			});
+			return;
 		}
-		else
+
+		OrderStep nextStep = null;
+
+		// Priority 1: Perfect swaps (2-cycles in the permutation)
+		for (int i = 0; i < n && nextStep == null; i++)
 		{
+			if (perm[i] != i)
+			{
+				int j = perm[i];
+				if (j < n && perm[j] == i)
+				{
+					BankItem itemA = currentItems.get(i);
+					BankItem itemB = currentItems.get(j);
+					nextStep = new OrderStep(
+						itemA.itemId, itemA.name, j,
+						"[SWAP] Swap " + itemA.name + " with " + itemB.name,
+						getSubCategoryName(itemA, tabCategory),
+						itemB.itemId, true
+					);
+				}
+			}
+		}
+
+		// Priority 2: Insert using LIS strategy
+		if (nextStep == null)
+		{
+			// Compute LIS of the permutation to find items already in correct relative order
+			Set<Integer> lisIndices = computeLIS(perm);
+
+			// Find first ideal position whose correct item is NOT in the LIS
+			for (int idealPos = 0; idealPos < n; idealPos++)
+			{
+				BankItem idealItem = idealOrder.get(idealPos);
+				// Find where this item currently is
+				int currentPos = -1;
+				for (int j = 0; j < n; j++)
+				{
+					if (currentItems.get(j).itemId == idealItem.itemId)
+					{
+						currentPos = j;
+						break;
+					}
+				}
+
+				if (currentPos == idealPos) continue; // Already correct
+				if (currentPos >= 0 && !lisIndices.contains(currentPos))
+				{
+					BankItem currentAtTarget = currentItems.get(idealPos);
+					nextStep = new OrderStep(
+						idealItem.itemId, idealItem.name, idealPos,
+						"[INSERT] Insert " + idealItem.name + " before " + currentAtTarget.name,
+						getSubCategoryName(idealItem, tabCategory),
+						currentAtTarget.itemId, false
+					);
+					break;
+				}
+			}
+		}
+
+		if (nextStep != null)
+		{
+			// Count remaining out-of-place items
+			int outOfPlace = 0;
+			for (int i = 0; i < n; i++)
+			{
+				if (perm[i] != i) outOfPlace++;
+			}
+
 			List<OrderStep> steps = new ArrayList<>();
 			steps.add(nextStep);
 			orderSteps = steps;
 			currentOrderStep = 0;
 
-			int remaining = totalOutOfPlace;
 			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
-			log.info("Ordering: {} items out of place. Next: move {} before slot {}",
-				remaining, nextStep.itemName, nextStep.targetSlot);
+			log.info("Ordering: {} items out of place. Next: {}",
+				outOfPlace, nextStep.instruction);
 		}
+	}
+
+	/**
+	 * Compute the Longest Increasing Subsequence of a permutation.
+	 * Returns the set of INDICES in the input array that form the LIS.
+	 * O(n log n) using patience sorting.
+	 */
+	private Set<Integer> computeLIS(int[] perm)
+	{
+		int n = perm.length;
+		if (n == 0) return new java.util.HashSet<>();
+
+		// tails[k] = smallest ending value of increasing subsequence of length k+1
+		List<Integer> tails = new ArrayList<>();
+		List<Integer> tailIndices = new ArrayList<>();
+		int[] parent = new int[n];
+		java.util.Arrays.fill(parent, -1);
+
+		for (int i = 0; i < n; i++)
+		{
+			int pos = java.util.Collections.binarySearch(tails, perm[i]);
+			if (pos < 0) pos = -(pos + 1);
+
+			if (pos == tails.size())
+			{
+				tails.add(perm[i]);
+				tailIndices.add(i);
+			}
+			else
+			{
+				tails.set(pos, perm[i]);
+				tailIndices.set(pos, i);
+			}
+
+			if (pos > 0)
+			{
+				parent[i] = tailIndices.get(pos - 1);
+			}
+		}
+
+		// Backtrack to find LIS indices
+		Set<Integer> lisIndices = new java.util.HashSet<>();
+		int k = tailIndices.get(tails.size() - 1);
+		while (k != -1)
+		{
+			lisIndices.add(k);
+			k = parent[k];
+		}
+
+		return lisIndices;
 	}
 
 	private String getSubCategoryName(BankItem item, ItemCategory tabCategory)
