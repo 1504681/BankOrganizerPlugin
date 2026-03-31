@@ -766,24 +766,23 @@ public class BankOrganizerPlugin extends Plugin
 
 		OrderStep nextStep = null;
 
-		// Priority 1: Look for beneficial swaps
-		// A swap fixes two items at once if item A is where B should be and B is where A should be
+		// Priority 1: Look for PERFECT swaps only
+		// Both items end up in their correct final positions after the swap
 		for (int i = 0; i < currentItems.size() && nextStep == null; i++)
 		{
 			int currentItemId = currentItems.get(i).itemId;
 			Integer idealPos = idealPosMap.get(currentItemId);
 			if (idealPos == null || idealPos == i)
 			{
-				continue; // Already in correct position
+				continue;
 			}
 
-			// What item is currently at this item's ideal position?
 			if (idealPos < currentItems.size())
 			{
 				int otherItemId = currentItems.get(idealPos).itemId;
 				Integer otherIdealPos = idealPosMap.get(otherItemId);
 
-				// If the other item's ideal position is where this item currently is = perfect swap
+				// Perfect swap: A goes to B's spot AND B goes to A's spot
 				if (otherIdealPos != null && otherIdealPos == i)
 				{
 					BankItem itemA = currentItems.get(i);
@@ -803,42 +802,7 @@ public class BankOrganizerPlugin extends Plugin
 			}
 		}
 
-		// Priority 2: Look for swaps that fix at least one item
-		if (nextStep == null)
-		{
-			for (int i = 0; i < currentItems.size() && nextStep == null; i++)
-			{
-				int currentItemId = currentItems.get(i).itemId;
-				Integer idealPos = idealPosMap.get(currentItemId);
-				if (idealPos == null || idealPos == i) continue;
-
-				// Swapping this item to its ideal position — does it improve things?
-				if (idealPos < currentItems.size())
-				{
-					BankItem itemA = currentItems.get(i);
-					BankItem itemB = currentItems.get(idealPos);
-					String subCatName = getSubCategoryName(itemA, tabCategory);
-
-					// Check if the item currently at the ideal position is also out of place
-					Integer itemBIdealPos = idealPosMap.get(itemB.itemId);
-					if (itemBIdealPos != null && itemBIdealPos != idealPos)
-					{
-						// Both are wrong, swap fixes at least one
-						nextStep = new OrderStep(
-							itemA.itemId,
-							itemA.name,
-							idealPos,
-							"[SWAP] Swap " + itemA.name + " with " + itemB.name,
-							subCatName,
-							itemB.itemId,
-							true
-						);
-					}
-				}
-			}
-		}
-
-		// Priority 3: Fall back to insert for the first out-of-place item
+		// Priority 2: Fall back to insert for the first out-of-place item
 		if (nextStep == null)
 		{
 			for (int i = 0; i < idealOrder.size() && i < currentItems.size(); i++)
