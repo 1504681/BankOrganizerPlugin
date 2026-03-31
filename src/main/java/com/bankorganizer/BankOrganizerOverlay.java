@@ -47,7 +47,6 @@ public class BankOrganizerOverlay extends Overlay
 		}
 		else if (plugin.isOverlayEnabled())
 		{
-			// Show/Hide Overlays toggle — draws category boxes on ALL items
 			drawAllItemCategories(graphics);
 		}
 		else if (plugin.isScanActive())
@@ -55,7 +54,56 @@ public class BankOrganizerOverlay extends Overlay
 			drawMisplacedItems(graphics);
 		}
 
+		// Highlight items without subcategory if toggle is on
+		if (plugin.isHighlightUntagged())
+		{
+			drawUntaggedItems(graphics);
+		}
+
 		return null;
+	}
+
+	private void drawUntaggedItems(Graphics2D graphics)
+	{
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null || bankItemContainer.isHidden()) return;
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null) return;
+		Rectangle containerBounds = bankItemContainer.getBounds();
+
+		for (Widget child : children)
+		{
+			if (child == null || child.isHidden()) continue;
+			int itemId = child.getItemId();
+			if (itemId <= 0) continue;
+
+			Rectangle bounds = child.getBounds();
+			if (bounds == null || bounds.width <= 0) continue;
+			if (containerBounds != null && !containerBounds.contains(bounds)) continue;
+
+			String itemName = plugin.getItemManager().getItemComposition(itemId).getName();
+			if (itemName == null || itemName.equals("null")) continue;
+
+			// Check if item is in a category with subcategories (Skilling)
+			ItemCategory cat = plugin.getCategorizer().categorize(itemName, itemId);
+			if (cat == ItemCategory.SKILLING)
+			{
+				int skillIdx = plugin.getCategorizer().getSkillGroupIndex(itemName, itemId);
+				if (skillIdx >= 99)
+				{
+					// Untagged — draw a distinct highlight (red/white dashed)
+					Color fill = new Color(255, 50, 50, 40);
+					Color border = new Color(255, 50, 50, 180);
+					graphics.setColor(fill);
+					graphics.fill(bounds);
+					graphics.setColor(border);
+					graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT,
+						BasicStroke.JOIN_MITER, 10, new float[]{3, 3}, 0));
+					graphics.draw(bounds);
+					graphics.setStroke(new BasicStroke(1));
+				}
+			}
+		}
 	}
 
 	private void drawTabColors(Graphics2D graphics)

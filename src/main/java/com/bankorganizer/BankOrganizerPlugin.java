@@ -80,7 +80,8 @@ public class BankOrganizerPlugin extends Plugin
 	private boolean scanActive = false;
 	private boolean categorizeMode = false;
 	private boolean subCategoryMode = false;
-	private boolean skipUntagged = true; // Skip items without subcategory during ordering
+	private boolean skipUntagged = true;
+	private boolean highlightUntagged = false; // Draw boxes on items missing subcategory
 
 	// Ordering state
 	private boolean orderingActive = false;
@@ -101,6 +102,8 @@ public class BankOrganizerPlugin extends Plugin
 	public void setSubCategoryMode(boolean mode) { this.subCategoryMode = mode; }
 	public boolean isSkipUntagged() { return skipUntagged; }
 	public void setSkipUntagged(boolean skip) { this.skipUntagged = skip; }
+	public boolean isHighlightUntagged() { return highlightUntagged; }
+	public void setHighlightUntagged(boolean highlight) { this.highlightUntagged = highlight; }
 	public boolean isOrderingActive() { return orderingActive; }
 	public List<OrderStep> getOrderSteps() { return orderSteps; }
 	public int getCurrentOrderStep() { return currentOrderStep; }
@@ -479,7 +482,17 @@ public class BankOrganizerPlugin extends Plugin
 		String json = config.manualOverrides();
 		if (json == null || json.isEmpty())
 		{
-			return;
+			// Load defaults from resource file for new users
+			json = loadResourceFile("default_overrides.txt");
+			if (json != null && !json.isEmpty())
+			{
+				config.setManualOverrides(json);
+				log.info("Loaded default category overrides");
+			}
+			else
+			{
+				return;
+			}
 		}
 
 		Map<Integer, ItemCategory> overrides = new HashMap<>();
@@ -518,7 +531,19 @@ public class BankOrganizerPlugin extends Plugin
 	private void loadSubOverridesFromConfig()
 	{
 		String json = config.subCategoryOverrides();
-		if (json == null || json.isEmpty()) return;
+		if (json == null || json.isEmpty())
+		{
+			json = loadResourceFile("default_sub_overrides.txt");
+			if (json != null && !json.isEmpty())
+			{
+				config.setSubCategoryOverrides(json);
+				log.info("Loaded default subcategory overrides");
+			}
+			else
+			{
+				return;
+			}
+		}
 
 		Map<Integer, Integer> overrides = new HashMap<>();
 		for (String entry : json.split(","))
@@ -681,6 +706,20 @@ public class BankOrganizerPlugin extends Plugin
 			return stats.getEquipment();
 		}
 		return null;
+	}
+
+	private String loadResourceFile(String filename)
+	{
+		try (java.io.InputStream is = getClass().getResourceAsStream("/com/bankorganizer/" + filename))
+		{
+			if (is == null) return null;
+			return new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+		}
+		catch (Exception e)
+		{
+			log.error("Failed to load resource {}", filename, e);
+			return null;
+		}
 	}
 
 	private void refreshPanel()
@@ -935,7 +974,7 @@ public class BankOrganizerPlugin extends Plugin
 				}
 
 				// Optionally skip items without subcategory (skill 99)
-				if (skipUntagged && tabCategory == ItemCategory.SKILLING)
+				if (tabCategory == ItemCategory.SKILLING)
 				{
 					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 					if (skillIdx >= 99) continue;
