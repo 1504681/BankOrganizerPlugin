@@ -534,6 +534,10 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			categoryKey = categorizer.getPotionFullSortKey(item.name, item.itemId);
 		}
+		else if (tabCategory == ItemCategory.FOOD)
+		{
+			categoryKey = categorizer.getFoodFullSortKey(item.name, item.itemId);
+		}
 
 		// Use item ID as tiebreaker so items with identical stats have a stable order
 		// Shift category key left by 16 bits and add item ID in the low bits
@@ -778,30 +782,8 @@ public class BankOrganizerPlugin extends Plugin
 
 		OrderStep nextStep = null;
 
-		// Priority 1: Perfect swaps (2-cycles in the permutation)
-		for (int i = 0; i < n && nextStep == null; i++)
+		// Insert using LIS strategy — find items already in correct relative order
 		{
-			if (perm[i] != i)
-			{
-				int j = perm[i];
-				if (j < n && perm[j] == i)
-				{
-					BankItem itemA = currentItems.get(i);
-					BankItem itemB = currentItems.get(j);
-					nextStep = new OrderStep(
-						itemA.itemId, itemA.name, j,
-						"[SWAP] Swap " + itemA.name + " with " + itemB.name,
-						getSubCategoryName(itemA, tabCategory),
-						itemB.itemId, true
-					);
-				}
-			}
-		}
-
-		// Priority 2: Insert using LIS strategy
-		if (nextStep == null)
-		{
-			// Compute LIS of the permutation to find items already in correct relative order
 			Set<Integer> lisIndices = computeLIS(perm);
 
 			// Find first ideal position whose correct item is NOT in the LIS

@@ -257,6 +257,8 @@ public class BankOrganizerPanel extends PluginPanel
 		scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
 		scrollPane.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		scrollPane.setPreferredSize(new Dimension(0, 300));
+		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
 		mainPanel.add(scrollPane);
 
@@ -306,8 +308,24 @@ public class BankOrganizerPanel extends PluginPanel
 		}
 		else
 		{
+			// Show count header
+			JLabel countLabel = new JLabel(misplacedItems.size() + " misplaced items:");
+			countLabel.setForeground(Color.WHITE);
+			countLabel.setBorder(new EmptyBorder(3, 5, 5, 5));
+			resultsPanel.add(countLabel);
+
+			int shown = 0;
 			for (Map.Entry<Integer, ItemCategory> entry : misplacedItems.entrySet())
 			{
+				if (shown >= 100) // Limit to prevent UI freeze
+				{
+					JLabel moreLabel = new JLabel("... and " + (misplacedItems.size() - 100) + " more");
+					moreLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+					moreLabel.setBorder(new EmptyBorder(3, 5, 3, 5));
+					resultsPanel.add(moreLabel);
+					break;
+				}
+
 				int itemId = entry.getKey();
 				ItemCategory correctCategory = entry.getValue();
 				String itemName = itemNames.getOrDefault(itemId, "Unknown");
@@ -321,7 +339,7 @@ public class BankOrganizerPanel extends PluginPanel
 				row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
 
 				JLabel nameLabel = new JLabel(itemName);
-				nameLabel.setForeground(correctCategory.getColor());
+				nameLabel.setForeground(plugin.getColorForCategory(correctCategory));
 
 				JLabel destLabel = new JLabel(" -> " + tabStr + " (" + correctCategory.getDisplayName() + ")");
 				destLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
@@ -331,6 +349,7 @@ public class BankOrganizerPanel extends PluginPanel
 				row.add(destLabel, BorderLayout.EAST);
 
 				resultsPanel.add(row);
+				shown++;
 			}
 		}
 

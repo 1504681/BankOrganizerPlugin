@@ -312,6 +312,11 @@ public class ItemCategorizer
 		itemIdMap.put(28329, ItemCategory.GEAR);   // Bone shortbow
 		itemIdMap.put(30891, ItemCategory.GEAR);   // Soulreaper axe
 		itemIdMap.put(12006, ItemCategory.GEAR);   // Abyssal tentacle
+		// Combat utility items
+		itemIdMap.put(25346, ItemCategory.GEAR);  // Soul bearer
+		itemIdMap.put(18337, ItemCategory.GEAR);  // Bonecrusher
+		itemIdMap.put(22118, ItemCategory.GEAR);  // Bonecrusher necklace
+		itemIdMap.put(27012, ItemCategory.GEAR);  // Ash sanctifier
 
 		// === TELEPORTS (user-contributed) ===
 		itemIdMap.put(28929, ItemCategory.TELEPORTS); // Quetzal whistle
@@ -1014,6 +1019,55 @@ public class ItemCategorizer
 	/**
 	 * Full sort key for potions: divine first, then by priority, then by dose descending.
 	 */
+	/**
+	 * Full sort key for food: highest healing first.
+	 */
+	public long getFoodFullSortKey(String itemName, int itemId)
+	{
+		int healAmount = getFoodHealAmount(itemName.toLowerCase());
+		// Invert so highest healing sorts first
+		return 999 - healAmount;
+	}
+
+	private int getFoodHealAmount(String lower)
+	{
+		// Highest healing foods first (heal amounts from OSRS wiki)
+		if (lower.contains("anglerfish")) return 22; // Up to 22 (scales with HP)
+		if (lower.contains("dark crab")) return 22;
+		if (lower.contains("manta ray")) return 22;
+		if (lower.contains("tuna potato")) return 22;
+		if (lower.contains("shark")) return 20;
+		if (lower.contains("sea turtle")) return 21;
+		if (lower.contains("mushroom potato")) return 20;
+		if (lower.contains("karambwan")) return 18; // Tick eat food
+		if (lower.contains("monkfish")) return 16;
+		if (lower.contains("bass")) return 13;
+		if (lower.contains("swordfish")) return 14;
+		if (lower.contains("lobster")) return 12;
+		if (lower.contains("potato with cheese")) return 16;
+		if (lower.contains("chilli potato")) return 14;
+		if (lower.contains("pizza")) return 11;
+		if (lower.contains("pie")) return 8;
+		if (lower.contains("cake")) return 12;
+		if (lower.contains("tuna")) return 10;
+		if (lower.contains("salmon")) return 9;
+		if (lower.contains("trout")) return 7;
+		if (lower.contains("pike")) return 8;
+		if (lower.contains("herring")) return 5;
+		if (lower.contains("mackerel")) return 6;
+		if (lower.contains("cod")) return 7;
+		if (lower.contains("sardine")) return 4;
+		if (lower.contains("shrimps")) return 3;
+		if (lower.contains("anchovies")) return 1;
+		if (lower.contains("bread")) return 5;
+		if (lower.contains("meat")) return 3;
+		if (lower.contains("chicken")) return 3;
+		if (lower.contains("stew")) return 11;
+		if (lower.contains("cooked")) return 5;
+		if (lower.contains("wine")) return 11;
+		return 0;
+	}
+
 	public long getPotionFullSortKey(String itemName, int itemId)
 	{
 		String lower = itemName.toLowerCase();
@@ -1358,6 +1412,8 @@ public class ItemCategorizer
 		// === PRAYER (skill 5) ===
 		else if (lower.contains("bone") || lower.contains("skull"))
 		{ skillOrder = 5; tierOrder = getBoneTier(lower); }
+		else if (lower.contains("ensouled"))
+		{ skillOrder = 5; tierOrder = 100; } // Ensouled heads after bones
 
 		// === AGILITY (skill 6) ===
 		else if (lower.contains("graceful"))
