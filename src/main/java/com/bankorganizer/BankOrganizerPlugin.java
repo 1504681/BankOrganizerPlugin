@@ -177,105 +177,7 @@ public class BankOrganizerPlugin extends Plugin
 
 	private void recomputeOrderSteps()
 	{
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
-		if (bankItemContainer == null) return;
-		Widget[] children = bankItemContainer.getDynamicChildren();
-		if (children == null) return;
-
-		int currentTab = client.getVarbitValue(4150);
-		ItemCategory tabCategory = getCategoryForTab(currentTab);
-		if (tabCategory == null) return;
-
-		// Collect current items
-		List<BankItem> currentItems = new ArrayList<>();
-		for (int slot = 0; slot < children.length; slot++)
-		{
-			Widget child = children[slot];
-			if (child == null || child.isHidden()) continue;
-			int itemId = child.getItemId();
-			if (itemId <= 0) continue;
-			String name = itemManager.getItemComposition(itemId).getName();
-			if (name == null || name.equals("null")) continue;
-			currentItems.add(new BankItem(itemId, name, slot));
-		}
-
-		// Compute ideal order
-		List<BankItem> idealOrder = new ArrayList<>(currentItems);
-		GearSortMode gearMode = config.gearSortMode();
-		TeleportSortMode teleportMode = config.teleportSortMode();
-
-		idealOrder.sort(Comparator.comparingLong(item ->
-			getItemSortKey(item, tabCategory, gearMode, teleportMode)
-		));
-
-		// Find remaining steps
-		List<OrderStep> newSteps = new ArrayList<>();
-		List<BankItem> working = new ArrayList<>(currentItems);
-
-		for (int targetSlot = 0; targetSlot < idealOrder.size(); targetSlot++)
-		{
-			BankItem idealItem = idealOrder.get(targetSlot);
-			int currentSlot = -1;
-			for (int j = 0; j < working.size(); j++)
-			{
-				if (working.get(j).itemId == idealItem.itemId)
-				{
-					currentSlot = j;
-					break;
-				}
-			}
-
-			if (currentSlot != targetSlot && currentSlot >= 0)
-			{
-				String subCatName = "";
-				if (tabCategory == ItemCategory.GEAR)
-				{
-					subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId, getEquipmentStats(idealItem.itemId)).getDisplayName();
-				}
-				else if (tabCategory == ItemCategory.TELEPORTS)
-				{
-					subCatName = categorizer.getTeleportSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
-				}
-
-				// The item to insert before (what's currently at the target slot)
-				BankItem targetItem = working.get(targetSlot);
-
-				newSteps.add(new OrderStep(
-					idealItem.itemId,
-					idealItem.name,
-					targetSlot,
-					"Insert " + idealItem.name + " before " + targetItem.name,
-					subCatName,
-					targetItem.itemId
-				));
-
-				BankItem removed = working.remove(currentSlot);
-				working.add(targetSlot, removed);
-			}
-		}
-
-		if (newSteps.isEmpty())
-		{
-			log.info("Ordering complete!");
-			orderingActive = false;
-			orderSteps.clear();
-			currentOrderStep = 0;
-			SwingUtilities.invokeLater(() ->
-			{
-				panel.updateOrderingState();
-				javax.swing.JOptionPane.showMessageDialog(null,
-					"All items are now in order!",
-					"Ordering Complete",
-					javax.swing.JOptionPane.INFORMATION_MESSAGE);
-			});
-		}
-		else
-		{
-			orderSteps = newSteps;
-			currentOrderStep = 0;
-			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
-			log.info("Ordering: {} steps remaining", newSteps.size());
-		}
+		computeNextOrderStep();
 	}
 
 	// === Right-click category assignment ===
@@ -763,128 +665,128 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
-			Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
-			if (bankWidget == null || bankWidget.isHidden())
+			orderingActive = true;
+			computeNextOrderStep();
+		});
+	}
+
+	/**
+	 * Find the first item that's out of place and create a single step for it.
+	 * Called on start and after each bank change.
+	 */
+	private void computeNextOrderStep()
+	{
+		Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		if (bankWidget == null || bankWidget.isHidden())
+		{
+			return;
+		}
+
+		int currentTab = client.getVarbitValue(4150);
+		ItemCategory tabCategory = getCategoryForTab(currentTab);
+		if (tabCategory == null) return;
+
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null) return;
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null) return;
+
+		// Collect current items
+		List<BankItem> currentItems = new ArrayList<>();
+		for (int slot = 0; slot < children.length; slot++)
+		{
+			Widget child = children[slot];
+			if (child == null || child.isHidden()) continue;
+			int itemId = child.getItemId();
+			if (itemId <= 0) continue;
+			String name = itemManager.getItemComposition(itemId).getName();
+			if (name == null || name.equals("null")) continue;
+			currentItems.add(new BankItem(itemId, name, slot));
+		}
+
+		// Compute ideal order
+		GearSortMode gearMode = config.gearSortMode();
+		TeleportSortMode teleportMode = config.teleportSortMode();
+
+		List<BankItem> idealOrder = new ArrayList<>(currentItems);
+		idealOrder.sort(Comparator.comparingLong(item ->
+			getItemSortKey(item, tabCategory, gearMode, teleportMode)
+		));
+
+		// Find the first item that's in the wrong position
+		// Compare ideal order against current order by item ID sequence
+		OrderStep nextStep = null;
+		int totalOutOfPlace = 0;
+
+		for (int i = 0; i < idealOrder.size(); i++)
+		{
+			if (i >= currentItems.size()) break;
+			if (idealOrder.get(i).itemId != currentItems.get(i).itemId)
 			{
-				log.debug("Bank is not open");
-				return;
-			}
+				totalOutOfPlace++;
 
-			int currentTab = getCurrentBankTab();
-			ItemCategory tabCategory = getCategoryForTab(currentTab);
-			if (tabCategory == null)
-			{
-				log.debug("No category mapped to current tab");
-				return;
-			}
-
-			Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
-			if (bankItemContainer == null) return;
-			Widget[] children = bankItemContainer.getDynamicChildren();
-			if (children == null) return;
-
-			// Collect all items in the tab with their current positions
-			List<BankItem> currentItems = new ArrayList<>();
-			for (int slot = 0; slot < children.length; slot++)
-			{
-				Widget child = children[slot];
-				if (child == null || child.isHidden()) continue;
-				int itemId = child.getItemId();
-				if (itemId <= 0) continue;
-				String name = itemManager.getItemComposition(itemId).getName();
-				if (name == null || name.equals("null")) continue;
-				currentItems.add(new BankItem(itemId, name, slot));
-			}
-
-			// Sort items into ideal order
-			List<BankItem> idealOrder = new ArrayList<>(currentItems);
-			GearSortMode gearMode = config.gearSortMode();
-			TeleportSortMode teleportMode = config.teleportSortMode();
-
-			idealOrder.sort(Comparator.comparingLong(item ->
-			{
-				if (tabCategory == ItemCategory.GEAR)
+				if (nextStep == null)
 				{
-					return categorizer.getGearFullSortKey(item.name, item.itemId,
-						getEquipmentStats(item.itemId), gearMode);
-				}
-				else if (tabCategory == ItemCategory.TELEPORTS)
-				{
-					TeleportSubCategory sub = categorizer.getTeleportSubCategory(item.name, item.itemId);
-					return categorizer.getTeleportSortOrder(sub, teleportMode);
-				}
-				return 0;
-			}));
+					// The item that SHOULD be at position i
+					BankItem idealItem = idealOrder.get(i);
+					// The item that IS at position i (what we need to insert before)
+					BankItem currentAtTarget = currentItems.get(i);
 
-			// Debug: log sort keys
-			for (int i = 0; i < Math.min(idealOrder.size(), 20); i++)
-			{
-				BankItem item = idealOrder.get(i);
-				long key = 0;
-				if (tabCategory == ItemCategory.GEAR)
-				{
-					key = categorizer.getGearFullSortKey(item.name, item.itemId,
-						getEquipmentStats(item.itemId), gearMode);
-				}
-				log.debug("Ideal[{}]: {} (ID:{}) key={}", i, item.name, item.itemId, key);
-			}
+					String subCatName = getSubCategoryName(idealItem, tabCategory);
 
-			// Generate order steps: find items that need to move
-			List<OrderStep> steps = new ArrayList<>();
-			for (int targetSlot = 0; targetSlot < idealOrder.size(); targetSlot++)
-			{
-				BankItem idealItem = idealOrder.get(targetSlot);
-				// Find where this item currently is in the working order
-				int currentSlot = -1;
-				for (int j = 0; j < currentItems.size(); j++)
-				{
-					if (currentItems.get(j).itemId == idealItem.itemId)
-					{
-						currentSlot = j;
-						break;
-					}
-				}
-
-				if (currentSlot != targetSlot && currentSlot >= 0)
-				{
-					String subCatName = "";
-					if (tabCategory == ItemCategory.GEAR)
-					{
-						subCatName = categorizer.getGearSubCategory(idealItem.name, idealItem.itemId, getEquipmentStats(idealItem.itemId)).getDisplayName();
-					}
-					else if (tabCategory == ItemCategory.TELEPORTS)
-					{
-						subCatName = categorizer.getTeleportSubCategory(idealItem.name, idealItem.itemId).getDisplayName();
-					}
-
-					BankItem targetItem = targetSlot < currentItems.size() ?
-						currentItems.get(targetSlot) : null;
-					String targetItemName = targetItem != null ? targetItem.name : "position " + (targetSlot + 1);
-					int targetItemId = targetItem != null ? targetItem.itemId : -1;
-
-					steps.add(new OrderStep(
+					nextStep = new OrderStep(
 						idealItem.itemId,
 						idealItem.name,
-						targetSlot,
-						"Insert " + idealItem.name + " before " + targetItemName,
+						i,
+						"Insert " + idealItem.name + " before " + currentAtTarget.name,
 						subCatName,
-						targetItemId
-					));
-
-					// Simulate the insert in our working list
-					BankItem removed = currentItems.remove(currentSlot);
-					currentItems.add(targetSlot, removed);
+						currentAtTarget.itemId
+					);
 				}
 			}
+		}
 
+		if (nextStep == null)
+		{
+			// Everything is in order!
+			orderingActive = false;
+			orderSteps.clear();
+			currentOrderStep = 0;
+			SwingUtilities.invokeLater(() ->
+			{
+				panel.updateOrderingState();
+				javax.swing.JOptionPane.showMessageDialog(null,
+					"All items are now in order!",
+					"Ordering Complete",
+					javax.swing.JOptionPane.INFORMATION_MESSAGE);
+			});
+		}
+		else
+		{
+			List<OrderStep> steps = new ArrayList<>();
+			steps.add(nextStep);
 			orderSteps = steps;
 			currentOrderStep = 0;
-			orderingActive = !steps.isEmpty();
 
+			int remaining = totalOutOfPlace;
 			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+			log.info("Ordering: {} items out of place. Next: move {} before slot {}",
+				remaining, nextStep.itemName, nextStep.targetSlot);
+		}
+	}
 
-			log.info("Ordering: {} steps to reorder {} tab", steps.size(), tabCategory.getDisplayName());
-		});
+	private String getSubCategoryName(BankItem item, ItemCategory tabCategory)
+	{
+		if (tabCategory == ItemCategory.GEAR)
+		{
+			return categorizer.getGearSubCategory(item.name, item.itemId,
+				getEquipmentStats(item.itemId)).getDisplayName();
+		}
+		else if (tabCategory == ItemCategory.TELEPORTS)
+		{
+			return categorizer.getTeleportSubCategory(item.name, item.itemId).getDisplayName();
+		}
+		return "";
 	}
 
 	public void advanceOrderStep()
