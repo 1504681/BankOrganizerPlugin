@@ -121,6 +121,19 @@ public class BankOrganizerPanel extends PluginPanel
 		orderButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 		orderButton.addActionListener(e -> plugin.startOrdering());
 		mainPanel.add(orderButton);
+		mainPanel.add(Box.createVerticalStrut(3));
+
+		JButton skipUntaggedBtn = new JButton("Skip Untagged: ON");
+		skipUntaggedBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
+		skipUntaggedBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+		skipUntaggedBtn.setFont(skipUntaggedBtn.getFont().deriveFont(11f));
+		skipUntaggedBtn.addActionListener(e ->
+		{
+			boolean skip = !plugin.isSkipUntagged();
+			plugin.setSkipUntagged(skip);
+			skipUntaggedBtn.setText("Skip Untagged: " + (skip ? "ON" : "OFF"));
+		});
+		mainPanel.add(skipUntaggedBtn);
 		mainPanel.add(Box.createVerticalStrut(5));
 
 		// Export/Import overrides

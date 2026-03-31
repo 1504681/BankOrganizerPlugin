@@ -79,7 +79,8 @@ public class BankOrganizerPlugin extends Plugin
 	private ItemCategory activeFilter;
 	private boolean scanActive = false;
 	private boolean categorizeMode = false;
-	private boolean subCategoryMode = false; // false=category, true=subcategory
+	private boolean subCategoryMode = false;
+	private boolean skipUntagged = true; // Skip items without subcategory during ordering
 
 	// Ordering state
 	private boolean orderingActive = false;
@@ -98,6 +99,8 @@ public class BankOrganizerPlugin extends Plugin
 	public void setCategorizeMode(boolean mode) { this.categorizeMode = mode; }
 	public boolean isSubCategoryMode() { return subCategoryMode; }
 	public void setSubCategoryMode(boolean mode) { this.subCategoryMode = mode; }
+	public boolean isSkipUntagged() { return skipUntagged; }
+	public void setSkipUntagged(boolean skip) { this.skipUntagged = skip; }
 	public boolean isOrderingActive() { return orderingActive; }
 	public List<OrderStep> getOrderSteps() { return orderSteps; }
 	public int getCurrentOrderStep() { return currentOrderStep; }
@@ -280,8 +283,30 @@ public class BankOrganizerPlugin extends Plugin
 		ItemCategory currentCategory = categorizer.categorize(
 			itemName != null ? itemName : "", itemId);
 
-		// Add "Remove Override" if has manual override
-		if (categorizer.hasManualOverride(itemId) || categorizer.hasSubCategoryOverride(itemId))
+		// Get current subcategory
+		int currentSkillIdx = categorizer.getSkillGroupIndex(
+			itemName != null ? itemName : "", itemId);
+		String currentSkillName = (currentSkillIdx < ItemCategorizer.SKILL_NAMES.length)
+			? ItemCategorizer.SKILL_NAMES[currentSkillIdx] : null;
+
+		// Add "Remove: {skill}" if has subcategory override, or "Remove Override" for category
+		if (categorizer.hasSubCategoryOverride(itemId))
+		{
+			int subIdx = categorizer.getSubCategoryOverrides().get(itemId);
+			String subName = subIdx < ItemCategorizer.SKILL_NAMES.length
+				? ItemCategorizer.SKILL_NAMES[subIdx] : "Unknown";
+			java.awt.Color subColor = subIdx < ItemCategorizer.SKILL_COLORS.length
+				? ItemCategorizer.SKILL_COLORS[subIdx]
+				: getColorForCategory(ItemCategory.SKILLING);
+			client.createMenuEntry(-1)
+				.setOption(ColorUtil.colorTag(subColor) + "Remove: " + subName)
+				.setTarget(event.getTarget())
+				.setIdentifier(itemId)
+				.setType(MenuAction.RUNELITE)
+				.setParam0(event.getActionParam0())
+				.setParam1(widgetId);
+		}
+		else if (categorizer.hasManualOverride(itemId))
 		{
 			client.createMenuEntry(-1)
 				.setOption(MENU_REMOVE_OVERRIDE)
@@ -294,16 +319,20 @@ public class BankOrganizerPlugin extends Plugin
 
 		if (subCategoryMode)
 		{
-			// SUBCATEGORY MODE: show all skills only
+			// SUBCATEGORY MODE: show all skills, mark current with "Current:"
 			String[] skillNames = ItemCategorizer.SKILL_NAMES;
 			for (int i = skillNames.length - 1; i >= 0; i--)
 			{
 				java.awt.Color skillColor = i < ItemCategorizer.SKILL_COLORS.length
 						? ItemCategorizer.SKILL_COLORS[i]
 						: getColorForCategory(ItemCategory.SKILLING);
+
+				String prefix = (currentSkillName != null && skillNames[i].equals(currentSkillName))
+					? "Current: " : "Sub: ";
+
 				client.createMenuEntry(-1)
 					.setOption(ColorUtil.colorTag(skillColor)
-						+ "Sub: " + skillNames[i])
+						+ prefix + skillNames[i])
 					.setTarget(event.getTarget())
 					.setIdentifier(itemId)
 					.setType(MenuAction.RUNELITE)
@@ -361,7 +390,7 @@ public class BankOrganizerPlugin extends Plugin
 		// Strip color tags for comparison
 		String stripped = option.replaceAll("<[^>]+>", "");
 
-		if (MENU_REMOVE_OVERRIDE.equals(stripped))
+		if (MENU_REMOVE_OVERRIDE.equals(stripped) || stripped.startsWith("Remove: "))
 		{
 			int itemId = event.getId();
 			categorizer.removeManualOverride(itemId);
@@ -905,8 +934,8 @@ public class BankOrganizerPlugin extends Plugin
 						currentItems.get(idealPos).name, currentItems.get(idealPos).itemId);
 				}
 
-				// Skip "everything else" items (skill 99)
-				if (tabCategory == ItemCategory.SKILLING)
+				// Optionally skip items without subcategory (skill 99)
+				if (skipUntagged && tabCategory == ItemCategory.SKILLING)
 				{
 					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 					if (skillIdx >= 99) continue;
