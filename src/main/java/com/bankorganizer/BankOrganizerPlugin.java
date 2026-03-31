@@ -789,12 +789,12 @@ public class BankOrganizerPlugin extends Plugin
 			GearSortMode gearMode = config.gearSortMode();
 			TeleportSortMode teleportMode = config.teleportSortMode();
 
-			idealOrder.sort(Comparator.comparingInt(item ->
+			idealOrder.sort(Comparator.comparingLong(item ->
 			{
 				if (tabCategory == ItemCategory.GEAR)
 				{
-					GearSubCategory sub = categorizer.getGearSubCategory(item.name, item.itemId, getEquipmentStats(item.itemId));
-					return categorizer.getGearSortOrder(sub, gearMode);
+					return categorizer.getGearFullSortKey(item.name, item.itemId,
+						getEquipmentStats(item.itemId), gearMode);
 				}
 				else if (tabCategory == ItemCategory.TELEPORTS)
 				{
@@ -803,6 +803,19 @@ public class BankOrganizerPlugin extends Plugin
 				}
 				return 0;
 			}));
+
+			// Debug: log sort keys
+			for (int i = 0; i < Math.min(idealOrder.size(), 20); i++)
+			{
+				BankItem item = idealOrder.get(i);
+				long key = 0;
+				if (tabCategory == ItemCategory.GEAR)
+				{
+					key = categorizer.getGearFullSortKey(item.name, item.itemId,
+						getEquipmentStats(item.itemId), gearMode);
+				}
+				log.debug("Ideal[{}]: {} (ID:{}) key={}", i, item.name, item.itemId, key);
+			}
 
 			// Generate order steps: find items that need to move
 			List<OrderStep> steps = new ArrayList<>();
