@@ -48,12 +48,89 @@ public class ItemCategorizer
 		// Rune pouch
 		itemIdMap.put(12791, ItemCategory.TELEPORTS);
 
+		// Teleport jewelry — Amulet of glory (1-6 charges + uncharged)
+		itemIdMap.put(1704, ItemCategory.TELEPORTS);  // Glory(4)
+		itemIdMap.put(1706, ItemCategory.TELEPORTS);  // Glory(3)
+		itemIdMap.put(1708, ItemCategory.TELEPORTS);  // Glory(2)
+		itemIdMap.put(1710, ItemCategory.TELEPORTS);  // Glory(1)
+		itemIdMap.put(1712, ItemCategory.TELEPORTS);  // Glory (uncharged)
+		itemIdMap.put(11978, ItemCategory.TELEPORTS); // Glory(6)
+		itemIdMap.put(11976, ItemCategory.TELEPORTS); // Glory(5)
+		// Ring of dueling (1-8 charges)
+		itemIdMap.put(2552, ItemCategory.TELEPORTS);  // Ring of dueling(8)
+		itemIdMap.put(2554, ItemCategory.TELEPORTS);  // Ring of dueling(7)
+		itemIdMap.put(2556, ItemCategory.TELEPORTS);  // Ring of dueling(6)
+		itemIdMap.put(2558, ItemCategory.TELEPORTS);  // Ring of dueling(5)
+		itemIdMap.put(2560, ItemCategory.TELEPORTS);  // Ring of dueling(4)
+		itemIdMap.put(2562, ItemCategory.TELEPORTS);  // Ring of dueling(3)
+		itemIdMap.put(2564, ItemCategory.TELEPORTS);  // Ring of dueling(2)
+		itemIdMap.put(2566, ItemCategory.TELEPORTS);  // Ring of dueling(1)
+		// Games necklace (1-8 charges)
+		itemIdMap.put(3853, ItemCategory.TELEPORTS);  // Games necklace(8)
+		itemIdMap.put(3855, ItemCategory.TELEPORTS);  // Games necklace(7)
+		itemIdMap.put(3857, ItemCategory.TELEPORTS);  // Games necklace(6)
+		itemIdMap.put(3859, ItemCategory.TELEPORTS);  // Games necklace(5)
+		itemIdMap.put(3861, ItemCategory.TELEPORTS);  // Games necklace(4)
+		itemIdMap.put(3863, ItemCategory.TELEPORTS);  // Games necklace(3)
+		itemIdMap.put(3865, ItemCategory.TELEPORTS);  // Games necklace(2)
+		itemIdMap.put(3867, ItemCategory.TELEPORTS);  // Games necklace(1)
+		// Ring of wealth (1-5 charges)
+		itemIdMap.put(11980, ItemCategory.TELEPORTS); // Ring of wealth(5)
+		itemIdMap.put(11982, ItemCategory.TELEPORTS); // Ring of wealth(4)
+		itemIdMap.put(11984, ItemCategory.TELEPORTS); // Ring of wealth(3)
+		itemIdMap.put(11986, ItemCategory.TELEPORTS); // Ring of wealth(2)
+		itemIdMap.put(11988, ItemCategory.TELEPORTS); // Ring of wealth(1)
+		// Skills necklace (1-6 charges)
+		itemIdMap.put(11105, ItemCategory.TELEPORTS); // Skills necklace(6)
+		itemIdMap.put(11107, ItemCategory.TELEPORTS); // Skills necklace(5)
+		itemIdMap.put(11109, ItemCategory.TELEPORTS); // Skills necklace(4)
+		itemIdMap.put(11111, ItemCategory.TELEPORTS); // Skills necklace(3)
+		itemIdMap.put(11113, ItemCategory.TELEPORTS); // Skills necklace(2)
+		itemIdMap.put(11115, ItemCategory.TELEPORTS); // Skills necklace(1)
+		// Combat bracelet (1-6 charges)
+		itemIdMap.put(11118, ItemCategory.TELEPORTS); // Combat bracelet(6)
+		itemIdMap.put(11120, ItemCategory.TELEPORTS); // Combat bracelet(5)
+		itemIdMap.put(11122, ItemCategory.TELEPORTS); // Combat bracelet(4)
+		itemIdMap.put(11124, ItemCategory.TELEPORTS); // Combat bracelet(3)
+		itemIdMap.put(11126, ItemCategory.TELEPORTS); // Combat bracelet(2)
+		itemIdMap.put(11128, ItemCategory.TELEPORTS); // Combat bracelet(1)
+		// Necklace of passage (1-5 charges)
+		itemIdMap.put(21146, ItemCategory.TELEPORTS); // Necklace of passage(5)
+		itemIdMap.put(21149, ItemCategory.TELEPORTS); // Necklace of passage(4)
+		itemIdMap.put(21151, ItemCategory.TELEPORTS); // Necklace of passage(3)
+		itemIdMap.put(21153, ItemCategory.TELEPORTS); // Necklace of passage(2)
+		itemIdMap.put(21155, ItemCategory.TELEPORTS); // Necklace of passage(1)
+		// Burning amulet (1-5 charges)
+		itemIdMap.put(21166, ItemCategory.TELEPORTS); // Burning amulet(5)
+		itemIdMap.put(21169, ItemCategory.TELEPORTS); // Burning amulet(4)
+		itemIdMap.put(21171, ItemCategory.TELEPORTS); // Burning amulet(3)
+		itemIdMap.put(21173, ItemCategory.TELEPORTS); // Burning amulet(2)
+		itemIdMap.put(21175, ItemCategory.TELEPORTS); // Burning amulet(1)
+		// Digsite pendant (1-5 charges)
+		itemIdMap.put(11190, ItemCategory.TELEPORTS); // Digsite pendant(5)
+		itemIdMap.put(11191, ItemCategory.TELEPORTS); // Digsite pendant(4)
+		itemIdMap.put(11192, ItemCategory.TELEPORTS); // Digsite pendant(3)
+		itemIdMap.put(11193, ItemCategory.TELEPORTS); // Digsite pendant(2)
+		itemIdMap.put(11194, ItemCategory.TELEPORTS); // Digsite pendant(1)
+
 		// === GEAR ===
 		itemIdMap.put(7462, ItemCategory.GEAR);  // Barrows gloves
 		itemIdMap.put(6570, ItemCategory.GEAR);  // Fire cape
 		itemIdMap.put(21295, ItemCategory.GEAR); // Infernal cape
 		itemIdMap.put(10499, ItemCategory.GEAR); // Ava's accumulator
 		itemIdMap.put(22109, ItemCategory.GEAR); // Ava's assembler
+		// Mystic robes
+		itemIdMap.put(4089, ItemCategory.GEAR);  // Mystic hat
+		itemIdMap.put(4091, ItemCategory.GEAR);  // Mystic robe top
+		itemIdMap.put(4093, ItemCategory.GEAR);  // Mystic robe bottom
+		itemIdMap.put(4095, ItemCategory.GEAR);  // Mystic hat (dark)
+		itemIdMap.put(4097, ItemCategory.GEAR);  // Mystic robe top (dark)
+		itemIdMap.put(4099, ItemCategory.GEAR);  // Mystic robe bottom (dark)
+		itemIdMap.put(4101, ItemCategory.GEAR);  // Mystic hat (light)
+		itemIdMap.put(4103, ItemCategory.GEAR);  // Mystic robe top (light)
+		itemIdMap.put(4105, ItemCategory.GEAR);  // Mystic robe bottom (light)
+		itemIdMap.put(4107, ItemCategory.GEAR);  // Mystic gloves
+		itemIdMap.put(4109, ItemCategory.GEAR);  // Mystic boots
 
 		// === POTIONS ===
 		// Super combat (4-1 dose)

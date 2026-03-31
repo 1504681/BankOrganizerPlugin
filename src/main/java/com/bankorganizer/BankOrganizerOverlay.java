@@ -15,6 +15,10 @@ import net.runelite.client.ui.overlay.OverlayPosition;
 
 public class BankOrganizerOverlay extends Overlay
 {
+	// Bank tab widget IDs (WidgetInfo for tabs 1-9)
+	private static final int BANK_TAB_CONTAINER_GROUP = 12;
+	private static final int BANK_TAB_CONTAINER_CHILD = 42;
+
 	private final Client client;
 	private final BankOrganizerPlugin plugin;
 
@@ -31,57 +35,142 @@ public class BankOrganizerOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
+		if (!plugin.isScanActive())
+		{
+			// Still draw tab colors even without a scan
+			drawTabColors(graphics);
+			return null;
+		}
+
+		drawTabColors(graphics);
+		drawMisplacedItems(graphics);
+
+		return null;
+	}
+
+	private void drawTabColors(Graphics2D graphics)
+	{
+		Widget tabContainer = client.getWidget(WidgetInfo.BANK_TAB_CONTAINER);
+		if (tabContainer == null || tabContainer.isHidden())
+		{
+			return;
+		}
+
+		Widget[] tabs = tabContainer.getDynamicChildren();
+		if (tabs == null)
+		{
+			tabs = tabContainer.getStaticChildren();
+		}
+		if (tabs == null)
+		{
+			return;
+		}
+
+		// Tab container children: index 0 is usually "all" tab, indices 1-9 are tabs 1-9
+		for (int i = 0; i < tabs.length && i <= 9; i++)
+		{
+			if (i == 0)
+			{
+				continue; // Skip "all items" tab
+			}
+
+			ItemCategory category = plugin.getCategoryForTab(i);
+			if (category == null)
+			{
+				continue;
+			}
+
+			Widget tabWidget = tabs[i];
+			if (tabWidget == null || tabWidget.isHidden())
+			{
+				continue;
+			}
+
+			Rectangle tabBounds = tabWidget.getBounds();
+			if (tabBounds == null || tabBounds.width <= 0)
+			{
+				continue;
+			}
+
+			Color color = category.getColor();
+			Color barColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 160);
+
+			int barHeight = 3;
+			graphics.setColor(barColor);
+			graphics.fillRect(tabBounds.x, tabBounds.y + tabBounds.height - barHeight,
+				tabBounds.width, barHeight);
+		}
+	}
+
+	private void drawMisplacedItems(Graphics2D graphics)
+	{
 		Map<Integer, ItemCategory> misplacedItems = plugin.getMisplacedItems();
 		ItemCategory activeFilter = plugin.getActiveFilter();
 
 		if (misplacedItems == null || misplacedItems.isEmpty())
 		{
-			return null;
+			return;
 		}
 
 		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null || bankItemContainer.isHidden())
 		{
-			return null;
+			return;
 		}
 
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null)
 		{
-			return null;
+			return;
 		}
 
-		for (Map.Entry<Integer, ItemCategory> entry : misplacedItems.entrySet())
+		Rectangle containerBounds = bankItemContainer.getBounds();
+
+		// Check each visible widget slot against misplaced item IDs
+		for (Widget child : children)
 		{
-			int slot = entry.getKey();
-			ItemCategory correctCategory = entry.getValue();
+			if (child == null || child.isHidden())
+			{
+				continue;
+			}
+
+			int itemId = child.getItemId();
+			if (itemId <= 0)
+			{
+				continue;
+			}
+
+			ItemCategory correctCategory = misplacedItems.get(itemId);
+			if (correctCategory == null)
+			{
+				continue;
+			}
 
 			if (activeFilter != null && activeFilter != correctCategory)
 			{
 				continue;
 			}
 
-			if (slot < children.length)
+			Rectangle bounds = child.getBounds();
+			if (bounds == null || bounds.width <= 0)
 			{
-				Widget itemWidget = children[slot];
-				if (itemWidget != null && !itemWidget.isHidden())
-				{
-					Rectangle bounds = itemWidget.getBounds();
-					if (bounds != null && bounds.width > 0)
-					{
-						Color color = correctCategory.getColor();
-						Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 80);
-						Color borderColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 200);
-
-						graphics.setColor(fillColor);
-						graphics.fill(bounds);
-						graphics.setColor(borderColor);
-						graphics.draw(bounds);
-					}
-				}
+				continue;
 			}
-		}
 
-		return null;
+			// Only draw if within the visible bank scroll area
+			if (containerBounds != null && !containerBounds.contains(bounds))
+			{
+				continue;
+			}
+
+			Color color = correctCategory.getColor();
+			Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 80);
+			Color borderColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 200);
+
+			graphics.setColor(fillColor);
+			graphics.fill(bounds);
+			graphics.setColor(borderColor);
+			graphics.draw(bounds);
+		}
 	}
 }

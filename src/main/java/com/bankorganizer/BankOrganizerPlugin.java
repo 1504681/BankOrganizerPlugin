@@ -6,15 +6,13 @@ import java.util.HashMap;
 import java.util.Map;
 import javax.inject.Inject;
 import javax.swing.SwingUtilities;
-import lombok.Getter;
-import lombok.Setter;
-import lombok.extern.slf4j.Slf4j;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import net.runelite.api.Client;
-import net.runelite.api.ItemContainer;
-import net.runelite.api.InventoryID;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.WidgetInfo;
 import net.runelite.client.callback.ClientThread;
+import com.google.inject.Provides;
 import net.runelite.client.config.ConfigManager;
 import net.runelite.client.eventbus.Subscribe;
 import net.runelite.client.events.ConfigChanged;
@@ -26,7 +24,6 @@ import net.runelite.client.ui.NavigationButton;
 import net.runelite.client.ui.overlay.OverlayManager;
 import net.runelite.client.util.ImageUtil;
 
-@Slf4j
 @PluginDescriptor(
 	name = "Bank Organizer",
 	description = "Scans bank items and highlights misplaced ones based on category presets",
@@ -34,6 +31,8 @@ import net.runelite.client.util.ImageUtil;
 )
 public class BankOrganizerPlugin extends Plugin
 {
+	private static final Logger log = LoggerFactory.getLogger(BankOrganizerPlugin.class);
+
 	@Inject
 	private Client client;
 
@@ -62,15 +61,25 @@ public class BankOrganizerPlugin extends Plugin
 	private NavigationButton navButton;
 	private ItemCategorizer categorizer;
 
-	@Getter
+	// Keyed by item ID, not slot index
 	private Map<Integer, ItemCategory> misplacedItems = new HashMap<>();
-
-	@Getter
 	private Map<Integer, String> misplacedItemNames = new HashMap<>();
-
-	@Getter
-	@Setter
 	private ItemCategory activeFilter;
+	private boolean scanActive = false;
+
+	public Map<Integer, ItemCategory> getMisplacedItems() { return misplacedItems; }
+	public Map<Integer, String> getMisplacedItemNames() { return misplacedItemNames; }
+	public ItemCategory getActiveFilter() { return activeFilter; }
+	public void setActiveFilter(ItemCategory activeFilter) { this.activeFilter = activeFilter; }
+	public boolean isScanActive() { return scanActive; }
+	public ItemCategorizer getCategorizer() { return categorizer; }
+	public ItemManager getItemManager() { return itemManager; }
+
+	@Provides
+	BankOrganizerConfig provideConfig(ConfigManager configManager)
+	{
+		return configManager.getConfig(BankOrganizerConfig.class);
+	}
 
 	@Override
 	protected void startUp()
@@ -110,6 +119,7 @@ public class BankOrganizerPlugin extends Plugin
 		overlayManager.remove(overlay);
 		misplacedItems.clear();
 		misplacedItemNames.clear();
+		scanActive = false;
 
 		log.info("Bank Organizer stopped!");
 	}
@@ -221,22 +231,24 @@ public class BankOrganizerPlugin extends Plugin
 				}
 
 				ItemCategory correctCategory = categorizer.categorize(itemName, itemId);
+				log.debug("Item: {} (ID: {}) -> {}", itemName, itemId, correctCategory);
 
 				if (expectedCategory != null && correctCategory != expectedCategory)
 				{
-					newMisplaced.put(slot, correctCategory);
-					newNames.put(slot, itemName);
+					// Key by item ID so highlights follow items when they move
+					newMisplaced.put(itemId, correctCategory);
+					newNames.put(itemId, itemName);
 				}
 				else if (expectedCategory == null)
 				{
-					// Main tab or unmapped: show where each item should go
-					newMisplaced.put(slot, correctCategory);
-					newNames.put(slot, itemName);
+					newMisplaced.put(itemId, correctCategory);
+					newNames.put(itemId, itemName);
 				}
 			}
 
 			misplacedItems = newMisplaced;
 			misplacedItemNames = newNames;
+			scanActive = true;
 
 			Map<ItemCategory, Integer> tabMappings = getTabMappings();
 
