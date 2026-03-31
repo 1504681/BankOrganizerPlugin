@@ -14,6 +14,8 @@ import org.slf4j.LoggerFactory;
 import net.runelite.api.Client;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
+import net.runelite.api.InventoryID;
+import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.Widget;
@@ -154,6 +156,63 @@ public class BankOrganizerPlugin extends Plugin
 		if ("bankorganizer".equals(event.getGroup()))
 		{
 			updateRegexFromConfig();
+		}
+	}
+
+	@Subscribe
+	public void onItemContainerChanged(ItemContainerChanged event)
+	{
+		if (!orderingActive || event.getContainerId() != InventoryID.BANK.getId())
+		{
+			return;
+		}
+
+		// Check if the current ordering step was completed
+		if (currentOrderStep >= orderSteps.size())
+		{
+			return;
+		}
+
+		OrderStep step = orderSteps.get(currentOrderStep);
+
+		// Read the bank widget to check if the item is now at the target slot
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null)
+		{
+			return;
+		}
+
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null || step.targetSlot >= children.length)
+		{
+			return;
+		}
+
+		Widget targetWidget = children[step.targetSlot];
+		if (targetWidget != null && targetWidget.getItemId() == step.itemId)
+		{
+			log.info("Ordering step {} complete: {} moved to slot {}",
+				currentOrderStep + 1, step.itemName, step.targetSlot);
+
+			if (currentOrderStep < orderSteps.size() - 1)
+			{
+				currentOrderStep++;
+				SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+			}
+			else
+			{
+				// All done!
+				log.info("Ordering complete!");
+				orderingActive = false;
+				SwingUtilities.invokeLater(() ->
+				{
+					panel.updateOrderingState();
+					javax.swing.JOptionPane.showMessageDialog(null,
+						"All items are now in order!",
+						"Ordering Complete",
+						javax.swing.JOptionPane.INFORMATION_MESSAGE);
+				});
+			}
 		}
 	}
 
