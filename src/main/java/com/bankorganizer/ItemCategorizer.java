@@ -692,10 +692,11 @@ public class ItemCategorizer
 		}
 
 		// Invert stat so higher stats sort first (lower key value = sorted first)
-		int invertedStat = 999999 - statValue;
+		long invertedStat = 999999 - statValue;
+		if (invertedStat < 0) invertedStat = 0;
 
-		// Pack: subOrder (8 bits) | slotOrder (8 bits) | invertedStat (remaining)
-		return ((long) subOrder << 24) | ((long) slotOrder << 16) | (invertedStat & 0xFFFF);
+		// Pack into long with enough bits: subOrder (8 bits) | slotOrder (8 bits) | invertedStat (20 bits)
+		return ((long) subOrder << 28) | ((long) slotOrder << 20) | (invertedStat & 0xFFFFF);
 	}
 
 	public int getGearSortOrder(GearSubCategory sub, GearSortMode mode)
