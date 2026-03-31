@@ -86,7 +86,7 @@ public class BankOrganizerOverlay extends Overlay
 
 			Rectangle bounds = child.getBounds();
 			if (bounds == null || bounds.width <= 0) continue;
-			if (containerBounds != null && !containerBounds.contains(bounds)) continue;
+			if (containerBounds != null && !containerBounds.intersects(bounds)) continue;
 
 			String itemName = plugin.getItemManager().getItemComposition(itemId).getName();
 			if (itemName == null || itemName.equals("null")) continue;
@@ -189,6 +189,13 @@ public class BankOrganizerOverlay extends Overlay
 		Rectangle containerBounds = bankItemContainer.getBounds();
 		ItemCategory activeFilter = plugin.getActiveFilter();
 
+		// Clip to bank container so partial items don't overflow
+		java.awt.Shape oldClip = graphics.getClip();
+		if (containerBounds != null)
+		{
+			graphics.setClip(containerBounds);
+		}
+
 		for (Widget child : children)
 		{
 			if (child == null || child.isHidden()) continue;
@@ -197,7 +204,7 @@ public class BankOrganizerOverlay extends Overlay
 
 			Rectangle bounds = child.getBounds();
 			if (bounds == null || bounds.width <= 0) continue;
-			if (containerBounds != null && !containerBounds.contains(bounds)) continue;
+			if (containerBounds != null && !containerBounds.intersects(bounds)) continue;
 
 			String itemName = plugin.getItemManager().getItemComposition(itemId).getName();
 			if (itemName == null || itemName.equals("null")) continue;
@@ -211,8 +218,8 @@ public class BankOrganizerOverlay extends Overlay
 
 			Color color = plugin.getColorForCategory(category);
 			int opacity = Math.max(0, Math.min(100, plugin.getConfig().overlayOpacity()));
-			int fillAlpha = (int)(opacity * 2.55);
-			int borderAlpha = Math.min(255, fillAlpha + 120);
+			int fillAlpha = (int)(opacity * 1.0); // 0-100 maps directly to alpha 0-100
+			int borderAlpha = Math.min(255, fillAlpha + 80);
 			Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), fillAlpha);
 			Color borderColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), borderAlpha);
 
@@ -221,6 +228,8 @@ public class BankOrganizerOverlay extends Overlay
 			graphics.setColor(borderColor);
 			graphics.draw(bounds);
 		}
+
+		graphics.setClip(oldClip);
 	}
 
 	private void drawMisplacedItems(Graphics2D graphics)
@@ -279,7 +288,7 @@ public class BankOrganizerOverlay extends Overlay
 			}
 
 			// Only draw if within the visible bank scroll area
-			if (containerBounds != null && !containerBounds.contains(bounds))
+			if (containerBounds != null && !containerBounds.intersects(bounds))
 			{
 				continue;
 			}
@@ -329,7 +338,7 @@ public class BankOrganizerOverlay extends Overlay
 
 			Rectangle bounds = child.getBounds();
 			if (bounds == null || bounds.width <= 0) continue;
-			if (containerBounds != null && !containerBounds.contains(bounds)) continue;
+			if (containerBounds != null && !containerBounds.intersects(bounds)) continue;
 
 			if (itemId == step.itemId)
 			{
@@ -454,7 +463,7 @@ public class BankOrganizerOverlay extends Overlay
 				slotIndex++;
 				continue;
 			}
-			if (containerBounds != null && !containerBounds.contains(bounds))
+			if (containerBounds != null && !containerBounds.intersects(bounds))
 			{
 				slotIndex++;
 				continue;

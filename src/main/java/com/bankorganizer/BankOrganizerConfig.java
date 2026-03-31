@@ -42,7 +42,7 @@ public interface BankOrganizerConfig extends Config
 		position = 2,
 		section = generalSection
 	)
-	default int overlayOpacity() { return 60; }
+	default int overlayOpacity() { return 30; }
 
 	@ConfigSection(
 		name = "Tab Mappings",
