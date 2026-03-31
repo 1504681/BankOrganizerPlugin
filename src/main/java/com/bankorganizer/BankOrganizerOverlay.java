@@ -86,24 +86,29 @@ public class BankOrganizerOverlay extends Overlay
 			String itemName = plugin.getItemManager().getItemComposition(itemId).getName();
 			if (itemName == null || itemName.equals("null")) continue;
 
-			// Check if item is in a category with subcategories (Skilling)
 			ItemCategory cat = plugin.getCategorizer().categorize(itemName, itemId);
+			boolean untagged = false;
+
 			if (cat == ItemCategory.SKILLING)
 			{
-				int skillIdx = plugin.getCategorizer().getSkillGroupIndex(itemName, itemId);
-				if (skillIdx >= 99)
-				{
-					// Untagged — draw a distinct highlight (red/white dashed)
-					Color fill = new Color(255, 50, 50, 40);
-					Color border = new Color(255, 50, 50, 180);
-					graphics.setColor(fill);
-					graphics.fill(bounds);
-					graphics.setColor(border);
-					graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT,
-						BasicStroke.JOIN_MITER, 10, new float[]{3, 3}, 0));
-					graphics.draw(bounds);
-					graphics.setStroke(new BasicStroke(1));
-				}
+				untagged = plugin.getCategorizer().getSkillGroupIndex(itemName, itemId) >= 99;
+			}
+			else if (cat == ItemCategory.RAW_MATERIALS)
+			{
+				untagged = plugin.getCategorizer().getMaterialGroupIndex(itemName, itemId) >= 99;
+			}
+
+			if (untagged)
+			{
+				Color fill = new Color(255, 50, 50, 40);
+				Color border = new Color(255, 50, 50, 180);
+				graphics.setColor(fill);
+				graphics.fill(bounds);
+				graphics.setColor(border);
+				graphics.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT,
+					BasicStroke.JOIN_MITER, 10, new float[]{3, 3}, 0));
+				graphics.draw(bounds);
+				graphics.setStroke(new BasicStroke(1));
 			}
 		}
 	}
