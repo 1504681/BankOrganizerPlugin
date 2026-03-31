@@ -200,6 +200,7 @@ public class BankOrganizerPlugin extends Plugin
 		recomputeOrderSteps();
 	}
 
+
 	private void recomputeOrderSteps()
 	{
 		computeNextOrderStep();
