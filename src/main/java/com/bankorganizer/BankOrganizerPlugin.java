@@ -89,6 +89,7 @@ public class BankOrganizerPlugin extends Plugin
 	private int currentOrderStep = 0;
 	private int lastStepItemId = -1;
 	private int stuckCounter = 0;
+	private List<Integer> lastSeenItemOrder = new ArrayList<>();
 	private boolean previewMode = false;
 	private boolean overlayEnabled = false;
 	private List<PreviewItem> previewItems = new ArrayList<>();
@@ -228,7 +229,6 @@ public class BankOrganizerPlugin extends Plugin
 		// within a tab doesn't trigger ItemContainerChanged
 		if (!orderingActive) return;
 
-		// Only recompute if the bank is actually open
 		Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
 		if (bankWidget == null || bankWidget.isHidden()) return;
 
@@ -237,9 +237,21 @@ public class BankOrganizerPlugin extends Plugin
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null || children.length == 0) return;
 
-		// Check if the current widget items differ from our last known state
-		// to avoid unnecessary recomputes
-		recomputeOrderSteps();
+		// Build current item order and compare to last seen
+		List<Integer> currentOrder = new ArrayList<>(children.length);
+		for (Widget child : children)
+		{
+			if (child != null && !child.isHidden() && child.getItemId() > 0)
+			{
+				currentOrder.add(child.getItemId());
+			}
+		}
+
+		if (!currentOrder.equals(lastSeenItemOrder))
+		{
+			lastSeenItemOrder = currentOrder;
+			recomputeOrderSteps();
+		}
 	}
 
 

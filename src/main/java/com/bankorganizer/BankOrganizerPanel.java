@@ -428,12 +428,12 @@ public class BankOrganizerPanel extends PluginPanel
 			{
 				BankOrganizerPlugin.OrderStep step = steps.get(current);
 				orderingSubCatLabel.setText("<html><b>" + step.phaseDescription + "</b></html>");
-				orderingSubCatLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(15f));
+				orderingSubCatLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
 				orderingSubCatLabel.setForeground(new Color(80, 220, 80));
 				orderingStepLabel.setText("<html>" + step.instruction + "</html>");
-				orderingStepLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(12f));
+				orderingStepLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(14f));
 				orderingProgressLabel.setText(step.totalOutOfPlace + " remaining");
-				orderingProgressLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 11f));
+				orderingProgressLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(13f));
 			}
 		}
 		else
