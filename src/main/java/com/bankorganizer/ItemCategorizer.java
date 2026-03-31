@@ -1279,139 +1279,115 @@ public class ItemCategorizer
 	public long getSkillingFullSortKey(String itemName, int itemId)
 	{
 		String lower = itemName.toLowerCase();
-		int typeOrder = 99;
+		int skillOrder = 99;
 		int tierOrder = 50;
 
-		// === FARMING (highest priority) ===
+		// === FARMING (skill 0) ===
 		if (lower.contains("bottomless") && lower.contains("compost"))
-		{
-			typeOrder = 0; tierOrder = 0;
-		}
+		{ skillOrder = 0; tierOrder = 0; }
 		else if (lower.contains("compost"))
 		{
-			typeOrder = 0;
+			skillOrder = 0;
 			if (lower.contains("ultracompost")) tierOrder = 1;
 			else if (lower.contains("supercompost")) tierOrder = 2;
-			else tierOrder = 3; // Regular compost
+			else tierOrder = 3;
 		}
 		else if (lower.contains("herb sack"))
-		{
-			typeOrder = 0;
-			tierOrder = lower.contains("open") ? 5 : 4;
-		}
+		{ skillOrder = 0; tierOrder = lower.contains("open") ? 5 : 4; }
 		else if (lower.contains("magic secateurs"))
-		{
-			typeOrder = 0; tierOrder = 6;
-		}
+		{ skillOrder = 0; tierOrder = 6; }
 		else if (lower.contains("spade"))
-		{
-			typeOrder = 0; tierOrder = 7;
-		}
+		{ skillOrder = 0; tierOrder = 7; }
 		else if (lower.contains("rake"))
-		{
-			typeOrder = 0; tierOrder = 8;
-		}
+		{ skillOrder = 0; tierOrder = 8; }
 		else if (lower.contains("seed dibber"))
-		{
-			typeOrder = 0; tierOrder = 9;
-		}
+		{ skillOrder = 0; tierOrder = 9; }
 		else if (lower.contains("trowel"))
-		{
-			typeOrder = 0; tierOrder = 10;
-		}
+		{ skillOrder = 0; tierOrder = 10; }
 		else if (lower.contains("secateurs") && !lower.contains("magic"))
-		{
-			typeOrder = 0; tierOrder = 11;
-		}
+		{ skillOrder = 0; tierOrder = 11; }
 		else if (lower.contains("watering can"))
-		{
-			typeOrder = 0; tierOrder = 12;
-		}
+		{ skillOrder = 0; tierOrder = 12; }
 		else if (lower.contains("seed box"))
-		{
-			typeOrder = 0; tierOrder = 13;
-		}
-		// Farmer outfit
+		{ skillOrder = 0; tierOrder = 13; }
 		else if (lower.contains("farmer"))
-		{
-			typeOrder = 0; tierOrder = 20 + getOutfitSlotOrder(lower);
-		}
+		{ skillOrder = 0; tierOrder = 20 + getOutfitSlotOrder(lower); }
 
-		// === RUNECRAFTING ===
+		// === RUNECRAFTING (skill 1) ===
 		else if (lower.contains("colossal pouch"))
-		{
-			typeOrder = 1; tierOrder = 0;
-		}
+		{ skillOrder = 1; tierOrder = 0; }
 		else if (lower.contains("pouch") && !lower.contains("rune") && !lower.contains("fur")
 			&& (lower.contains("small") || lower.contains("medium") || lower.contains("large")
 				|| lower.contains("giant") || lower.contains("essence")))
-		{
-			typeOrder = 1; tierOrder = 1 + getPouchTier(lower);
-		}
+		{ skillOrder = 1; tierOrder = 1 + getPouchTier(lower); }
 		else if (lower.contains("talisman"))
-		{
-			typeOrder = 1; tierOrder = 10 + getTalismanOrder(lower);
-		}
+		{ skillOrder = 1; tierOrder = 10 + getTalismanOrder(lower); }
 		else if (lower.contains("pure essence"))
-		{
-			typeOrder = 1; tierOrder = 30;
-		}
+		{ skillOrder = 1; tierOrder = 30; }
 		else if (lower.contains("daeyalt"))
-		{
-			typeOrder = 1; tierOrder = 31;
-		}
+		{ skillOrder = 1; tierOrder = 31; }
 		else if (lower.contains("dark essence"))
-		{
-			typeOrder = 1; tierOrder = 32;
-		}
+		{ skillOrder = 1; tierOrder = 32; }
 
-		// === BONES (prayer) ===
+		// === WOODCUTTING (skill 2) ===
+		else if (lower.contains("lumberjack"))
+		{ skillOrder = 2; tierOrder = getOutfitSlotOrder(lower); }
+		else if (lower.contains("log basket") || lower.contains("forestry kit"))
+		{ skillOrder = 2; tierOrder = 10; }
+		else if (lower.contains("axe") && !lower.contains("pickaxe") && !lower.contains("battleaxe"))
+		{ skillOrder = 2; tierOrder = 20 + getToolTier(lower); }
+
+		// === FISHING (skill 3) ===
+		else if (lower.contains("angler"))
+		{ skillOrder = 3; tierOrder = getOutfitSlotOrder(lower); }
+		else if (lower.contains("fish barrel") || lower.contains("tackle box"))
+		{ skillOrder = 3; tierOrder = 10; }
+		else if (lower.contains("harpoon"))
+		{ skillOrder = 3; tierOrder = 20 + getToolTier(lower); }
+		else if (lower.contains("rod") || lower.contains("net"))
+		{ skillOrder = 3; tierOrder = 30; }
+
+		// === MINING (skill 4) ===
+		else if (lower.contains("prospector"))
+		{ skillOrder = 4; tierOrder = getOutfitSlotOrder(lower); }
+		else if (lower.contains("gem bag") || lower.contains("coal bag"))
+		{ skillOrder = 4; tierOrder = 10; }
+		else if (lower.contains("pickaxe"))
+		{ skillOrder = 4; tierOrder = 20 + getToolTier(lower); }
+
+		// === PRAYER (skill 5) ===
 		else if (lower.contains("bone") || lower.contains("skull"))
-		{
-			typeOrder = 2;
-			tierOrder = getBoneTier(lower);
-		}
+		{ skillOrder = 5; tierOrder = getBoneTier(lower); }
 
-		// === SKILLING OUTFITS ===
-		else if (lower.contains("graceful") || lower.contains("lumberjack")
-			|| lower.contains("angler") || lower.contains("prospector")
-			|| lower.contains("pyromancer") || lower.contains("rogue"))
-		{
-			typeOrder = 3;
-			tierOrder = getOutfitSlotOrder(lower);
-		}
+		// === AGILITY (skill 6) ===
+		else if (lower.contains("graceful"))
+		{ skillOrder = 6; tierOrder = getOutfitSlotOrder(lower); }
 
-		// === SKILLING TOOLS (axes, pickaxes by tier) ===
-		else if (lower.contains("axe") || lower.contains("pickaxe") || lower.contains("harpoon"))
-		{
-			typeOrder = 4;
-			tierOrder = getToolTier(lower);
-		}
+		// === FIREMAKING (skill 7) ===
+		else if (lower.contains("pyromancer"))
+		{ skillOrder = 7; tierOrder = getOutfitSlotOrder(lower); }
+		else if (lower.contains("tinderbox"))
+		{ skillOrder = 7; tierOrder = 10; }
 
-		// === STORAGE (fish barrel, gem bag, coal bag, etc.) ===
-		else if (lower.contains("barrel") || lower.contains("bag")
-			|| lower.contains("basket") || lower.contains("kit"))
-		{
-			typeOrder = 5;
-		}
+		// === THIEVING (skill 8) ===
+		else if (lower.contains("rogue"))
+		{ skillOrder = 8; tierOrder = getOutfitSlotOrder(lower); }
 
-		// === BASIC TOOLS ===
+		// === CRAFTING/SMITHING (skill 9) ===
 		else if (lower.contains("hammer") || lower.contains("chisel")
-			|| lower.contains("tinderbox") || lower.contains("knife")
-			|| lower.contains("needle") || lower.contains("saw")
-			|| lower.contains("pestle") || lower.contains("shears")
-			|| lower.contains("glassblowing"))
-		{
-			typeOrder = 6;
-		}
+			|| lower.contains("needle") || lower.contains("glassblowing")
+			|| lower.contains("pestle") || lower.contains("shears"))
+		{ skillOrder = 9; tierOrder = 0; }
+
+		// === CONSTRUCTION (skill 10) ===
+		else if (lower.contains("saw") || lower.contains("plank sack"))
+		{ skillOrder = 10; tierOrder = 0; }
 
 		// === EVERYTHING ELSE ===
 		else
-		{
-			typeOrder = 7;
-		}
+		{ skillOrder = 99; }
 
-		return ((long) typeOrder << 12) | (tierOrder & 0xFFF);
+		return ((long) skillOrder << 12) | (tierOrder & 0xFFF);
 	}
 
 	private int getTalismanOrder(String lower)
