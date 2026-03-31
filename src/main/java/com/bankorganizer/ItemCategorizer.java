@@ -974,6 +974,72 @@ public class ItemCategorizer
 	/**
 	 * Full sort key for material items: type grouping, then tier.
 	 */
+	/**
+	 * Full sort key for potions: divine first, then by priority, then by dose descending.
+	 */
+	public long getPotionFullSortKey(String itemName, int itemId)
+	{
+		String lower = itemName.toLowerCase();
+		int isDivine = lower.contains("divine") ? 0 : 1; // Divine potions first
+		int potionPriority = getPotionPriority(lower);
+		int doseOrder = getChargeOrder(itemName); // Reuse charge extraction — (4) before (3) etc.
+
+		// Pack: isDivine(4) | potionPriority(12) | doseOrder(8)
+		return ((long) isDivine << 20) | ((long) potionPriority << 8) | (doseOrder & 0xFF);
+	}
+
+	private int getPotionPriority(String lower)
+	{
+		// Highest priority combat potions
+		if (lower.contains("super combat")) return 0;
+		if (lower.contains("ranging potion")) return 1;
+		if (lower.contains("bastion potion")) return 2;
+		if (lower.contains("saradomin brew")) return 3;
+		if (lower.contains("super restore")) return 4;
+		if (lower.contains("blighted super restore")) return 3; // Same tier as super restore
+		if (lower.contains("prayer potion")) return 5;
+		if (lower.contains("surge")) return 6;
+
+		// Anti-venom variants
+		if (lower.contains("extended anti-venom+") || lower.contains("antivenom+")) return 7;
+		if (lower.contains("anti-venom+") || lower.contains("antivenom+")) return 8;
+		if (lower.contains("anti-venom") || lower.contains("antivenom")) return 9;
+		if (lower.contains("antipoison")) return 10;
+
+		// Stamina and utility
+		if (lower.contains("stamina")) return 11;
+		if (lower.contains("extended antifire")) return 12;
+		if (lower.contains("antifire")) return 13;
+		if (lower.contains("menaphite remedy")) return 14;
+
+		// Super potions
+		if (lower.contains("super attack")) return 20;
+		if (lower.contains("super strength")) return 21;
+		if (lower.contains("super defence")) return 22;
+		if (lower.contains("super energy")) return 23;
+
+		// Regular combat potions
+		if (lower.contains("attack potion")) return 30;
+		if (lower.contains("strength potion")) return 31;
+		if (lower.contains("defence potion")) return 32;
+		if (lower.contains("magic potion")) return 33;
+
+		// Skilling potions
+		if (lower.contains("agility")) return 40;
+		if (lower.contains("fishing")) return 41;
+		if (lower.contains("hunter")) return 42;
+		if (lower.contains("mining")) return 43;
+		if (lower.contains("woodcutting")) return 44;
+
+		// Everything else
+		if (lower.contains("overload")) return 50;
+		if (lower.contains("battlemage")) return 51;
+		if (lower.contains("energy")) return 52;
+		if (lower.contains("antidote")) return 53;
+
+		return 99;
+	}
+
 	public long getMaterialFullSortKey(String itemName, int itemId)
 	{
 		String lower = itemName.toLowerCase();
@@ -1179,47 +1245,154 @@ public class ItemCategorizer
 		int typeOrder = 99;
 		int tierOrder = 50;
 
-		// Bones (sorted by prayer XP — which correlates with bone shards from Bone Grinder)
-		if (lower.contains("bone") || lower.contains("skull"))
+		// === FARMING (highest priority) ===
+		if (lower.contains("bottomless") && lower.contains("compost"))
+		{
+			typeOrder = 0; tierOrder = 0;
+		}
+		else if (lower.contains("compost"))
 		{
 			typeOrder = 0;
-			tierOrder = getBoneTier(lower);
+			if (lower.contains("ultracompost")) tierOrder = 1;
+			else if (lower.contains("supercompost")) tierOrder = 2;
+			else tierOrder = 3; // Regular compost
 		}
-		// Skilling outfits
-		else if (lower.contains("graceful") || lower.contains("lumberjack")
-			|| lower.contains("angler") || lower.contains("farmer")
-			|| lower.contains("prospector") || lower.contains("pyromancer")
-			|| lower.contains("rogue"))
+		else if (lower.contains("herb sack"))
 		{
-			typeOrder = 1;
-			tierOrder = getOutfitSlotOrder(lower);
+			typeOrder = 0;
+			tierOrder = lower.contains("open") ? 5 : 4;
 		}
-		// Skilling tools (axes, pickaxes, harpoons by tier)
-		else if (lower.contains("axe") || lower.contains("pickaxe"))
+		else if (lower.contains("magic secateurs"))
 		{
-			typeOrder = 2;
-			tierOrder = getToolTier(lower);
+			typeOrder = 0; tierOrder = 6;
 		}
-		// Pouches (RC)
+		else if (lower.contains("spade"))
+		{
+			typeOrder = 0; tierOrder = 7;
+		}
+		else if (lower.contains("rake"))
+		{
+			typeOrder = 0; tierOrder = 8;
+		}
+		else if (lower.contains("seed dibber"))
+		{
+			typeOrder = 0; tierOrder = 9;
+		}
+		else if (lower.contains("trowel"))
+		{
+			typeOrder = 0; tierOrder = 10;
+		}
+		else if (lower.contains("secateurs") && !lower.contains("magic"))
+		{
+			typeOrder = 0; tierOrder = 11;
+		}
+		else if (lower.contains("watering can"))
+		{
+			typeOrder = 0; tierOrder = 12;
+		}
+		else if (lower.contains("seed box"))
+		{
+			typeOrder = 0; tierOrder = 13;
+		}
+		// Farmer outfit
+		else if (lower.contains("farmer"))
+		{
+			typeOrder = 0; tierOrder = 20 + getOutfitSlotOrder(lower);
+		}
+
+		// === RUNECRAFTING ===
+		else if (lower.contains("colossal pouch"))
+		{
+			typeOrder = 1; tierOrder = 0;
+		}
 		else if (lower.contains("pouch") && !lower.contains("rune"))
 		{
-			typeOrder = 3;
-			tierOrder = getPouchTier(lower);
+			typeOrder = 1; tierOrder = 1 + getPouchTier(lower);
 		}
-		// Storage items (fish barrel, herb sack, etc.)
-		else if (lower.contains("barrel") || lower.contains("sack")
-			|| lower.contains("bag") || lower.contains("box")
-			|| lower.contains("basket") || lower.contains("kit"))
+		else if (lower.contains("talisman"))
+		{
+			typeOrder = 1; tierOrder = 10 + getTalismanOrder(lower);
+		}
+		else if (lower.contains("pure essence"))
+		{
+			typeOrder = 1; tierOrder = 30;
+		}
+		else if (lower.contains("daeyalt"))
+		{
+			typeOrder = 1; tierOrder = 31;
+		}
+		else if (lower.contains("dark essence"))
+		{
+			typeOrder = 1; tierOrder = 32;
+		}
+
+		// === BONES (prayer) ===
+		else if (lower.contains("bone") || lower.contains("skull"))
+		{
+			typeOrder = 2;
+			tierOrder = getBoneTier(lower);
+		}
+
+		// === SKILLING OUTFITS ===
+		else if (lower.contains("graceful") || lower.contains("lumberjack")
+			|| lower.contains("angler") || lower.contains("prospector")
+			|| lower.contains("pyromancer") || lower.contains("rogue"))
+		{
+			typeOrder = 3;
+			tierOrder = getOutfitSlotOrder(lower);
+		}
+
+		// === SKILLING TOOLS (axes, pickaxes by tier) ===
+		else if (lower.contains("axe") || lower.contains("pickaxe") || lower.contains("harpoon"))
 		{
 			typeOrder = 4;
+			tierOrder = getToolTier(lower);
 		}
-		// Basic tools
-		else
+
+		// === STORAGE (fish barrel, gem bag, coal bag, etc.) ===
+		else if (lower.contains("barrel") || lower.contains("bag")
+			|| lower.contains("basket") || lower.contains("kit"))
 		{
 			typeOrder = 5;
 		}
 
+		// === BASIC TOOLS ===
+		else if (lower.contains("hammer") || lower.contains("chisel")
+			|| lower.contains("tinderbox") || lower.contains("knife")
+			|| lower.contains("needle") || lower.contains("saw")
+			|| lower.contains("pestle") || lower.contains("shears")
+			|| lower.contains("glassblowing"))
+		{
+			typeOrder = 6;
+		}
+
+		// === EVERYTHING ELSE ===
+		else
+		{
+			typeOrder = 7;
+		}
+
 		return ((long) typeOrder << 12) | (tierOrder & 0xFFF);
+	}
+
+	private int getTalismanOrder(String lower)
+	{
+		// Elemental talismans first, then catalytic
+		if (lower.contains("air")) return 0;
+		if (lower.contains("water")) return 1;
+		if (lower.contains("earth")) return 2;
+		if (lower.contains("fire")) return 3;
+		if (lower.contains("mind")) return 4;
+		if (lower.contains("body")) return 5;
+		if (lower.contains("cosmic")) return 6;
+		if (lower.contains("chaos")) return 7;
+		if (lower.contains("nature")) return 8;
+		if (lower.contains("law")) return 9;
+		if (lower.contains("death")) return 10;
+		if (lower.contains("blood")) return 11;
+		if (lower.contains("soul")) return 12;
+		if (lower.contains("wrath")) return 13;
+		return 50;
 	}
 
 	private int getBoneTier(String lower)

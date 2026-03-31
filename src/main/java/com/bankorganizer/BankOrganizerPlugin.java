@@ -508,6 +508,10 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			return categorizer.getSkillingFullSortKey(item.name, item.itemId);
 		}
+		else if (tabCategory == ItemCategory.POTIONS)
+		{
+			return categorizer.getPotionFullSortKey(item.name, item.itemId);
+		}
 		return 0;
 	}
 
