@@ -185,7 +185,10 @@ public class BankOrganizerPlugin extends Plugin
 			.panel(panel)
 			.build();
 
-		clientToolbar.addNavigation(navButton);
+		if (config.showSidebarIcon())
+		{
+			clientToolbar.addNavigation(navButton);
+		}
 		overlayManager.add(overlay);
 
 		log.info("Bank Organizer started!");
@@ -211,6 +214,19 @@ public class BankOrganizerPlugin extends Plugin
 		if ("bankorganizer".equals(event.getGroup()))
 		{
 			updateRegexFromConfig();
+
+			// Toggle sidebar icon
+			if ("showSidebarIcon".equals(event.getKey()))
+			{
+				if (config.showSidebarIcon())
+				{
+					clientToolbar.addNavigation(navButton);
+				}
+				else
+				{
+					clientToolbar.removeNavigation(navButton);
+				}
+			}
 		}
 	}
 

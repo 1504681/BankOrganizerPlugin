@@ -11,6 +11,40 @@ import net.runelite.client.config.ConfigSection;
 public interface BankOrganizerConfig extends Config
 {
 	@ConfigSection(
+		name = "General",
+		description = "General plugin settings",
+		position = -1
+	)
+	String generalSection = "general";
+
+	@ConfigItem(
+		keyName = "showSidebarIcon",
+		name = "Show Sidebar Icon",
+		description = "Show the Bank Organizer panel icon in the sidebar",
+		position = 0,
+		section = generalSection
+	)
+	default boolean showSidebarIcon() { return true; }
+
+	@ConfigItem(
+		keyName = "showTabColors",
+		name = "Show Tab Colors",
+		description = "Draw colored bars on bank tabs to show their category",
+		position = 1,
+		section = generalSection
+	)
+	default boolean showTabColors() { return true; }
+
+	@ConfigItem(
+		keyName = "overlayOpacity",
+		name = "Overlay Opacity",
+		description = "Opacity of category overlay boxes (0-100)",
+		position = 2,
+		section = generalSection
+	)
+	default int overlayOpacity() { return 60; }
+
+	@ConfigSection(
 		name = "Tab Mappings",
 		description = "Assign a category to each bank tab",
 		position = 0

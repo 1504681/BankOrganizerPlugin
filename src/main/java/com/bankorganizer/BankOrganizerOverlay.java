@@ -39,7 +39,10 @@ public class BankOrganizerOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		drawTabColors(graphics);
+		if (plugin.getConfig().showTabColors())
+		{
+			drawTabColors(graphics);
+		}
 
 		// Overlay toggle always takes priority — draws on all items
 		if (plugin.isOverlayEnabled())
@@ -205,8 +208,11 @@ public class BankOrganizerOverlay extends Overlay
 			}
 
 			Color color = plugin.getColorForCategory(category);
-			Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 60);
-			Color borderColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 180);
+			int opacity = Math.max(0, Math.min(100, plugin.getConfig().overlayOpacity()));
+			int fillAlpha = (int)(opacity * 2.55);
+			int borderAlpha = Math.min(255, fillAlpha + 120);
+			Color fillColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), fillAlpha);
+			Color borderColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), borderAlpha);
 
 			graphics.setColor(fillColor);
 			graphics.fill(bounds);
