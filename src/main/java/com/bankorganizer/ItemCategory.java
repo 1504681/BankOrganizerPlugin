@@ -11,7 +11,7 @@ public enum ItemCategory
 		"ring of wealth(", "skills necklace(", "combat bracelet(",
 		"passage(", "burning amulet(", "digsite pendant("
 	)),
-	GEAR("Gear", new Color(220, 50, 50), Arrays.asList(
+	GEAR("Combat", new Color(220, 50, 50), Arrays.asList(
 		"helm", "full helm", "med helm", "platebody", "platelegs", "plateskirt",
 		"chainbody", "shield", "kiteshield", "sq shield",
 		"sword", "longsword", "scimitar", "dagger", "mace", "warhammer", "battleaxe",
@@ -46,7 +46,7 @@ public enum ItemCategory
 		"prospector", "pyromancer", "rogue",
 		"axe", "harpoon", "net", "rod", "compost"
 	)),
-	RAW_MATERIALS("Raw Materials", new Color(160, 82, 45), Arrays.asList(
+	RAW_MATERIALS("Materials", new Color(160, 82, 45), Arrays.asList(
 		" ore", "bronze bar", "iron bar", "steel bar", "mithril bar",
 		"adamantite bar", "runite bar", "gold bar", "silver bar",
 		"logs", "hide", "leather", "essence",
