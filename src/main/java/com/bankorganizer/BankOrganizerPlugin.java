@@ -205,19 +205,8 @@ public class BankOrganizerPlugin extends Plugin
 		TeleportSortMode teleportMode = config.teleportSortMode();
 
 		idealOrder.sort(Comparator.comparingLong(item ->
-		{
-			if (tabCategory == ItemCategory.GEAR)
-			{
-				return categorizer.getGearFullSortKey(item.name, item.itemId,
-					getEquipmentStats(item.itemId), gearMode);
-			}
-			else if (tabCategory == ItemCategory.TELEPORTS)
-			{
-				TeleportSubCategory sub = categorizer.getTeleportSubCategory(item.name, item.itemId);
-				return categorizer.getTeleportSortOrder(sub, teleportMode);
-			}
-			return 0;
-		}));
+			getItemSortKey(item, tabCategory, gearMode, teleportMode)
+		));
 
 		// Find remaining steps
 		List<OrderStep> newSteps = new ArrayList<>();
@@ -597,6 +586,29 @@ public class BankOrganizerPlugin extends Plugin
 	/**
 	 * Get equipment stats for an item, or null if not equipable.
 	 */
+	private long getItemSortKey(BankItem item, ItemCategory tabCategory,
+		GearSortMode gearMode, TeleportSortMode teleportMode)
+	{
+		if (tabCategory == ItemCategory.GEAR)
+		{
+			return categorizer.getGearFullSortKey(item.name, item.itemId,
+				getEquipmentStats(item.itemId), gearMode);
+		}
+		else if (tabCategory == ItemCategory.TELEPORTS)
+		{
+			return categorizer.getTeleportFullSortKey(item.name, item.itemId, teleportMode);
+		}
+		else if (tabCategory == ItemCategory.RAW_MATERIALS)
+		{
+			return categorizer.getMaterialFullSortKey(item.name, item.itemId);
+		}
+		else if (tabCategory == ItemCategory.SKILLING)
+		{
+			return categorizer.getSkillingFullSortKey(item.name, item.itemId);
+		}
+		return 0;
+	}
+
 	private net.runelite.http.api.item.ItemEquipmentStats getEquipmentStats(int itemId)
 	{
 		net.runelite.http.api.item.ItemStats stats = itemManager.getItemStats(itemId, false);
@@ -942,19 +954,8 @@ public class BankOrganizerPlugin extends Plugin
 
 			List<BankItem> sorted = new ArrayList<>(items);
 			sorted.sort(Comparator.comparingLong(item ->
-			{
-				if (tabCategory == ItemCategory.GEAR)
-				{
-					return categorizer.getGearFullSortKey(item.name, item.itemId,
-						getEquipmentStats(item.itemId), gearMode);
-				}
-				else if (tabCategory == ItemCategory.TELEPORTS)
-				{
-					TeleportSubCategory sub = categorizer.getTeleportSubCategory(item.name, item.itemId);
-					return categorizer.getTeleportSortOrder(sub, teleportMode);
-				}
-				return 0;
-			}));
+				getItemSortKey(item, tabCategory, gearMode, teleportMode)
+			));
 
 			List<PreviewItem> preview = new ArrayList<>();
 			for (int i = 0; i < sorted.size(); i++)

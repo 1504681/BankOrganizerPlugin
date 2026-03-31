@@ -769,6 +769,440 @@ public class ItemCategorizer
 		return order.length;
 	}
 
+	/**
+	 * Full sort key for teleport items: sub-category, then type grouping, then charges descending.
+	 */
+	public long getTeleportFullSortKey(String itemName, int itemId, TeleportSortMode mode)
+	{
+		TeleportSubCategory sub = getTeleportSubCategory(itemName, itemId);
+		int subOrder = getTeleportSortOrder(sub, mode);
+		int typeOrder = 0;
+		int chargeOrder = 0;
+
+		if (sub == TeleportSubCategory.RUNES)
+		{
+			typeOrder = getRuneSortOrder(itemId);
+		}
+		else if (sub == TeleportSubCategory.JEWELRY)
+		{
+			typeOrder = getJewelryTypeOrder(itemId, itemName);
+			chargeOrder = getChargeOrder(itemName);
+		}
+		else if (sub == TeleportSubCategory.TABLETS)
+		{
+			typeOrder = getTabletOrder(itemName);
+		}
+
+		// Pack: subOrder(8) | typeOrder(12) | chargeOrder(8)
+		return ((long) subOrder << 20) | ((long) typeOrder << 8) | (chargeOrder & 0xFF);
+	}
+
+	private int getRuneSortOrder(int itemId)
+	{
+		// Elemental runes first
+		switch (itemId)
+		{
+			case 556: return 0;  // Air rune
+			case 555: return 1;  // Water rune
+			case 557: return 2;  // Earth rune
+			case 554: return 3;  // Fire rune
+			// Combination runes
+			case 4695: return 10; // Mist rune (air+water) - using placeholder, real IDs may differ
+			default: break;
+		}
+		// Combination runes by name
+		// Standard catalytic runes in level order
+		switch (itemId)
+		{
+			case 558: return 20; // Mind rune
+			case 559: return 21; // Body rune
+			case 564: return 22; // Cosmic rune
+			case 562: return 23; // Chaos rune
+			case 9075: return 24; // Astral rune
+			case 561: return 25; // Nature rune
+			case 563: return 26; // Law rune
+			case 560: return 27; // Death rune
+			case 565: return 28; // Blood rune
+			case 566: return 29; // Soul rune
+			case 21880: return 30; // Wrath rune
+			default: return 50;
+		}
+	}
+
+	private int getJewelryTypeOrder(int itemId, String itemName)
+	{
+		String lower = itemName.toLowerCase();
+		// Group jewelry by type
+		if (lower.contains("ring of dueling")) return 0;
+		if (lower.contains("games necklace")) return 1;
+		if (lower.contains("ring of wealth")) return 2;
+		if (lower.contains("glory")) return 3;
+		if (lower.contains("skills necklace")) return 4;
+		if (lower.contains("combat bracelet")) return 5;
+		if (lower.contains("necklace of passage")) return 6;
+		if (lower.contains("burning amulet")) return 7;
+		if (lower.contains("digsite pendant")) return 8;
+		if (lower.contains("slayer ring")) return 9;
+		if (lower.contains("ring of returning")) return 10;
+		if (lower.contains("ring of shadows")) return 11;
+		return 50;
+	}
+
+	private int getChargeOrder(String itemName)
+	{
+		// Extract charge number from name like "Glory(4)" — higher charges first
+		java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\((\\d+)\\)").matcher(itemName);
+		if (m.find())
+		{
+			int charges = Integer.parseInt(m.group(1));
+			return 99 - charges; // Invert so higher charges = lower sort key
+		}
+		return 50; // Uncharged/no charge indicator
+	}
+
+	private int getTabletOrder(String itemName)
+	{
+		String lower = itemName.toLowerCase();
+		if (lower.contains("varrock")) return 0;
+		if (lower.contains("lumbridge")) return 1;
+		if (lower.contains("falador")) return 2;
+		if (lower.contains("camelot")) return 3;
+		if (lower.contains("ardougne")) return 4;
+		if (lower.contains("watchtower")) return 5;
+		if (lower.contains("house")) return 6;
+		return 50;
+	}
+
+	/**
+	 * Full sort key for material items: type grouping, then tier.
+	 */
+	public long getMaterialFullSortKey(String itemName, int itemId)
+	{
+		String lower = itemName.toLowerCase();
+		int typeOrder = 99;
+		int tierOrder = 50;
+
+		// Ores
+		if (lower.contains(" ore") || lower.equals("clay") || lower.equals("coal"))
+		{
+			typeOrder = 0;
+			tierOrder = getOreTier(lower);
+		}
+		// Bars
+		else if (lower.contains(" bar"))
+		{
+			typeOrder = 1;
+			tierOrder = getBarTier(lower);
+		}
+		// Logs
+		else if (lower.contains("logs") || lower.equals("logs"))
+		{
+			typeOrder = 2;
+			tierOrder = getLogTier(lower);
+		}
+		// Hides/leather
+		else if (lower.contains("hide") || lower.contains("leather"))
+		{
+			typeOrder = 3;
+			tierOrder = getHideTier(lower);
+		}
+		// Gems
+		else if (lower.contains("uncut") || isGem(lower))
+		{
+			typeOrder = 4;
+			tierOrder = getGemTier(lower);
+		}
+		// Seeds
+		else if (lower.contains("seed"))
+		{
+			typeOrder = 5;
+			tierOrder = getSeedTier(lower);
+		}
+		// Herbs (grimy first, then clean)
+		else if (lower.contains("grimy") || lower.contains("herb"))
+		{
+			typeOrder = 6;
+			tierOrder = getHerbTier(lower);
+		}
+		// Essence
+		else if (lower.contains("essence"))
+		{
+			typeOrder = 7;
+			tierOrder = getEssenceTier(lower);
+		}
+
+		// Pack: typeOrder(8) | tierOrder(12)
+		return ((long) typeOrder << 12) | (tierOrder & 0xFFF);
+	}
+
+	private int getOreTier(String lower)
+	{
+		if (lower.contains("copper")) return 0;
+		if (lower.contains("tin")) return 1;
+		if (lower.contains("clay")) return 2;
+		if (lower.contains("iron")) return 3;
+		if (lower.contains("silver")) return 4;
+		if (lower.contains("coal")) return 5;
+		if (lower.contains("gold")) return 6;
+		if (lower.contains("mithril")) return 7;
+		if (lower.contains("adamant")) return 8;
+		if (lower.contains("runite")) return 9;
+		if (lower.contains("amethyst")) return 10;
+		return 50;
+	}
+
+	private int getBarTier(String lower)
+	{
+		if (lower.contains("bronze")) return 0;
+		if (lower.contains("iron")) return 1;
+		if (lower.contains("steel")) return 2;
+		if (lower.contains("silver")) return 3;
+		if (lower.contains("gold")) return 4;
+		if (lower.contains("mithril")) return 5;
+		if (lower.contains("adamant")) return 6;
+		if (lower.contains("runite")) return 7;
+		return 50;
+	}
+
+	private int getLogTier(String lower)
+	{
+		if (lower.equals("logs")) return 0;
+		if (lower.contains("oak")) return 1;
+		if (lower.contains("willow")) return 2;
+		if (lower.contains("teak")) return 3;
+		if (lower.contains("maple")) return 4;
+		if (lower.contains("mahogany")) return 5;
+		if (lower.contains("yew")) return 6;
+		if (lower.contains("magic")) return 7;
+		if (lower.contains("redwood")) return 8;
+		return 50;
+	}
+
+	private int getHideTier(String lower)
+	{
+		if (lower.contains("cowhide") || lower.contains("leather") && !lower.contains("dragon")) return 0;
+		if (lower.contains("green d") || lower.contains("green dragon")) return 1;
+		if (lower.contains("blue d") || lower.contains("blue dragon")) return 2;
+		if (lower.contains("red d") || lower.contains("red dragon")) return 3;
+		if (lower.contains("black d") || lower.contains("black dragon")) return 4;
+		return 50;
+	}
+
+	private boolean isGem(String lower)
+	{
+		return lower.contains("sapphire") || lower.contains("emerald") || lower.contains("ruby")
+			|| lower.contains("diamond") || lower.contains("dragonstone") || lower.contains("onyx")
+			|| lower.contains("zenyte");
+	}
+
+	private int getGemTier(String lower)
+	{
+		if (lower.contains("sapphire")) return 0;
+		if (lower.contains("emerald")) return 1;
+		if (lower.contains("ruby")) return 2;
+		if (lower.contains("diamond")) return 3;
+		if (lower.contains("dragonstone")) return 4;
+		if (lower.contains("onyx")) return 5;
+		if (lower.contains("zenyte")) return 6;
+		return 50;
+	}
+
+	private int getSeedTier(String lower)
+	{
+		// Farming seeds roughly by level
+		if (lower.contains("potato")) return 0;
+		if (lower.contains("onion")) return 1;
+		if (lower.contains("cabbage")) return 2;
+		if (lower.contains("tomato")) return 3;
+		if (lower.contains("sweetcorn")) return 4;
+		if (lower.contains("strawberry")) return 5;
+		if (lower.contains("watermelon")) return 6;
+		if (lower.contains("snape")) return 7;
+		// Tree seeds
+		if (lower.contains("acorn")) return 10;
+		if (lower.contains("willow seed")) return 11;
+		if (lower.contains("maple seed")) return 12;
+		if (lower.contains("yew seed")) return 13;
+		if (lower.contains("magic seed")) return 14;
+		// Herb seeds
+		if (lower.contains("guam")) return 20;
+		if (lower.contains("marrentill")) return 21;
+		if (lower.contains("tarromin")) return 22;
+		if (lower.contains("harralander")) return 23;
+		if (lower.contains("ranarr")) return 24;
+		if (lower.contains("toadflax")) return 25;
+		if (lower.contains("irit")) return 26;
+		if (lower.contains("avantoe")) return 27;
+		if (lower.contains("kwuarm")) return 28;
+		if (lower.contains("snapdragon")) return 29;
+		if (lower.contains("cadantine")) return 30;
+		if (lower.contains("lantadyme")) return 31;
+		if (lower.contains("dwarf weed")) return 32;
+		if (lower.contains("torstol")) return 33;
+		return 50;
+	}
+
+	private int getHerbTier(String lower)
+	{
+		// Grimy first, then clean — ordered by herblore level
+		int base = lower.contains("grimy") ? 0 : 100;
+		if (lower.contains("guam")) return base;
+		if (lower.contains("marrentill")) return base + 1;
+		if (lower.contains("tarromin")) return base + 2;
+		if (lower.contains("harralander")) return base + 3;
+		if (lower.contains("ranarr")) return base + 4;
+		if (lower.contains("toadflax")) return base + 5;
+		if (lower.contains("irit")) return base + 6;
+		if (lower.contains("avantoe")) return base + 7;
+		if (lower.contains("kwuarm")) return base + 8;
+		if (lower.contains("snapdragon")) return base + 9;
+		if (lower.contains("cadantine")) return base + 10;
+		if (lower.contains("lantadyme")) return base + 11;
+		if (lower.contains("dwarf weed")) return base + 12;
+		if (lower.contains("torstol")) return base + 13;
+		return base + 50;
+	}
+
+	private int getEssenceTier(String lower)
+	{
+		if (lower.contains("rune essence")) return 0;
+		if (lower.contains("pure essence")) return 1;
+		if (lower.contains("daeyalt")) return 2;
+		if (lower.contains("dark")) return 3;
+		return 50;
+	}
+
+	/**
+	 * Full sort key for skilling items: type grouping, then tier/XP.
+	 */
+	public long getSkillingFullSortKey(String itemName, int itemId)
+	{
+		String lower = itemName.toLowerCase();
+		int typeOrder = 99;
+		int tierOrder = 50;
+
+		// Bones (sorted by prayer XP — which correlates with bone shards from Bone Grinder)
+		if (lower.contains("bone") || lower.contains("skull"))
+		{
+			typeOrder = 0;
+			tierOrder = getBoneTier(lower);
+		}
+		// Skilling outfits
+		else if (lower.contains("graceful") || lower.contains("lumberjack")
+			|| lower.contains("angler") || lower.contains("farmer")
+			|| lower.contains("prospector") || lower.contains("pyromancer")
+			|| lower.contains("rogue"))
+		{
+			typeOrder = 1;
+			tierOrder = getOutfitSlotOrder(lower);
+		}
+		// Skilling tools (axes, pickaxes, harpoons by tier)
+		else if (lower.contains("axe") || lower.contains("pickaxe"))
+		{
+			typeOrder = 2;
+			tierOrder = getToolTier(lower);
+		}
+		// Pouches (RC)
+		else if (lower.contains("pouch") && !lower.contains("rune"))
+		{
+			typeOrder = 3;
+			tierOrder = getPouchTier(lower);
+		}
+		// Storage items (fish barrel, herb sack, etc.)
+		else if (lower.contains("barrel") || lower.contains("sack")
+			|| lower.contains("bag") || lower.contains("box")
+			|| lower.contains("basket") || lower.contains("kit"))
+		{
+			typeOrder = 4;
+		}
+		// Basic tools
+		else
+		{
+			typeOrder = 5;
+		}
+
+		return ((long) typeOrder << 12) | (tierOrder & 0xFFF);
+	}
+
+	private int getBoneTier(String lower)
+	{
+		// Ordered by prayer XP (and bone shard yield)
+		// Regular bones: 4.5 XP, 0.5 shards
+		if (lower.equals("bones")) return 0;
+		if (lower.contains("burnt")) return 1;
+		if (lower.contains("wolf")) return 2;
+		if (lower.contains("monkey")) return 3;
+		if (lower.contains("bat")) return 4;
+		// Big bones: 15 XP
+		if (lower.contains("big bone")) return 10;
+		// Zogre bones: 22.5 XP
+		if (lower.contains("zogre")) return 15;
+		// Shaikahan bones
+		if (lower.contains("shaikahan")) return 16;
+		// Baby dragon bones: 30 XP
+		if (lower.contains("baby dragon")) return 20;
+		// Wyrm bones
+		if (lower.contains("wyrm")) return 22;
+		// Dragon bones: 72 XP
+		if (lower.contains("dragon bone") && !lower.contains("baby") && !lower.contains("superior")) return 30;
+		// Drake bones
+		if (lower.contains("drake")) return 32;
+		// Wyvern bones: 72 XP
+		if (lower.contains("wyvern")) return 33;
+		// Fayrg bones: 84 XP
+		if (lower.contains("fayrg")) return 35;
+		// Lava dragon bones: 85 XP
+		if (lower.contains("lava dragon")) return 36;
+		// Raurg bones: 96 XP
+		if (lower.contains("raurg")) return 37;
+		// Dagannoth bones: 125 XP
+		if (lower.contains("dagannoth")) return 40;
+		// Ourg bones: 140 XP
+		if (lower.contains("ourg")) return 42;
+		// Superior dragon bones: 150 XP
+		if (lower.contains("superior dragon")) return 45;
+		// Hydra bones: 110 XP
+		if (lower.contains("hydra")) return 43;
+		return 50;
+	}
+
+	private int getOutfitSlotOrder(String lower)
+	{
+		// Head, top, legs, gloves, boots, cape
+		if (lower.contains("hood") || lower.contains("hat") || lower.contains("helm")) return 0;
+		if (lower.contains("top") || lower.contains("body") || lower.contains("shirt")) return 1;
+		if (lower.contains("legs") || lower.contains("trousers")) return 2;
+		if (lower.contains("gloves") || lower.contains("hands")) return 3;
+		if (lower.contains("boots")) return 4;
+		if (lower.contains("cape") || lower.contains("cloak")) return 5;
+		return 10;
+	}
+
+	private int getToolTier(String lower)
+	{
+		if (lower.contains("bronze")) return 0;
+		if (lower.contains("iron")) return 1;
+		if (lower.contains("steel")) return 2;
+		if (lower.contains("black")) return 3;
+		if (lower.contains("mithril")) return 4;
+		if (lower.contains("adamant")) return 5;
+		if (lower.contains("rune")) return 6;
+		if (lower.contains("dragon")) return 7;
+		if (lower.contains("crystal")) return 8;
+		if (lower.contains("infernal")) return 9;
+		return 50;
+	}
+
+	private int getPouchTier(String lower)
+	{
+		if (lower.contains("small")) return 0;
+		if (lower.contains("medium")) return 1;
+		if (lower.contains("large")) return 2;
+		if (lower.contains("giant")) return 3;
+		if (lower.contains("colossal")) return 4;
+		return 50;
+	}
+
 	// === Manual overrides ===
 
 	public void setManualOverride(int itemId, ItemCategory category)
