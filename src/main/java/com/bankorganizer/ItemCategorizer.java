@@ -1332,11 +1332,12 @@ public class ItemCategorizer
 	/**
 	 * Full sort key for skilling items: type grouping, then tier/XP.
 	 */
-	// Skill names for subcategory tagging
+	// Skill names for subcategory tagging — order matches skillOrder values
 	public static final String[] SKILL_NAMES = {
 		"Farming", "Runecrafting", "Woodcutting", "Fishing", "Mining",
-		"Prayer", "Agility", "Firemaking", "Thieving", "Crafting/Smithing",
-		"Construction"
+		"Prayer", "Agility", "Firemaking", "Thieving", "Crafting",
+		"Construction", "Smithing", "Fletching", "Herblore", "Cooking",
+		"Hunting", "Slayer"
 	};
 
 	public long getSkillingFullSortKey(String itemName, int itemId)

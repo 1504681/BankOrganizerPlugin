@@ -31,6 +31,7 @@ public class BankOrganizerPanel extends PluginPanel
 	private final JLabel orderingSubCatLabel;
 	private final JLabel orderingProgressLabel;
 	private final JButton categorizeButton;
+	private final JButton subCatToggle;
 	private final JButton orderButton;
 	private final JButton nextStepButton;
 	private final JButton stopOrderButton;
@@ -99,6 +100,20 @@ public class BankOrganizerPanel extends PluginPanel
 		categorizeButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 		categorizeButton.addActionListener(e -> toggleCategorizeMode());
 		mainPanel.add(categorizeButton);
+		mainPanel.add(Box.createVerticalStrut(3));
+
+		subCatToggle = new JButton("Mode: Category");
+		subCatToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
+		subCatToggle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+		subCatToggle.setFont(subCatToggle.getFont().deriveFont(11f));
+		subCatToggle.setVisible(false);
+		subCatToggle.addActionListener(e ->
+		{
+			boolean newMode = !plugin.isSubCategoryMode();
+			plugin.setSubCategoryMode(newMode);
+			subCatToggle.setText(newMode ? "Mode: Subcategory" : "Mode: Category");
+		});
+		mainPanel.add(subCatToggle);
 		mainPanel.add(Box.createVerticalStrut(5));
 
 		orderButton = new JButton("Start Ordering Items");
@@ -273,11 +288,15 @@ public class BankOrganizerPanel extends PluginPanel
 		{
 			categorizeButton.setText("Stop Categorizing");
 			categorizeButton.setBackground(new Color(100, 60, 60));
+			subCatToggle.setVisible(true);
 		}
 		else
 		{
 			categorizeButton.setText("Start Categorizing");
 			categorizeButton.setBackground(null);
+			subCatToggle.setVisible(false);
+			plugin.setSubCategoryMode(false);
+			subCatToggle.setText("Mode: Category");
 		}
 	}
 

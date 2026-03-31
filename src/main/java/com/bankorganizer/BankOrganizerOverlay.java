@@ -41,20 +41,16 @@ public class BankOrganizerOverlay extends Overlay
 	{
 		drawTabColors(graphics);
 
-		if (plugin.isOverlayEnabled())
-		{
-			drawAllItemCategories(graphics);
-		}
-
-		if (plugin.isPreviewMode())
-		{
-			drawPreview(graphics);
-		}
-		else if (plugin.isOrderingActive())
+		if (plugin.isOrderingActive())
 		{
 			drawOrderingHighlight(graphics);
 		}
-		else if (plugin.isScanActive() && !plugin.isOverlayEnabled())
+		else if (plugin.isOverlayEnabled())
+		{
+			// Show/Hide Overlays toggle — draws category boxes on ALL items
+			drawAllItemCategories(graphics);
+		}
+		else if (plugin.isScanActive())
 		{
 			drawMisplacedItems(graphics);
 		}

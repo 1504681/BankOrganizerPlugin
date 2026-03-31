@@ -79,6 +79,7 @@ public class BankOrganizerPlugin extends Plugin
 	private ItemCategory activeFilter;
 	private boolean scanActive = false;
 	private boolean categorizeMode = false;
+	private boolean subCategoryMode = false; // false=category, true=subcategory
 
 	// Ordering state
 	private boolean orderingActive = false;
@@ -95,6 +96,8 @@ public class BankOrganizerPlugin extends Plugin
 	public boolean isScanActive() { return scanActive; }
 	public boolean isCategorizeMode() { return categorizeMode; }
 	public void setCategorizeMode(boolean mode) { this.categorizeMode = mode; }
+	public boolean isSubCategoryMode() { return subCategoryMode; }
+	public void setSubCategoryMode(boolean mode) { this.subCategoryMode = mode; }
 	public boolean isOrderingActive() { return orderingActive; }
 	public List<OrderStep> getOrderSteps() { return orderSteps; }
 	public int getCurrentOrderStep() { return currentOrderStep; }
@@ -267,9 +270,9 @@ public class BankOrganizerPlugin extends Plugin
 				.setParam1(widgetId);
 		}
 
-		// Add subcategory options if item is in Skilling
-		if (currentCategory == ItemCategory.SKILLING)
+		if (subCategoryMode)
 		{
+			// SUBCATEGORY MODE: show all skills only
 			String[] skillNames = ItemCategorizer.SKILL_NAMES;
 			for (int i = skillNames.length - 1; i >= 0; i--)
 			{
@@ -283,34 +286,36 @@ public class BankOrganizerPlugin extends Plugin
 					.setParam1(widgetId);
 			}
 		}
-
-		// Add category options in reverse order (they stack, last added = top)
-		ItemCategory[] categories = ItemCategory.values();
-		for (int i = categories.length - 1; i >= 0; i--)
+		else
 		{
-			ItemCategory cat = categories[i];
-			String colorTag = ColorUtil.colorTag(getColorForCategory(cat));
+			// CATEGORY MODE: show all categories
+			ItemCategory[] categories = ItemCategory.values();
+			for (int i = categories.length - 1; i >= 0; i--)
+			{
+				ItemCategory cat = categories[i];
+				String colorTag = ColorUtil.colorTag(getColorForCategory(cat));
 
-			if (cat == currentCategory)
-			{
-				client.createMenuEntry(-1)
-					.setOption(colorTag + "Current: " + cat.getDisplayName())
-					.setTarget(event.getTarget())
-					.setIdentifier(itemId)
+				if (cat == currentCategory)
+				{
+					client.createMenuEntry(-1)
+						.setOption(colorTag + "Current: " + cat.getDisplayName())
+						.setTarget(event.getTarget())
+						.setIdentifier(itemId)
+						.setType(MenuAction.RUNELITE)
+						.setParam0(event.getActionParam0())
+						.setParam1(widgetId);
+				}
+				else
+				{
+					client.createMenuEntry(-1)
+						.setOption(colorTag + MENU_SET_PREFIX + cat.getDisplayName())
+						.setTarget(event.getTarget())
+						.setIdentifier(itemId)
 					.setType(MenuAction.RUNELITE)
 					.setParam0(event.getActionParam0())
 					.setParam1(widgetId);
 			}
-			else
-			{
-				client.createMenuEntry(-1)
-					.setOption(colorTag + MENU_SET_PREFIX + cat.getDisplayName())
-					.setTarget(event.getTarget())
-					.setIdentifier(itemId)
-					.setType(MenuAction.RUNELITE)
-					.setParam0(event.getActionParam0())
-					.setParam1(widgetId);
-			}
+		}
 		}
 	}
 
