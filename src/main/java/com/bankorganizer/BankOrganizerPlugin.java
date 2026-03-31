@@ -263,6 +263,8 @@ public class BankOrganizerPlugin extends Plugin
 
 	// === Right-click category assignment ===
 
+	private static final String MENU_CATEGORIZE_ALL = "Categorize tab: ";
+
 	@Subscribe
 	public void onMenuEntryAdded(MenuEntryAdded event)
 	{
@@ -271,14 +273,44 @@ public class BankOrganizerPlugin extends Plugin
 			return;
 		}
 
-		// Only add to bank item container actions
+		// === Check for bank TAB right-click (category mode only, not subcategory) ===
+		if (!subCategoryMode)
+		{
+			Widget tabContainer = client.getWidget(WidgetInfo.BANK_TAB_CONTAINER);
+			if (tabContainer != null)
+			{
+				String option = event.getOption();
+				// Bank tabs have options like "View all items" or "Collapse tab"
+				// We hook into any right-click on the tab container
+				if ("View all items".equals(option) || "Collapse tab".equals(option)
+					|| (option != null && option.startsWith("View tab")))
+				{
+					int widgetId = event.getActionParam1();
+					// Add "Categorize tab: X" for each category
+					ItemCategory[] categories = ItemCategory.values();
+					for (int i = categories.length - 1; i >= 0; i--)
+					{
+						ItemCategory cat = categories[i];
+						String colorTag = ColorUtil.colorTag(getColorForCategory(cat));
+						client.createMenuEntry(-1)
+							.setOption(colorTag + MENU_CATEGORIZE_ALL + cat.getDisplayName())
+							.setTarget(event.getTarget())
+							.setIdentifier(event.getIdentifier())
+							.setType(MenuAction.RUNELITE)
+							.setParam0(event.getActionParam0())
+							.setParam1(widgetId);
+					}
+				}
+			}
+		}
+
+		// === Check for bank ITEM right-click ===
 		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null)
 		{
 			return;
 		}
 
-		// Check if this menu is for a bank item (Examine option on bank items)
 		String option = event.getOption();
 		if (!"Examine".equals(option))
 		{
@@ -420,6 +452,21 @@ public class BankOrganizerPlugin extends Plugin
 
 		// Strip color tags for comparison
 		String stripped = option.replaceAll("<[^>]+>", "");
+
+		// Handle "Categorize tab: X" — mass-categorize all visible items
+		if (stripped.startsWith(MENU_CATEGORIZE_ALL))
+		{
+			String categoryName = stripped.substring(MENU_CATEGORIZE_ALL.length());
+			for (ItemCategory cat : ItemCategory.values())
+			{
+				if (cat.getDisplayName().equals(categoryName))
+				{
+					categorizeAllVisibleItems(cat);
+					break;
+				}
+			}
+			return;
+		}
 
 		if (MENU_REMOVE_OVERRIDE.equals(stripped) || stripped.startsWith("Remove: "))
 		{
@@ -734,6 +781,34 @@ public class BankOrganizerPlugin extends Plugin
 			return stats.getEquipment();
 		}
 		return null;
+	}
+
+	private void categorizeAllVisibleItems(ItemCategory category)
+	{
+		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null) return;
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null) return;
+
+		int count = 0;
+		for (Widget child : children)
+		{
+			if (child == null || child.isHidden()) continue;
+			int itemId = child.getItemId();
+			if (itemId <= 0) continue;
+
+			categorizer.setManualOverride(itemId, category);
+			count++;
+		}
+
+		saveOverridesToConfig();
+		log.info("Categorized {} items as {}", count, category.getDisplayName());
+
+		final int total = count;
+		javax.swing.JOptionPane.showMessageDialog(null,
+			"Set " + total + " items to " + category.getDisplayName(),
+			"Categorize Tab",
+			javax.swing.JOptionPane.INFORMATION_MESSAGE);
 	}
 
 	private String loadResourceFile(String filename)
