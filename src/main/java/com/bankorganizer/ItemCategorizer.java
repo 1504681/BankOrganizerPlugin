@@ -16,6 +16,8 @@ public class ItemCategorizer
 
 	// Manual overrides (item ID -> category), persisted in config
 	private final Map<Integer, ItemCategory> manualOverrides = new HashMap<>();
+	// Subcategory overrides: itemId -> skillOrder (for skilling) or sub-sort key
+	private final Map<Integer, Integer> subCategoryOverrides = new HashMap<>();
 
 	// Sub-category maps for gear and teleports
 	private final Map<Integer, GearSubCategory> gearSubIdMap = new HashMap<>();
@@ -1330,8 +1332,22 @@ public class ItemCategorizer
 	/**
 	 * Full sort key for skilling items: type grouping, then tier/XP.
 	 */
+	// Skill names for subcategory tagging
+	public static final String[] SKILL_NAMES = {
+		"Farming", "Runecrafting", "Woodcutting", "Fishing", "Mining",
+		"Prayer", "Agility", "Firemaking", "Thieving", "Crafting/Smithing",
+		"Construction"
+	};
+
 	public long getSkillingFullSortKey(String itemName, int itemId)
 	{
+		// Check subcategory override first
+		Integer subOverride = subCategoryOverrides.get(itemId);
+		if (subOverride != null)
+		{
+			return ((long) subOverride << 12) | (itemId & 0xFFF);
+		}
+
 		String lower = itemName.toLowerCase();
 		int skillOrder = 99;
 		int tierOrder = 50;
@@ -1382,6 +1398,10 @@ public class ItemCategorizer
 		{ skillOrder = 1; tierOrder = 31; }
 		else if (lower.contains("dark essence"))
 		{ skillOrder = 1; tierOrder = 32; }
+		else if (lower.contains("of the eye"))
+		{ skillOrder = 1; tierOrder = 33; }
+		else if (lower.contains("abyssal lantern"))
+		{ skillOrder = 1; tierOrder = 34; }
 
 		// === WOODCUTTING (skill 2) ===
 		else if (lower.contains("lumberjack"))
@@ -1418,6 +1438,8 @@ public class ItemCategorizer
 		// === AGILITY (skill 6) ===
 		else if (lower.contains("graceful"))
 		{ skillOrder = 6; tierOrder = getOutfitSlotOrder(lower); }
+		else if (lower.contains("hallowed"))
+		{ skillOrder = 6; tierOrder = 20; }
 
 		// === FIREMAKING (skill 7) ===
 		else if (lower.contains("pyromancer"))
@@ -1573,6 +1595,37 @@ public class ItemCategorizer
 		if (overrides != null)
 		{
 			manualOverrides.putAll(overrides);
+		}
+	}
+
+	// === Subcategory overrides ===
+
+	public void setSubCategoryOverride(int itemId, int skillOrder)
+	{
+		subCategoryOverrides.put(itemId, skillOrder);
+	}
+
+	public void removeSubCategoryOverride(int itemId)
+	{
+		subCategoryOverrides.remove(itemId);
+	}
+
+	public boolean hasSubCategoryOverride(int itemId)
+	{
+		return subCategoryOverrides.containsKey(itemId);
+	}
+
+	public Map<Integer, Integer> getSubCategoryOverrides()
+	{
+		return subCategoryOverrides;
+	}
+
+	public void loadSubCategoryOverrides(Map<Integer, Integer> overrides)
+	{
+		subCategoryOverrides.clear();
+		if (overrides != null)
+		{
+			subCategoryOverrides.putAll(overrides);
 		}
 	}
 

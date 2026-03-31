@@ -135,6 +135,7 @@ public class BankOrganizerPlugin extends Plugin
 		categorizer = new ItemCategorizer();
 		updateRegexFromConfig();
 		loadOverridesFromConfig();
+		loadSubOverridesFromConfig();
 
 		panel = new BankOrganizerPanel(this);
 
@@ -255,7 +256,7 @@ public class BankOrganizerPlugin extends Plugin
 			itemName != null ? itemName : "", itemId);
 
 		// Add "Remove Override" if has manual override
-		if (categorizer.hasManualOverride(itemId))
+		if (categorizer.hasManualOverride(itemId) || categorizer.hasSubCategoryOverride(itemId))
 		{
 			client.createMenuEntry(-1)
 				.setOption(MENU_REMOVE_OVERRIDE)
@@ -266,17 +267,32 @@ public class BankOrganizerPlugin extends Plugin
 				.setParam1(widgetId);
 		}
 
+		// Add subcategory options if item is in Skilling
+		if (currentCategory == ItemCategory.SKILLING)
+		{
+			String[] skillNames = ItemCategorizer.SKILL_NAMES;
+			for (int i = skillNames.length - 1; i >= 0; i--)
+			{
+				client.createMenuEntry(-1)
+					.setOption(ColorUtil.colorTag(getColorForCategory(ItemCategory.SKILLING))
+						+ "Sub: " + skillNames[i])
+					.setTarget(event.getTarget())
+					.setIdentifier(itemId)
+					.setType(MenuAction.RUNELITE)
+					.setParam0(event.getActionParam0())
+					.setParam1(widgetId);
+			}
+		}
+
 		// Add category options in reverse order (they stack, last added = top)
-		// Skip the current category, show it with "Current:" prefix instead
 		ItemCategory[] categories = ItemCategory.values();
 		for (int i = categories.length - 1; i >= 0; i--)
 		{
 			ItemCategory cat = categories[i];
-			String colorTag = ColorUtil.colorTag(cat.getColor());
+			String colorTag = ColorUtil.colorTag(getColorForCategory(cat));
 
 			if (cat == currentCategory)
 			{
-				// Show current category as non-actionable indicator
 				client.createMenuEntry(-1)
 					.setOption(colorTag + "Current: " + cat.getDisplayName())
 					.setTarget(event.getTarget())
@@ -319,8 +335,10 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			int itemId = event.getId();
 			categorizer.removeManualOverride(itemId);
+			categorizer.removeSubCategoryOverride(itemId);
 			saveOverridesToConfig();
-			log.info("Removed category override for item ID {}", itemId);
+			saveSubOverridesToConfig();
+			log.info("Removed overrides for item ID {}", itemId);
 			// Update overlay immediately: remove from misplaced or re-categorize
 			String name = misplacedItemNames.get(itemId);
 			if (name != null)
@@ -375,6 +393,24 @@ public class BankOrganizerPlugin extends Plugin
 				}
 			}
 		}
+
+		// Handle subcategory assignment
+		if (stripped.startsWith("Sub: "))
+		{
+			String subName = stripped.substring(5);
+			int itemId = event.getId();
+			String[] skillNames = ItemCategorizer.SKILL_NAMES;
+			for (int i = 0; i < skillNames.length; i++)
+			{
+				if (skillNames[i].equals(subName))
+				{
+					categorizer.setSubCategoryOverride(itemId, i);
+					saveSubOverridesToConfig();
+					log.info("Set item ID {} to subcategory {} ({})", itemId, i, subName);
+					break;
+				}
+			}
+		}
 	}
 
 	// === Override persistence ===
@@ -418,6 +454,41 @@ public class BankOrganizerPlugin extends Plugin
 			sb.append(entry.getKey()).append(":").append(entry.getValue().name());
 		}
 		config.setManualOverrides(sb.toString());
+	}
+
+	private void loadSubOverridesFromConfig()
+	{
+		String json = config.subCategoryOverrides();
+		if (json == null || json.isEmpty()) return;
+
+		Map<Integer, Integer> overrides = new HashMap<>();
+		for (String entry : json.split(","))
+		{
+			String[] parts = entry.split(":");
+			if (parts.length == 2)
+			{
+				try
+				{
+					int id = Integer.parseInt(parts[0].trim());
+					int subOrder = Integer.parseInt(parts[1].trim());
+					overrides.put(id, subOrder);
+				}
+				catch (Exception ignored) {}
+			}
+		}
+		categorizer.loadSubCategoryOverrides(overrides);
+	}
+
+	private void saveSubOverridesToConfig()
+	{
+		Map<Integer, Integer> overrides = categorizer.getSubCategoryOverrides();
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<Integer, Integer> entry : overrides.entrySet())
+		{
+			if (sb.length() > 0) sb.append(",");
+			sb.append(entry.getKey()).append(":").append(entry.getValue());
+		}
+		config.setSubCategoryOverrides(sb.toString());
 	}
 
 	public void exportOverrides()

@@ -122,6 +122,12 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(keyName = "manualOverrides", name = "", description = "")
 	void setManualOverrides(String json);
 
+	@ConfigItem(keyName = "subCategoryOverrides", name = "", description = "", hidden = true)
+	default String subCategoryOverrides() { return ""; }
+
+	@ConfigItem(keyName = "subCategoryOverrides", name = "", description = "")
+	void setSubCategoryOverrides(String json);
+
 	// --- Custom regex ---
 
 	@ConfigItem(keyName = "regexTeleports", name = "Teleports Regex", description = "Custom regex for Teleports category", position = 0, section = regexSection)
