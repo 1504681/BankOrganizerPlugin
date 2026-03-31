@@ -187,7 +187,19 @@ public class BankOrganizerPlugin extends Plugin
 			return;
 		}
 
-		int itemId = event.getIdentifier();
+		// Get actual item ID from the widget child at this slot
+		int slot = event.getActionParam0();
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null || slot < 0 || slot >= children.length)
+		{
+			return;
+		}
+		Widget child = children[slot];
+		if (child == null)
+		{
+			return;
+		}
+		int itemId = child.getItemId();
 		if (itemId <= 0)
 		{
 			return;
@@ -265,6 +277,24 @@ public class BankOrganizerPlugin extends Plugin
 			categorizer.removeManualOverride(itemId);
 			saveOverridesToConfig();
 			log.info("Removed category override for item ID {}", itemId);
+			// Update overlay immediately: remove from misplaced or re-categorize
+			String name = misplacedItemNames.get(itemId);
+			if (name != null)
+			{
+				ItemCategory newCat = categorizer.categorize(name, itemId);
+				int currentTab = client.getVarbitValue(4150);
+				ItemCategory expectedCat = getCategoryForTab(currentTab);
+				if (expectedCat != null && newCat == expectedCat)
+				{
+					misplacedItems.remove(itemId);
+					misplacedItemNames.remove(itemId);
+				}
+				else
+				{
+					misplacedItems.put(itemId, newCat);
+				}
+			}
+			refreshPanel();
 			return;
 		}
 
@@ -272,6 +302,7 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			String categoryName = stripped.substring(MENU_SET_PREFIX.length());
 			int itemId = event.getId();
+			log.info("Category click: itemId={}, category={}", itemId, categoryName);
 
 			for (ItemCategory cat : ItemCategory.values())
 			{
@@ -280,6 +311,22 @@ public class BankOrganizerPlugin extends Plugin
 					categorizer.setManualOverride(itemId, cat);
 					saveOverridesToConfig();
 					log.info("Set item ID {} to category {}", itemId, cat);
+					// Update overlay immediately
+					int currentTab = client.getVarbitValue(4150);
+					ItemCategory expectedCat = getCategoryForTab(currentTab);
+					String itemName = itemManager.getItemComposition(itemId).getName();
+					if (expectedCat != null && cat == expectedCat)
+					{
+						misplacedItems.remove(itemId);
+						misplacedItemNames.remove(itemId);
+					}
+					else
+					{
+						misplacedItems.put(itemId, cat);
+						misplacedItemNames.put(itemId, itemName != null ? itemName : "Unknown");
+						scanActive = true;
+					}
+					refreshPanel();
 					break;
 				}
 			}
@@ -327,6 +374,14 @@ public class BankOrganizerPlugin extends Plugin
 			sb.append(entry.getKey()).append(":").append(entry.getValue().name());
 		}
 		config.setManualOverrides(sb.toString());
+	}
+
+	private void refreshPanel()
+	{
+		Map<ItemCategory, Integer> tabMappings = getTabMappings();
+		Map<Integer, ItemCategory> items = new HashMap<>(misplacedItems);
+		Map<Integer, String> names = new HashMap<>(misplacedItemNames);
+		SwingUtilities.invokeLater(() -> panel.updateResults(items, names, tabMappings));
 	}
 
 	// === Config helpers ===
