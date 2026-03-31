@@ -1490,8 +1490,10 @@ public class ItemCategorizer
 		{ skillOrder = 9; tierOrder = 0; }
 
 		// === CONSTRUCTION (skill 10) ===
-		else if (lower.contains("saw") || lower.contains("plank sack"))
+		else if (lower.contains("plank sack"))
 		{ skillOrder = 10; tierOrder = 0; }
+		else if (lower.contains("saw"))
+		{ skillOrder = 10; tierOrder = 1; }
 
 		// === SAILING (skill 17) ===
 		else if (lower.contains("sailing") || lower.contains("ship")
