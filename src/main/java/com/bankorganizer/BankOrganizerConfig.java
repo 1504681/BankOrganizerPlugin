@@ -93,4 +93,7 @@ public interface BankOrganizerConfig extends Config
 
 	@ConfigItem(keyName = "regexRawMaterials", name = "Raw Materials Regex", description = "Custom regex for Raw Materials category", position = 5, section = regexSection)
 	default String regexRawMaterials() { return ""; }
+
+	@ConfigItem(keyName = "regexHighAlch", name = "High Alch Regex", description = "Custom regex for High Alch category", position = 6, section = regexSection)
+	default String regexHighAlch() { return ""; }
 }

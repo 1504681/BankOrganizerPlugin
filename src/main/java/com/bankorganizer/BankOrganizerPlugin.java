@@ -193,7 +193,12 @@ public class BankOrganizerPlugin extends Plugin
 			return;
 		}
 
-		// Add "Remove Override" if has override
+		// Find the current category for this item
+		String itemName = itemManager.getItemComposition(itemId).getName();
+		ItemCategory currentCategory = categorizer.categorize(
+			itemName != null ? itemName : "", itemId);
+
+		// Add "Remove Override" if has manual override
 		if (categorizer.hasManualOverride(itemId))
 		{
 			client.createMenuEntry(-1)
@@ -206,18 +211,34 @@ public class BankOrganizerPlugin extends Plugin
 		}
 
 		// Add category options in reverse order (they stack, last added = top)
+		// Skip the current category, show it with "Current:" prefix instead
 		ItemCategory[] categories = ItemCategory.values();
 		for (int i = categories.length - 1; i >= 0; i--)
 		{
 			ItemCategory cat = categories[i];
 			String colorTag = ColorUtil.colorTag(cat.getColor());
-			client.createMenuEntry(-1)
-				.setOption(colorTag + MENU_SET_PREFIX + cat.getDisplayName())
-				.setTarget(event.getTarget())
-				.setIdentifier(itemId)
-				.setType(MenuAction.RUNELITE)
-				.setParam0(event.getActionParam0())
-				.setParam1(widgetId);
+
+			if (cat == currentCategory)
+			{
+				// Show current category as non-actionable indicator
+				client.createMenuEntry(-1)
+					.setOption(colorTag + "Current: " + cat.getDisplayName())
+					.setTarget(event.getTarget())
+					.setIdentifier(itemId)
+					.setType(MenuAction.RUNELITE)
+					.setParam0(event.getActionParam0())
+					.setParam1(widgetId);
+			}
+			else
+			{
+				client.createMenuEntry(-1)
+					.setOption(colorTag + MENU_SET_PREFIX + cat.getDisplayName())
+					.setTarget(event.getTarget())
+					.setIdentifier(itemId)
+					.setType(MenuAction.RUNELITE)
+					.setParam0(event.getActionParam0())
+					.setParam1(widgetId);
+			}
 		}
 	}
 
@@ -319,6 +340,7 @@ public class BankOrganizerPlugin extends Plugin
 		patterns.put(ItemCategory.FOOD, config.regexFood());
 		patterns.put(ItemCategory.TOOLS, config.regexTools());
 		patterns.put(ItemCategory.RAW_MATERIALS, config.regexRawMaterials());
+		patterns.put(ItemCategory.HIGH_ALCH, config.regexHighAlch());
 		categorizer.setRegexPatterns(patterns);
 	}
 

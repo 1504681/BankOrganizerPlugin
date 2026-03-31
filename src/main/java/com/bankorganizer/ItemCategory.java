@@ -48,6 +48,7 @@ public enum ItemCategory
 		"seed", "grimy", "herb", "feather", "bone",
 		"wool", "flax", "clay", "sand"
 	)),
+	HIGH_ALCH("High Alch", new Color(255, 215, 0), Arrays.asList()),
 	QUEST_MISC("Quest/Misc", new Color(180, 100, 255), Arrays.asList());
 
 	private final String displayName;
