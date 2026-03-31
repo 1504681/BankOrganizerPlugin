@@ -1375,16 +1375,13 @@ public class ItemCategorizer
 			return ((long) 99 << 28) | (itemId & 0xFFFF);
 		}
 
-		// Subcategory override takes full priority — early return
+		// Subcategory override sets skill group; keyword matching sets tier within group
 		Integer subOverride = subCategoryOverrides.get(itemId);
-		if (subOverride != null)
-		{
-			return ((long) subOverride << 28) | (itemId & 0xFFFF);
-		}
 
 		String lower = itemName.toLowerCase();
-		int skillOrder = 99;
+		int skillOrder = subOverride != null ? subOverride : 99;
 		int tierOrder = 50;
+		boolean overridden = subOverride != null;
 
 		// === FARMING (skill 0) ===
 		if (lower.contains("bottomless") && lower.contains("compost"))
@@ -1510,6 +1507,14 @@ public class ItemCategorizer
 		{ skillOrder = 99; }
 
 		// Pack: skillOrder(8) | tierOrder(12) | itemId(16) for guaranteed uniqueness
+		// If overridden, force the skill group but keep the tier from keyword matching
+		if (overridden)
+		{
+			skillOrder = subOverride;
+			// If keywords didn't match this skill's items (tierOrder still 50),
+			// use a default tier based on itemId for stable ordering
+		}
+
 		return ((long) skillOrder << 28) | ((long)(tierOrder & 0xFFF) << 16) | (itemId & 0xFFFF);
 	}
 
