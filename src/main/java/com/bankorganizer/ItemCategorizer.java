@@ -220,6 +220,35 @@ public class ItemCategorizer
 		itemIdMap.put(7936, ItemCategory.RAW_MATERIALS);
 		itemIdMap.put(314, ItemCategory.RAW_MATERIALS);
 		itemIdMap.put(526, ItemCategory.RAW_MATERIALS);
+		itemIdMap.put(23490, ItemCategory.RAW_MATERIALS); // User-contributed
+		itemIdMap.put(26792, ItemCategory.RAW_MATERIALS); // User-contributed
+		itemIdMap.put(13391, ItemCategory.RAW_MATERIALS); // User-contributed
+		itemIdMap.put(28599, ItemCategory.RAW_MATERIALS); // User-contributed
+
+		// === HIGH ALCH ===
+		itemIdMap.put(1393, ItemCategory.HIGH_ALCH); // User-contributed
+
+		// === QUEST/MISC ===
+		itemIdMap.put(12785, ItemCategory.QUEST_MISC); // User-contributed
+
+		// === User-contributed GEAR ===
+		itemIdMap.put(12610, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(12006, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(29031, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(29033, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(29043, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(29045, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(4153, ItemCategory.GEAR);   // Granite maul
+		itemIdMap.put(29594, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(11902, ItemCategory.GEAR);  // User-contributed
+		itemIdMap.put(11, ItemCategory.GEAR);     // User-contributed
+
+		// === User-contributed TELEPORTS ===
+		itemIdMap.put(22947, ItemCategory.TELEPORTS); // User-contributed
+		itemIdMap.put(28327, ItemCategory.TELEPORTS); // User-contributed
+		itemIdMap.put(25930, ItemCategory.TELEPORTS); // User-contributed
+		itemIdMap.put(21389, ItemCategory.TELEPORTS); // User-contributed
+		itemIdMap.put(9781, ItemCategory.TELEPORTS);  // User-contributed
 	}
 
 	private void initializeGearSubCategories()

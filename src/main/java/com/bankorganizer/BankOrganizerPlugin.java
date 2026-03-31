@@ -376,6 +376,92 @@ public class BankOrganizerPlugin extends Plugin
 		config.setManualOverrides(sb.toString());
 	}
 
+	public void exportOverrides()
+	{
+		Map<Integer, ItemCategory> overrides = categorizer.getManualOverrides();
+		if (overrides.isEmpty())
+		{
+			log.info("No manual overrides to export");
+			return;
+		}
+
+		StringBuilder sb = new StringBuilder();
+		for (Map.Entry<Integer, ItemCategory> entry : overrides.entrySet())
+		{
+			if (sb.length() > 0) sb.append(",");
+			sb.append(entry.getKey()).append(":").append(entry.getValue().name());
+		}
+
+		String exportStr = sb.toString();
+		java.awt.Toolkit.getDefaultToolkit()
+			.getSystemClipboard()
+			.setContents(new java.awt.datatransfer.StringSelection(exportStr), null);
+		log.info("Exported {} overrides to clipboard", overrides.size());
+
+		javax.swing.JOptionPane.showMessageDialog(null,
+			"Copied " + overrides.size() + " overrides to clipboard!\n\nShare this with others to import.",
+			"Export Overrides", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+	}
+
+	public void importOverrides()
+	{
+		try
+		{
+			String clipText = (String) java.awt.Toolkit.getDefaultToolkit()
+				.getSystemClipboard()
+				.getData(java.awt.datatransfer.DataFlavor.stringFlavor);
+
+			if (clipText == null || clipText.trim().isEmpty())
+			{
+				javax.swing.JOptionPane.showMessageDialog(null,
+					"Clipboard is empty. Copy an override string first.",
+					"Import Overrides", javax.swing.JOptionPane.WARNING_MESSAGE);
+				return;
+			}
+
+			int imported = 0;
+			for (String entry : clipText.split(","))
+			{
+				String[] parts = entry.split(":");
+				if (parts.length == 2)
+				{
+					try
+					{
+						int id = Integer.parseInt(parts[0].trim());
+						ItemCategory cat = ItemCategory.valueOf(parts[1].trim());
+						categorizer.setManualOverride(id, cat);
+						imported++;
+					}
+					catch (Exception ignored)
+					{
+					}
+				}
+			}
+
+			if (imported > 0)
+			{
+				saveOverridesToConfig();
+				log.info("Imported {} overrides from clipboard", imported);
+				javax.swing.JOptionPane.showMessageDialog(null,
+					"Imported " + imported + " overrides!",
+					"Import Overrides", javax.swing.JOptionPane.INFORMATION_MESSAGE);
+			}
+			else
+			{
+				javax.swing.JOptionPane.showMessageDialog(null,
+					"No valid overrides found in clipboard.",
+					"Import Overrides", javax.swing.JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		catch (Exception e)
+		{
+			log.error("Failed to import overrides", e);
+			javax.swing.JOptionPane.showMessageDialog(null,
+				"Failed to read clipboard.",
+				"Import Overrides", javax.swing.JOptionPane.ERROR_MESSAGE);
+		}
+	}
+
 	private void refreshPanel()
 	{
 		Map<ItemCategory, Integer> tabMappings = getTabMappings();

@@ -84,6 +84,32 @@ public class BankOrganizerPanel extends PluginPanel
 		orderButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
 		orderButton.addActionListener(e -> plugin.startOrdering());
 		mainPanel.add(orderButton);
+		mainPanel.add(Box.createVerticalStrut(5));
+
+		// Export/Import overrides
+		JPanel overridePanel = new JPanel(new GridBagLayout());
+		overridePanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		overridePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		GridBagConstraints obc = new GridBagConstraints();
+		obc.fill = GridBagConstraints.HORIZONTAL;
+		obc.weightx = 1.0;
+		obc.insets = new Insets(0, 0, 0, 4);
+
+		JButton exportButton = new JButton("Export Overrides");
+		exportButton.setFont(exportButton.getFont().deriveFont(11f));
+		exportButton.addActionListener(e -> plugin.exportOverrides());
+		obc.gridx = 0;
+		overridePanel.add(exportButton, obc);
+
+		JButton importButton = new JButton("Import Overrides");
+		importButton.setFont(importButton.getFont().deriveFont(11f));
+		importButton.addActionListener(e -> plugin.importOverrides());
+		obc.gridx = 1;
+		obc.insets = new Insets(0, 0, 0, 0);
+		overridePanel.add(importButton, obc);
+
+		mainPanel.add(overridePanel);
 		mainPanel.add(Box.createVerticalStrut(10));
 
 		// === Ordering guide panel ===
