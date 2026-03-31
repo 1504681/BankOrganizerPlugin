@@ -170,7 +170,12 @@ public class BankOrganizerPanel extends PluginPanel
 		// === ORDERING SECTION ===
 		JPanel orderSection = createSection("Order Items");
 
-		orderButton = makeButton("Start Ordering", true);
+		orderButton = new JButton("Start Ordering");
+		orderButton.setFocusPainted(false);
+		orderButton.setFont(FontManager.getRunescapeBoldFont().deriveFont(14f));
+		orderButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+		orderButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
+		orderButton.setPreferredSize(new Dimension(0, 36));
 		orderButton.addActionListener(e -> plugin.startOrdering());
 		orderSection.add(orderButton);
 
@@ -298,32 +303,26 @@ public class BankOrganizerPanel extends PluginPanel
 		}
 		button.addActionListener(e ->
 		{
-			// Toggle: clicking same filter again turns it off
-			if (activeFilter == category)
+			// "All" or clicking active filter = clear filter
+			if (category == null || activeFilter == category)
 			{
 				activeFilter = null;
 				plugin.setActiveFilter(null);
-				// Also clear scan boxes
-				plugin.setOverlayEnabled(false);
 			}
 			else
 			{
 				activeFilter = category;
 				plugin.setActiveFilter(category);
-				// Auto-enable overlay when filtering
-				if (!plugin.isOverlayEnabled())
-				{
-					plugin.setOverlayEnabled(true);
-				}
 			}
+
 			// Update button highlighting
 			for (JButton fb : filterButtons)
 			{
 				fb.setBackground(null);
 			}
-			if (activeFilter != null || category == null)
+			if (activeFilter != null)
 			{
-				button.setBackground(activeFilter == category ? BTN_ACTIVE : null);
+				button.setBackground(BTN_ACTIVE);
 			}
 		});
 		return button;
