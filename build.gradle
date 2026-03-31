@@ -41,7 +41,7 @@ configurations.all {
 	}
 }
 
-group = 'com.debugplugin'
+group = 'com.bankorganizer'
 version = '1.0.0'
 
 tasks.withType(JavaCompile).configureEach {

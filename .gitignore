@@ -1,11 +1,25 @@
+# Build
 .gradle
-build
+build/
+out/
+*.jar
+!gradle/wrapper/gradle-wrapper.jar
+
+# IDE
 .idea/
+*.iml
 .project
 .settings/
 .classpath
 nbactions.xml
 nb-configuration.xml
 nbproject/
+.vscode/
+
+# Claude
 .claude/
 docs/superpowers/
+
+# OS
+.DS_Store
+Thumbs.db

@@ -426,6 +426,11 @@ public class BankOrganizerPanel extends PluginPanel
 			{
 				activeFilter = category;
 				plugin.setActiveFilter(category);
+				// Auto-enable overlay when selecting a filter
+				if (!plugin.isOverlayEnabled())
+				{
+					plugin.setOverlayEnabled(true);
+				}
 			}
 
 			// Update button highlighting

@@ -39,9 +39,7 @@ public class BankOrganizerOverlay extends Overlay
 	@Override
 	public Dimension render(Graphics2D graphics)
 	{
-		// Tab colors show when overlays are on, a filter is active, or config says always
-		if (plugin.getConfig().showTabColors()
-			&& (plugin.isOverlayEnabled() || plugin.getActiveFilter() != null))
+		if (plugin.getConfig().showTabColors() && plugin.isOverlayEnabled())
 		{
 			drawTabColors(graphics);
 		}
