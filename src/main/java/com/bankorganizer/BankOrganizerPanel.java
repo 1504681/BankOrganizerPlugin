@@ -83,7 +83,25 @@ public class BankOrganizerPanel extends PluginPanel
 			}
 		});
 		profileSection.add(profileDropdown);
-		profileSection.add(Box.createVerticalStrut(4));
+		profileSection.add(Box.createVerticalStrut(3));
+
+		// Collapsible management panel
+		JPanel profileManagePanel = new JPanel();
+		profileManagePanel.setLayout(new BoxLayout(profileManagePanel, BoxLayout.Y_AXIS));
+		profileManagePanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		profileManagePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		profileManagePanel.setVisible(false);
+
+		JButton manageToggle = makeButton("Manage Profiles...", true);
+		manageToggle.addActionListener(e ->
+		{
+			boolean show = !profileManagePanel.isVisible();
+			profileManagePanel.setVisible(show);
+			manageToggle.setText(show ? "Hide Management" : "Manage Profiles...");
+			revalidate();
+		});
+		profileSection.add(manageToggle);
+		profileSection.add(Box.createVerticalStrut(3));
 
 		JPanel profileBtnGrid = new JPanel(new GridLayout(2, 2, 3, 3));
 		profileBtnGrid.setBackground(ColorScheme.DARKER_GRAY_COLOR);
@@ -127,8 +145,8 @@ public class BankOrganizerPanel extends PluginPanel
 		});
 		profileBtnGrid.add(importProfileBtn);
 
-		profileSection.add(profileBtnGrid);
-		profileSection.add(Box.createVerticalStrut(3));
+		profileManagePanel.add(profileBtnGrid);
+		profileManagePanel.add(Box.createVerticalStrut(3));
 
 		JButton deleteProfileBtn = makeButton("Delete Profile", true);
 		deleteProfileBtn.setBackground(BTN_DANGER);
@@ -149,7 +167,9 @@ public class BankOrganizerPanel extends PluginPanel
 				refreshProfileDropdown(profileDropdown);
 			}
 		});
-		profileSection.add(deleteProfileBtn);
+		profileManagePanel.add(deleteProfileBtn);
+
+		profileSection.add(profileManagePanel);
 
 		mainPanel.add(profileSection);
 		mainPanel.add(Box.createVerticalStrut(4));
