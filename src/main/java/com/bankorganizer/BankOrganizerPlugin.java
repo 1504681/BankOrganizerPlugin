@@ -196,8 +196,18 @@ public class BankOrganizerPlugin extends Plugin
 			return;
 		}
 
-		// Re-scan and recompute remaining steps after each bank change
 		recomputeOrderSteps();
+	}
+
+	@Subscribe
+	public void onGameTick(net.runelite.api.events.GameTick event)
+	{
+		// Poll every tick when ordering is active because rearranging items
+		// within a tab doesn't trigger ItemContainerChanged
+		if (orderingActive)
+		{
+			recomputeOrderSteps();
+		}
 	}
 
 
