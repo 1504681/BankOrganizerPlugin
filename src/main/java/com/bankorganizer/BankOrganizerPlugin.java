@@ -36,7 +36,7 @@ import net.runelite.client.util.ColorUtil;
 import net.runelite.client.util.ImageUtil;
 
 @PluginDescriptor(
-	name = "Bank Organizer",
+	name = "Bank Tab Organizer",
 	description = "Scans bank items and highlights misplaced ones based on category presets",
 	tags = {"bank", "organizer", "sort", "tab", "category"}
 )
@@ -179,7 +179,7 @@ public class BankOrganizerPlugin extends Plugin
 		g.dispose();
 
 		navButton = NavigationButton.builder()
-			.tooltip("Bank Organizer")
+			.tooltip("Bank Tab Organizer")
 			.icon(icon)
 			.priority(6)
 			.panel(panel)
@@ -191,7 +191,7 @@ public class BankOrganizerPlugin extends Plugin
 		}
 		overlayManager.add(overlay);
 
-		log.info("Bank Organizer started!");
+		log.info("Bank Tab Organizer started!");
 	}
 
 	@Override
@@ -205,7 +205,7 @@ public class BankOrganizerPlugin extends Plugin
 		categorizeMode = false;
 		orderingActive = false;
 
-		log.info("Bank Organizer stopped!");
+		log.info("Bank Tab Organizer stopped!");
 	}
 
 	@Subscribe

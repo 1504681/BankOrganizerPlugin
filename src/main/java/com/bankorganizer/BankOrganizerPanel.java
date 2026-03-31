@@ -59,7 +59,7 @@ public class BankOrganizerPanel extends PluginPanel
 		mainPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
 		// === HEADER ===
-		JLabel title = new JLabel("Bank Organizer");
+		JLabel title = new JLabel("Bank Tab Organizer");
 		title.setForeground(ACCENT);
 		title.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
 		title.setAlignmentX(Component.LEFT_ALIGNMENT);

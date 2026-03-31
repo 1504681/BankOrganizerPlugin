@@ -1,6 +1,6 @@
 {
   "plugins": ["com.bankorganizer.BankOrganizerPlugin"],
-  "displayName": "Bank Organizer",
+  "displayName": "Bank Tab Organizer",
   "author": "1504681",
   "description": "Scans bank items and highlights misplaced ones based on category presets",
   "tags": ["bank", "organizer", "sort", "tab", "category"],

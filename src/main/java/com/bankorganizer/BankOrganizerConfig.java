@@ -20,7 +20,7 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(
 		keyName = "showSidebarIcon",
 		name = "Show Sidebar Icon",
-		description = "Show the Bank Organizer panel icon in the sidebar",
+		description = "Show the Bank Tab Organizer panel icon in the sidebar",
 		position = 0,
 		section = generalSection
 	)

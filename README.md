@@ -1,4 +1,4 @@
-# Bank Organizer
+# Bank Tab Organizer
 
 A RuneLite plugin that helps you organize your bank by categorizing items, highlighting misplaced ones, and guiding you through reordering items within tabs.
 
