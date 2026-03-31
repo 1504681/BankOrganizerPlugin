@@ -5,8 +5,6 @@ import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
 import java.awt.Font;
-import java.awt.GridBagConstraints;
-import java.awt.GridBagLayout;
 import java.awt.GridLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
@@ -39,6 +37,7 @@ public class BankOrganizerPanel extends PluginPanel
 	private final JButton nextStepButton;
 	private final JButton stopOrderButton;
 	private final List<JButton> filterButtons = new ArrayList<>();
+	private ItemCategory activeFilter = null;
 
 	private static final Color ACCENT = new Color(0, 180, 255);
 	private static final Color BTN_ACTIVE = new Color(40, 80, 40);
@@ -52,7 +51,6 @@ public class BankOrganizerPanel extends PluginPanel
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
-		// Scrollable main content
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
@@ -73,50 +71,61 @@ public class BankOrganizerPanel extends PluginPanel
 		mainPanel.add(presetLabel);
 		mainPanel.add(Box.createVerticalStrut(8));
 
-		// === QUICK ACTIONS (2-column grid) ===
-		JPanel actionsGrid = new JPanel(new GridLayout(0, 2, 4, 4));
-		actionsGrid.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		actionsGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
+		// === OVERLAYS SECTION ===
+		JPanel overlaySection = createSection("Overlays");
 
-		JButton overlayToggle = makeButton("Overlays", false);
+		JPanel overlayGrid = new JPanel(new GridLayout(1, 2, 4, 0));
+		overlayGrid.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		overlayGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JButton overlayToggle = makeButton("Show Overlays", false);
 		overlayToggle.addActionListener(e ->
 		{
 			boolean enabled = !plugin.isOverlayEnabled();
 			plugin.setOverlayEnabled(enabled);
-			overlayToggle.setText(enabled ? "Overlays ON" : "Overlays");
+			overlayToggle.setText(enabled ? "Hide Overlays" : "Show Overlays");
 			overlayToggle.setBackground(enabled ? BTN_ACTIVE : null);
 		});
-		actionsGrid.add(overlayToggle);
+		overlayGrid.add(overlayToggle);
 
 		JButton scanButton = makeButton("Scan Tab", false);
 		scanButton.addActionListener(e -> plugin.scanCurrentTab());
-		actionsGrid.add(scanButton);
+		overlayGrid.add(scanButton);
 
-		JButton highlightUntaggedBtn = makeButton("Untagged", false);
-		highlightUntaggedBtn.addActionListener(e ->
+		overlaySection.add(overlayGrid);
+		mainPanel.add(overlaySection);
+		mainPanel.add(Box.createVerticalStrut(4));
+
+		// === FILTER SECTION ===
+		JPanel filterSection = createSection("Filter Category");
+
+		JPanel filterGrid = new JPanel(new GridLayout(0, 2, 3, 3));
+		filterGrid.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		filterGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JButton allButton = makeFilterButton("All", null);
+		filterGrid.add(allButton);
+		filterButtons.add(allButton);
+
+		for (ItemCategory category : ItemCategory.values())
 		{
-			boolean hl = !plugin.isHighlightUntagged();
-			plugin.setHighlightUntagged(hl);
-			highlightUntaggedBtn.setText(hl ? "Untagged ON" : "Untagged");
-			highlightUntaggedBtn.setBackground(hl ? new Color(100, 40, 40) : null);
-		});
-		actionsGrid.add(highlightUntaggedBtn);
+			JButton btn = makeFilterButton(category.getDisplayName(), category);
+			filterGrid.add(btn);
+			filterButtons.add(btn);
+		}
 
-		JButton exportButton = makeButton("Export", false);
-		exportButton.addActionListener(e -> plugin.exportOverrides());
-		actionsGrid.add(exportButton);
-
-		mainPanel.add(actionsGrid);
-		mainPanel.add(Box.createVerticalStrut(6));
+		filterSection.add(filterGrid);
+		mainPanel.add(filterSection);
+		mainPanel.add(Box.createVerticalStrut(4));
 
 		// === CATEGORIZE SECTION ===
-		JPanel catSection = createSection("Categorize");
+		JPanel catSection = createSection("Categorize Items");
 
 		categorizeButton = makeButton("Start Categorizing", true);
 		categorizeButton.addActionListener(e -> toggleCategorizeMode());
 		catSection.add(categorizeButton);
 
-		subCatToggle = makeButton("Mode: Category", false);
+		subCatToggle = makeButton("Mode: Category", true);
 		subCatToggle.setVisible(false);
 		subCatToggle.addActionListener(e ->
 		{
@@ -126,12 +135,37 @@ public class BankOrganizerPanel extends PluginPanel
 		});
 		catSection.add(subCatToggle);
 
-		JButton importButton = makeButton("Import Overrides", false);
-		importButton.addActionListener(e -> plugin.importOverrides());
-		catSection.add(importButton);
-
 		mainPanel.add(catSection);
-		mainPanel.add(Box.createVerticalStrut(6));
+		mainPanel.add(Box.createVerticalStrut(4));
+
+		// === SUBCATEGORY SECTION ===
+		JPanel subSection = createSection("Subcategory Tools");
+
+		JButton highlightUntaggedBtn = makeButton("Highlight Untagged", true);
+		highlightUntaggedBtn.addActionListener(e ->
+		{
+			boolean hl = !plugin.isHighlightUntagged();
+			plugin.setHighlightUntagged(hl);
+			highlightUntaggedBtn.setText(hl ? "Hide Untagged" : "Highlight Untagged");
+			highlightUntaggedBtn.setBackground(hl ? BTN_DANGER : null);
+		});
+		subSection.add(highlightUntaggedBtn);
+
+		JPanel exportGrid = new JPanel(new GridLayout(1, 2, 4, 0));
+		exportGrid.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		exportGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JButton exportButton = makeButton("Export", false);
+		exportButton.addActionListener(e -> plugin.exportOverrides());
+		exportGrid.add(exportButton);
+
+		JButton importButton = makeButton("Import", false);
+		importButton.addActionListener(e -> plugin.importOverrides());
+		exportGrid.add(importButton);
+
+		subSection.add(exportGrid);
+		mainPanel.add(subSection);
+		mainPanel.add(Box.createVerticalStrut(4));
 
 		// === ORDERING SECTION ===
 		JPanel orderSection = createSection("Order Items");
@@ -191,29 +225,7 @@ public class BankOrganizerPanel extends PluginPanel
 		orderSection.add(orderingPanel);
 
 		mainPanel.add(orderSection);
-		mainPanel.add(Box.createVerticalStrut(6));
-
-		// === FILTER SECTION ===
-		JPanel filterSection = createSection("Filter");
-
-		JPanel filterGrid = new JPanel(new GridLayout(0, 2, 3, 3));
-		filterGrid.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		filterGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		JButton allButton = makeFilterButton("All", null);
-		filterGrid.add(allButton);
-		filterButtons.add(allButton);
-
-		for (ItemCategory category : ItemCategory.values())
-		{
-			JButton btn = makeFilterButton(category.getDisplayName(), category);
-			filterGrid.add(btn);
-			filterButtons.add(btn);
-		}
-
-		filterSection.add(filterGrid);
-		mainPanel.add(filterSection);
-		mainPanel.add(Box.createVerticalStrut(6));
+		mainPanel.add(Box.createVerticalStrut(4));
 
 		// === RESULTS SECTION ===
 		JPanel resultsSection = createSection("Scan Results");
@@ -232,15 +244,13 @@ public class BankOrganizerPanel extends PluginPanel
 		resultsSection.add(scrollPane);
 		mainPanel.add(resultsSection);
 
-		// Wrap everything in a scroll pane for the full panel
+		// Wrap in scroll pane
 		JScrollPane mainScroll = new JScrollPane(mainPanel);
 		mainScroll.setBorder(BorderFactory.createEmptyBorder());
 		mainScroll.setBackground(ColorScheme.DARK_GRAY_COLOR);
 		mainScroll.getVerticalScrollBar().setUnitIncrement(16);
 		add(mainScroll, BorderLayout.CENTER);
 	}
-
-	// === UI Helpers ===
 
 	private JPanel createSection(String title)
 	{
@@ -286,11 +296,38 @@ public class BankOrganizerPanel extends PluginPanel
 		{
 			button.setForeground(plugin.getColorForCategory(category));
 		}
-		button.addActionListener(e -> plugin.setActiveFilter(category));
+		button.addActionListener(e ->
+		{
+			// Toggle: clicking same filter again turns it off
+			if (activeFilter == category)
+			{
+				activeFilter = null;
+				plugin.setActiveFilter(null);
+				// Also clear scan boxes
+				plugin.setOverlayEnabled(false);
+			}
+			else
+			{
+				activeFilter = category;
+				plugin.setActiveFilter(category);
+				// Auto-enable overlay when filtering
+				if (!plugin.isOverlayEnabled())
+				{
+					plugin.setOverlayEnabled(true);
+				}
+			}
+			// Update button highlighting
+			for (JButton fb : filterButtons)
+			{
+				fb.setBackground(null);
+			}
+			if (activeFilter != null || category == null)
+			{
+				button.setBackground(activeFilter == category ? BTN_ACTIVE : null);
+			}
+		});
 		return button;
 	}
-
-	// === State Updates ===
 
 	private void toggleCategorizeMode()
 	{
@@ -320,7 +357,7 @@ public class BankOrganizerPanel extends PluginPanel
 
 		if (misplacedItems.isEmpty())
 		{
-			JLabel noItems = new JLabel("All items are in the correct tab!");
+			JLabel noItems = new JLabel("All items in the correct tab!");
 			noItems.setForeground(new Color(80, 220, 80));
 			noItems.setFont(FontManager.getRunescapeSmallFont());
 			noItems.setBorder(new EmptyBorder(4, 4, 4, 4));
@@ -328,7 +365,7 @@ public class BankOrganizerPanel extends PluginPanel
 		}
 		else
 		{
-			JLabel countLabel = new JLabel(misplacedItems.size() + " misplaced items");
+			JLabel countLabel = new JLabel(misplacedItems.size() + " misplaced");
 			countLabel.setForeground(new Color(255, 150, 150));
 			countLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
 			countLabel.setBorder(new EmptyBorder(2, 4, 4, 4));
@@ -352,7 +389,7 @@ public class BankOrganizerPanel extends PluginPanel
 				String itemName = itemNames.getOrDefault(itemId, "Unknown");
 
 				Integer tabNum = tabMappings.get(correctCategory);
-				String tabStr = tabNum != null ? "Tab " + tabNum : "?";
+				String tabStr = tabNum != null ? "T" + tabNum : "?";
 
 				JPanel row = new JPanel(new BorderLayout());
 				row.setBackground(shown % 2 == 0 ? ColorScheme.DARKER_GRAY_COLOR : new Color(35, 35, 35));
