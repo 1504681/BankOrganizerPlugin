@@ -1410,8 +1410,10 @@ public class ItemCategorizer
 		else if (lower.contains("colossal pouch"))
 		{ skillOrder = 1; tierOrder = 0; }
 		else if (lower.contains("pouch") && !lower.contains("rune") && !lower.contains("fur")
-			&& (lower.contains("small") || lower.contains("medium") || lower.contains("large")
-				|| lower.contains("giant") || lower.contains("essence")))
+			&& !lower.contains("meat") && !lower.contains("bolt") && !lower.contains("seed")
+			&& (lower.contains("small pouch") || lower.contains("medium pouch")
+				|| lower.contains("large pouch") || lower.contains("giant pouch")
+				|| lower.contains("essence")))
 		{ skillOrder = 1; tierOrder = 1 + getPouchTier(lower); }
 		else if (lower.contains("talisman"))
 		{ skillOrder = 1; tierOrder = 10 + getTalismanOrder(lower); }
