@@ -132,7 +132,17 @@ public class BankOrganizerPlugin extends Plugin
 	public boolean isPreviewMode() { return previewMode; }
 	public List<PreviewItem> getPreviewItems() { return previewItems; }
 	public boolean isOverlayEnabled() { return overlayEnabled; }
-	public void setOverlayEnabled(boolean enabled) { this.overlayEnabled = enabled; }
+	public void setOverlayEnabled(boolean enabled)
+	{
+		this.overlayEnabled = enabled;
+		if (!enabled)
+		{
+			// Clear scan state so misplaced boxes don't linger
+			scanActive = false;
+			misplacedItems.clear();
+			misplacedItemNames.clear();
+		}
+	}
 
 	@Provides
 	BankOrganizerConfig provideConfig(ConfigManager configManager)
