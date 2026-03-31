@@ -511,28 +511,32 @@ public class BankOrganizerPlugin extends Plugin
 	private long getItemSortKey(BankItem item, ItemCategory tabCategory,
 		GearSortMode gearMode, TeleportSortMode teleportMode)
 	{
+		long categoryKey = 0;
 		if (tabCategory == ItemCategory.GEAR)
 		{
-			return categorizer.getGearFullSortKey(item.name, item.itemId,
+			categoryKey = categorizer.getGearFullSortKey(item.name, item.itemId,
 				getEquipmentStats(item.itemId), gearMode);
 		}
 		else if (tabCategory == ItemCategory.TELEPORTS)
 		{
-			return categorizer.getTeleportFullSortKey(item.name, item.itemId, teleportMode);
+			categoryKey = categorizer.getTeleportFullSortKey(item.name, item.itemId, teleportMode);
 		}
 		else if (tabCategory == ItemCategory.RAW_MATERIALS)
 		{
-			return categorizer.getMaterialFullSortKey(item.name, item.itemId);
+			categoryKey = categorizer.getMaterialFullSortKey(item.name, item.itemId);
 		}
 		else if (tabCategory == ItemCategory.SKILLING)
 		{
-			return categorizer.getSkillingFullSortKey(item.name, item.itemId);
+			categoryKey = categorizer.getSkillingFullSortKey(item.name, item.itemId);
 		}
 		else if (tabCategory == ItemCategory.POTIONS)
 		{
-			return categorizer.getPotionFullSortKey(item.name, item.itemId);
+			categoryKey = categorizer.getPotionFullSortKey(item.name, item.itemId);
 		}
-		return 0;
+
+		// Use item ID as tiebreaker so items with identical stats have a stable order
+		// Shift category key left by 16 bits and add item ID in the low bits
+		return (categoryKey << 16) | (item.itemId & 0xFFFF);
 	}
 
 	private net.runelite.http.api.item.ItemEquipmentStats getEquipmentStats(int itemId)
