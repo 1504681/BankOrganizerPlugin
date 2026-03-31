@@ -346,21 +346,36 @@ public class BankOrganizerPlugin extends Plugin
 		ItemCategory currentCategory = categorizer.categorize(
 			itemName != null ? itemName : "", itemId);
 
-		// Get current subcategory
-		int currentSkillIdx = categorizer.getSkillGroupIndex(
-			itemName != null ? itemName : "", itemId);
-		String currentSkillName = (currentSkillIdx < ItemCategorizer.SKILL_NAMES.length)
-			? ItemCategorizer.SKILL_NAMES[currentSkillIdx] : null;
+		// Get current subcategory — context-aware based on category
+		String[] subNames;
+		java.awt.Color[] subColors;
+		int currentSubIdx;
+		String currentSubName;
 
-		// Add "Remove: {skill}" if has subcategory override, or "Remove Override" for category
+		if (currentCategory == ItemCategory.RAW_MATERIALS)
+		{
+			subNames = ItemCategorizer.MATERIAL_GROUP_NAMES;
+			subColors = ItemCategorizer.SKILL_COLORS; // Reuse skill colors
+			currentSubIdx = categorizer.getMaterialGroupIndex(
+				itemName != null ? itemName : "", itemId);
+			currentSubName = (currentSubIdx < subNames.length) ? subNames[currentSubIdx] : null;
+		}
+		else
+		{
+			subNames = ItemCategorizer.SKILL_NAMES;
+			subColors = ItemCategorizer.SKILL_COLORS;
+			currentSubIdx = categorizer.getSkillGroupIndex(
+				itemName != null ? itemName : "", itemId);
+			currentSubName = (currentSubIdx < subNames.length) ? subNames[currentSubIdx] : null;
+		}
+
+		// Add "Remove: {sub}" if has subcategory override, or "Remove Override" for category
 		if (categorizer.hasSubCategoryOverride(itemId))
 		{
 			int subIdx = categorizer.getSubCategoryOverrides().get(itemId);
-			String subName = subIdx < ItemCategorizer.SKILL_NAMES.length
-				? ItemCategorizer.SKILL_NAMES[subIdx] : "Unknown";
-			java.awt.Color subColor = subIdx < ItemCategorizer.SKILL_COLORS.length
-				? ItemCategorizer.SKILL_COLORS[subIdx]
-				: getColorForCategory(ItemCategory.SKILLING);
+			String subName = subIdx < subNames.length ? subNames[subIdx] : "Unknown";
+			java.awt.Color subColor = subIdx < subColors.length
+				? subColors[subIdx] : getColorForCategory(currentCategory);
 			client.createMenuEntry(-1)
 				.setOption(ColorUtil.colorTag(subColor) + "Remove: " + subName)
 				.setTarget(event.getTarget())
@@ -382,20 +397,18 @@ public class BankOrganizerPlugin extends Plugin
 
 		if (subCategoryMode)
 		{
-			// SUBCATEGORY MODE: show all skills, mark current with "Current:"
-			String[] skillNames = ItemCategorizer.SKILL_NAMES;
-			for (int i = skillNames.length - 1; i >= 0; i--)
+			// SUBCATEGORY MODE: show subcategories for this item's category type
+			for (int i = subNames.length - 1; i >= 0; i--)
 			{
-				java.awt.Color skillColor = i < ItemCategorizer.SKILL_COLORS.length
-						? ItemCategorizer.SKILL_COLORS[i]
-						: getColorForCategory(ItemCategory.SKILLING);
+				java.awt.Color color = i < subColors.length
+						? subColors[i] : getColorForCategory(currentCategory);
 
-				String prefix = (currentSkillName != null && skillNames[i].equals(currentSkillName))
+				String prefix = (currentSubName != null && subNames[i].equals(currentSubName))
 					? "Current: " : "Sub: ";
 
 				client.createMenuEntry(-1)
-					.setOption(ColorUtil.colorTag(skillColor)
-						+ prefix + skillNames[i])
+					.setOption(ColorUtil.colorTag(color)
+						+ prefix + subNames[i])
 					.setTarget(event.getTarget())
 					.setIdentifier(itemId)
 					.setType(MenuAction.RUNELITE)
@@ -531,20 +544,38 @@ public class BankOrganizerPlugin extends Plugin
 			}
 		}
 
-		// Handle subcategory assignment
+		// Handle subcategory assignment — check both skill names and material group names
 		if (stripped.startsWith("Sub: "))
 		{
 			String subName = stripped.substring(5);
 			int itemId = event.getId();
-			String[] skillNames = ItemCategorizer.SKILL_NAMES;
-			for (int i = 0; i < skillNames.length; i++)
+			boolean found = false;
+
+			// Check skill names first
+			for (int i = 0; i < ItemCategorizer.SKILL_NAMES.length; i++)
 			{
-				if (skillNames[i].equals(subName))
+				if (ItemCategorizer.SKILL_NAMES[i].equals(subName))
 				{
 					categorizer.setSubCategoryOverride(itemId, i);
 					saveSubOverridesToConfig();
 					log.info("Set item ID {} to subcategory {} ({})", itemId, i, subName);
+					found = true;
 					break;
+				}
+			}
+
+			// Then check material group names
+			if (!found)
+			{
+				for (int i = 0; i < ItemCategorizer.MATERIAL_GROUP_NAMES.length; i++)
+				{
+					if (ItemCategorizer.MATERIAL_GROUP_NAMES[i].equals(subName))
+					{
+						categorizer.setSubCategoryOverride(itemId, i);
+						saveSubOverridesToConfig();
+						log.info("Set item ID {} to material subcategory {} ({})", itemId, i, subName);
+						break;
+					}
 				}
 			}
 		}
