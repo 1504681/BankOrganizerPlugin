@@ -1371,6 +1371,13 @@ public class ItemCategorizer
 			return ((long) subOverride << 12) | (itemId & 0xFFF);
 		}
 
+		// If this item is categorized as something other than Skilling, push to end
+		ItemCategory cat = categorize(itemName, itemId);
+		if (cat != ItemCategory.SKILLING)
+		{
+			return ((long) 99 << 12) | (itemId & 0xFFF);
+		}
+
 		String lower = itemName.toLowerCase();
 		int skillOrder = 99;
 		int tierOrder = 50;
