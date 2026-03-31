@@ -738,35 +738,123 @@ public class BankOrganizerPlugin extends Plugin
 			getItemSortKey(item, tabCategory, gearMode, teleportMode)
 		));
 
-		// Find the first item that's in the wrong position
-		// Compare ideal order against current order by item ID sequence
-		OrderStep nextStep = null;
-		int totalOutOfPlace = 0;
-
+		// Build a map of itemId -> current position and itemId -> ideal position
+		Map<Integer, Integer> currentPosMap = new HashMap<>();
+		Map<Integer, Integer> idealPosMap = new HashMap<>();
+		for (int i = 0; i < currentItems.size(); i++)
+		{
+			currentPosMap.put(currentItems.get(i).itemId, i);
+		}
 		for (int i = 0; i < idealOrder.size(); i++)
 		{
-			if (i >= currentItems.size()) break;
+			idealPosMap.put(idealOrder.get(i).itemId, i);
+		}
+
+		// Count out-of-place items
+		int totalOutOfPlace = 0;
+		for (int i = 0; i < idealOrder.size() && i < currentItems.size(); i++)
+		{
 			if (idealOrder.get(i).itemId != currentItems.get(i).itemId)
 			{
 				totalOutOfPlace++;
+			}
+		}
 
-				if (nextStep == null)
+		OrderStep nextStep = null;
+
+		// Priority 1: Look for beneficial swaps
+		// A swap fixes two items at once if item A is where B should be and B is where A should be
+		for (int i = 0; i < currentItems.size() && nextStep == null; i++)
+		{
+			int currentItemId = currentItems.get(i).itemId;
+			Integer idealPos = idealPosMap.get(currentItemId);
+			if (idealPos == null || idealPos == i)
+			{
+				continue; // Already in correct position
+			}
+
+			// What item is currently at this item's ideal position?
+			if (idealPos < currentItems.size())
+			{
+				int otherItemId = currentItems.get(idealPos).itemId;
+				Integer otherIdealPos = idealPosMap.get(otherItemId);
+
+				// If the other item's ideal position is where this item currently is = perfect swap
+				if (otherIdealPos != null && otherIdealPos == i)
 				{
-					// The item that SHOULD be at position i
-					BankItem idealItem = idealOrder.get(i);
-					// The item that IS at position i (what we need to insert before)
-					BankItem currentAtTarget = currentItems.get(i);
+					BankItem itemA = currentItems.get(i);
+					BankItem itemB = currentItems.get(idealPos);
+					String subCatName = getSubCategoryName(itemA, tabCategory);
 
+					nextStep = new OrderStep(
+						itemA.itemId,
+						itemA.name,
+						idealPos,
+						"[SWAP] Swap " + itemA.name + " with " + itemB.name,
+						subCatName,
+						itemB.itemId,
+						true
+					);
+				}
+			}
+		}
+
+		// Priority 2: Look for swaps that fix at least one item
+		if (nextStep == null)
+		{
+			for (int i = 0; i < currentItems.size() && nextStep == null; i++)
+			{
+				int currentItemId = currentItems.get(i).itemId;
+				Integer idealPos = idealPosMap.get(currentItemId);
+				if (idealPos == null || idealPos == i) continue;
+
+				// Swapping this item to its ideal position — does it improve things?
+				if (idealPos < currentItems.size())
+				{
+					BankItem itemA = currentItems.get(i);
+					BankItem itemB = currentItems.get(idealPos);
+					String subCatName = getSubCategoryName(itemA, tabCategory);
+
+					// Check if the item currently at the ideal position is also out of place
+					Integer itemBIdealPos = idealPosMap.get(itemB.itemId);
+					if (itemBIdealPos != null && itemBIdealPos != idealPos)
+					{
+						// Both are wrong, swap fixes at least one
+						nextStep = new OrderStep(
+							itemA.itemId,
+							itemA.name,
+							idealPos,
+							"[SWAP] Swap " + itemA.name + " with " + itemB.name,
+							subCatName,
+							itemB.itemId,
+							true
+						);
+					}
+				}
+			}
+		}
+
+		// Priority 3: Fall back to insert for the first out-of-place item
+		if (nextStep == null)
+		{
+			for (int i = 0; i < idealOrder.size() && i < currentItems.size(); i++)
+			{
+				if (idealOrder.get(i).itemId != currentItems.get(i).itemId)
+				{
+					BankItem idealItem = idealOrder.get(i);
+					BankItem currentAtTarget = currentItems.get(i);
 					String subCatName = getSubCategoryName(idealItem, tabCategory);
 
 					nextStep = new OrderStep(
 						idealItem.itemId,
 						idealItem.name,
 						i,
-						"Insert " + idealItem.name + " before " + currentAtTarget.name,
+						"[INSERT] Insert " + idealItem.name + " before " + currentAtTarget.name,
 						subCatName,
-						currentAtTarget.itemId
+						currentAtTarget.itemId,
+						false
 					);
+					break;
 				}
 			}
 		}
@@ -929,9 +1017,10 @@ public class BankOrganizerPlugin extends Plugin
 		public final int targetSlot;
 		public final String instruction;
 		public final String subCategory;
-		public final int targetItemId; // The item to insert before
+		public final int targetItemId;
+		public final boolean isSwap;
 
-		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory, int targetItemId)
+		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory, int targetItemId, boolean isSwap)
 		{
 			this.itemId = itemId;
 			this.itemName = itemName;
@@ -939,6 +1028,13 @@ public class BankOrganizerPlugin extends Plugin
 			this.instruction = instruction;
 			this.subCategory = subCategory;
 			this.targetItemId = targetItemId;
+			this.isSwap = isSwap;
+		}
+
+		// Backwards compatible constructor
+		public OrderStep(int itemId, String itemName, int targetSlot, String instruction, String subCategory, int targetItemId)
+		{
+			this(itemId, itemName, targetSlot, instruction, subCategory, targetItemId, false);
 		}
 	}
 

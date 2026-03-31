@@ -274,20 +274,22 @@ public class BankOrganizerOverlay extends Overlay
 
 			if (itemId == step.itemId)
 			{
-				// Highlight the item to move with a pulsing green border
-				Color highlight = new Color(0, 255, 100, 180);
-				Color fill = new Color(0, 255, 100, 50);
+				Color highlight = step.isSwap
+					? new Color(0, 200, 255, 180)   // Cyan for swap
+					: new Color(0, 255, 100, 180);   // Green for insert
+				Color fill = step.isSwap
+					? new Color(0, 200, 255, 50)
+					: new Color(0, 255, 100, 50);
 				graphics.setColor(fill);
 				graphics.fill(bounds);
 				graphics.setColor(highlight);
 				graphics.setStroke(new BasicStroke(2));
 				graphics.draw(bounds);
 
-				// Draw label above
 				Font oldFont = graphics.getFont();
 				graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
 				graphics.setColor(Color.WHITE);
-				String label = "MOVE THIS";
+				String label = step.isSwap ? "SWAP" : "MOVE";
 				int textX = bounds.x + (bounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
 				int textY = bounds.y - 3;
 				graphics.drawString(label, textX, textY);
@@ -307,8 +309,12 @@ public class BankOrganizerOverlay extends Overlay
 				if (targetBounds == null || targetBounds.width <= 0) continue;
 				if (containerBounds != null && !containerBounds.contains(targetBounds)) continue;
 
-				Color targetFill = new Color(255, 255, 0, 50);
-				Color targetBorder = new Color(255, 255, 0, 200);
+				Color targetFill = step.isSwap
+					? new Color(0, 200, 255, 50)   // Cyan for swap target too
+					: new Color(255, 255, 0, 50);
+				Color targetBorder = step.isSwap
+					? new Color(0, 200, 255, 200)
+					: new Color(255, 255, 0, 200);
 				graphics.setColor(targetFill);
 				graphics.fill(targetBounds);
 				graphics.setColor(targetBorder);
@@ -317,8 +323,8 @@ public class BankOrganizerOverlay extends Overlay
 
 				Font oldFont = graphics.getFont();
 				graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
-				graphics.setColor(new Color(255, 255, 100));
-				String label = "INSERT BEFORE";
+				graphics.setColor(step.isSwap ? new Color(100, 220, 255) : new Color(255, 255, 100));
+				String label = step.isSwap ? "SWAP" : "INSERT BEFORE";
 				int textX = targetBounds.x + (targetBounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
 				int textY = targetBounds.y - 3;
 				graphics.drawString(label, textX, textY);
