@@ -4,8 +4,10 @@ import java.awt.BorderLayout;
 import java.awt.Color;
 import java.awt.Component;
 import java.awt.Dimension;
+import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.awt.GridLayout;
 import java.awt.Insets;
 import java.util.ArrayList;
 import java.util.List;
@@ -20,6 +22,7 @@ import javax.swing.JScrollPane;
 import javax.swing.SwingConstants;
 import javax.swing.border.EmptyBorder;
 import net.runelite.client.ui.ColorScheme;
+import net.runelite.client.ui.FontManager;
 import net.runelite.client.ui.PluginPanel;
 
 public class BankOrganizerPanel extends PluginPanel
@@ -37,6 +40,10 @@ public class BankOrganizerPanel extends PluginPanel
 	private final JButton stopOrderButton;
 	private final List<JButton> filterButtons = new ArrayList<>();
 
+	private static final Color ACCENT = new Color(0, 180, 255);
+	private static final Color BTN_ACTIVE = new Color(40, 80, 40);
+	private static final Color BTN_DANGER = new Color(100, 40, 40);
+
 	public BankOrganizerPanel(BankOrganizerPlugin plugin)
 	{
 		super(false);
@@ -45,67 +52,71 @@ public class BankOrganizerPanel extends PluginPanel
 		setLayout(new BorderLayout());
 		setBackground(ColorScheme.DARK_GRAY_COLOR);
 
+		// Scrollable main content
 		JPanel mainPanel = new JPanel();
 		mainPanel.setLayout(new BoxLayout(mainPanel, BoxLayout.Y_AXIS));
 		mainPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		mainPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
+		mainPanel.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-		// Title
+		// === HEADER ===
 		JLabel title = new JLabel("Bank Organizer");
-		title.setForeground(Color.WHITE);
-		title.setFont(title.getFont().deriveFont(16f));
+		title.setForeground(ACCENT);
+		title.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
 		title.setAlignmentX(Component.LEFT_ALIGNMENT);
 		mainPanel.add(title);
-		mainPanel.add(Box.createVerticalStrut(5));
+		mainPanel.add(Box.createVerticalStrut(2));
 
-		// Preset label
-		JLabel presetLabel = new JLabel("Preset: Default Layout");
+		JLabel presetLabel = new JLabel("Default Layout");
 		presetLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		presetLabel.setFont(FontManager.getRunescapeSmallFont());
 		presetLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		mainPanel.add(presetLabel);
-		mainPanel.add(Box.createVerticalStrut(10));
+		mainPanel.add(Box.createVerticalStrut(8));
 
-		// === Preview toggle at top ===
-		JButton overlayToggle = new JButton("Show Overlays");
-		overlayToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
-		overlayToggle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		// === QUICK ACTIONS (2-column grid) ===
+		JPanel actionsGrid = new JPanel(new GridLayout(0, 2, 4, 4));
+		actionsGrid.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		actionsGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JButton overlayToggle = makeButton("Overlays", false);
 		overlayToggle.addActionListener(e ->
 		{
 			boolean enabled = !plugin.isOverlayEnabled();
 			plugin.setOverlayEnabled(enabled);
-			if (enabled)
-			{
-				overlayToggle.setText("Hide Overlays");
-				overlayToggle.setBackground(new Color(60, 100, 60));
-			}
-			else
-			{
-				overlayToggle.setText("Show Overlays");
-				overlayToggle.setBackground(null);
-			}
+			overlayToggle.setText(enabled ? "Overlays ON" : "Overlays");
+			overlayToggle.setBackground(enabled ? BTN_ACTIVE : null);
 		});
-		mainPanel.add(overlayToggle);
-		mainPanel.add(Box.createVerticalStrut(5));
+		actionsGrid.add(overlayToggle);
 
-		// === Action buttons ===
-		JButton scanButton = new JButton("Scan Current Tab");
-		scanButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-		scanButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		JButton scanButton = makeButton("Scan Tab", false);
 		scanButton.addActionListener(e -> plugin.scanCurrentTab());
-		mainPanel.add(scanButton);
-		mainPanel.add(Box.createVerticalStrut(5));
+		actionsGrid.add(scanButton);
 
-		categorizeButton = new JButton("Start Categorizing");
-		categorizeButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-		categorizeButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
+		JButton highlightUntaggedBtn = makeButton("Untagged", false);
+		highlightUntaggedBtn.addActionListener(e ->
+		{
+			boolean hl = !plugin.isHighlightUntagged();
+			plugin.setHighlightUntagged(hl);
+			highlightUntaggedBtn.setText(hl ? "Untagged ON" : "Untagged");
+			highlightUntaggedBtn.setBackground(hl ? new Color(100, 40, 40) : null);
+		});
+		actionsGrid.add(highlightUntaggedBtn);
+
+		JButton exportButton = makeButton("Export", false);
+		exportButton.addActionListener(e -> plugin.exportOverrides());
+		actionsGrid.add(exportButton);
+
+		mainPanel.add(actionsGrid);
+		mainPanel.add(Box.createVerticalStrut(6));
+
+		// === CATEGORIZE SECTION ===
+		JPanel catSection = createSection("Categorize");
+
+		categorizeButton = makeButton("Start Categorizing", true);
 		categorizeButton.addActionListener(e -> toggleCategorizeMode());
-		mainPanel.add(categorizeButton);
-		mainPanel.add(Box.createVerticalStrut(3));
+		catSection.add(categorizeButton);
 
-		subCatToggle = new JButton("Mode: Category");
-		subCatToggle.setAlignmentX(Component.LEFT_ALIGNMENT);
-		subCatToggle.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-		subCatToggle.setFont(subCatToggle.getFont().deriveFont(11f));
+		subCatToggle = makeButton("Mode: Category", false);
 		subCatToggle.setVisible(false);
 		subCatToggle.addActionListener(e ->
 		{
@@ -113,185 +124,173 @@ public class BankOrganizerPanel extends PluginPanel
 			plugin.setSubCategoryMode(newMode);
 			subCatToggle.setText(newMode ? "Mode: Subcategory" : "Mode: Category");
 		});
-		mainPanel.add(subCatToggle);
-		mainPanel.add(Box.createVerticalStrut(5));
+		catSection.add(subCatToggle);
 
-		orderButton = new JButton("Start Ordering Items");
-		orderButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-		orderButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 30));
-		orderButton.addActionListener(e -> plugin.startOrdering());
-		mainPanel.add(orderButton);
-		mainPanel.add(Box.createVerticalStrut(3));
-
-		JButton highlightUntaggedBtn = new JButton("Highlight Untagged: OFF");
-		highlightUntaggedBtn.setAlignmentX(Component.LEFT_ALIGNMENT);
-		highlightUntaggedBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
-		highlightUntaggedBtn.setFont(highlightUntaggedBtn.getFont().deriveFont(11f));
-		highlightUntaggedBtn.addActionListener(e ->
-		{
-			boolean hl = !plugin.isHighlightUntagged();
-			plugin.setHighlightUntagged(hl);
-			highlightUntaggedBtn.setText("Highlight Untagged: " + (hl ? "ON" : "OFF"));
-		});
-		mainPanel.add(highlightUntaggedBtn);
-		mainPanel.add(Box.createVerticalStrut(5));
-
-		// Export/Import overrides
-		JPanel overridePanel = new JPanel(new GridBagLayout());
-		overridePanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		overridePanel.setAlignmentX(Component.LEFT_ALIGNMENT);
-
-		GridBagConstraints obc = new GridBagConstraints();
-		obc.fill = GridBagConstraints.HORIZONTAL;
-		obc.weightx = 1.0;
-		obc.insets = new Insets(0, 0, 0, 4);
-
-		JButton exportButton = new JButton("Export Overrides");
-		exportButton.setFont(exportButton.getFont().deriveFont(11f));
-		exportButton.addActionListener(e -> plugin.exportOverrides());
-		obc.gridx = 0;
-		overridePanel.add(exportButton, obc);
-
-		JButton importButton = new JButton("Import Overrides");
-		importButton.setFont(importButton.getFont().deriveFont(11f));
+		JButton importButton = makeButton("Import Overrides", false);
 		importButton.addActionListener(e -> plugin.importOverrides());
-		obc.gridx = 1;
-		obc.insets = new Insets(0, 0, 0, 0);
-		overridePanel.add(importButton, obc);
+		catSection.add(importButton);
 
-		mainPanel.add(overridePanel);
-		mainPanel.add(Box.createVerticalStrut(10));
+		mainPanel.add(catSection);
+		mainPanel.add(Box.createVerticalStrut(6));
 
-		// === Ordering guide panel ===
+		// === ORDERING SECTION ===
+		JPanel orderSection = createSection("Order Items");
+
+		orderButton = makeButton("Start Ordering", true);
+		orderButton.addActionListener(e -> plugin.startOrdering());
+		orderSection.add(orderButton);
+
+		// Ordering guide (hidden by default)
 		orderingPanel = new JPanel();
 		orderingPanel.setLayout(new BoxLayout(orderingPanel, BoxLayout.Y_AXIS));
-		orderingPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		orderingPanel.setBackground(new Color(30, 45, 30));
 		orderingPanel.setBorder(BorderFactory.createCompoundBorder(
 			BorderFactory.createLineBorder(new Color(80, 180, 80), 1),
-			new EmptyBorder(8, 8, 8, 8)
+			new EmptyBorder(6, 6, 6, 6)
 		));
 		orderingPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		orderingPanel.setVisible(false);
 
-		JLabel orderingTitle = new JLabel("Ordering Guide");
-		orderingTitle.setForeground(new Color(80, 180, 80));
-		orderingTitle.setFont(orderingTitle.getFont().deriveFont(13f));
-		orderingPanel.add(orderingTitle);
-		orderingPanel.add(Box.createVerticalStrut(3));
-
-		JLabel insertNote = new JLabel("(Make sure Insert mode is ON)");
+		JLabel insertNote = new JLabel("Use Insert mode!");
 		insertNote.setForeground(new Color(255, 200, 100));
-		insertNote.setFont(insertNote.getFont().deriveFont(10f));
+		insertNote.setFont(FontManager.getRunescapeSmallFont());
 		orderingPanel.add(insertNote);
-		orderingPanel.add(Box.createVerticalStrut(5));
+		orderingPanel.add(Box.createVerticalStrut(4));
 
 		orderingSubCatLabel = new JLabel("");
-		orderingSubCatLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		orderingSubCatLabel.setForeground(new Color(80, 220, 80));
+		orderingSubCatLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		orderingPanel.add(orderingSubCatLabel);
-		orderingPanel.add(Box.createVerticalStrut(3));
+		orderingPanel.add(Box.createVerticalStrut(2));
 
 		orderingStepLabel = new JLabel("");
 		orderingStepLabel.setForeground(Color.WHITE);
-		orderingStepLabel.setFont(orderingStepLabel.getFont().deriveFont(12f));
+		orderingStepLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		orderingPanel.add(orderingStepLabel);
-		orderingPanel.add(Box.createVerticalStrut(5));
+		orderingPanel.add(Box.createVerticalStrut(4));
 
 		orderingProgressLabel = new JLabel("");
 		orderingProgressLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
 		orderingPanel.add(orderingProgressLabel);
-		orderingPanel.add(Box.createVerticalStrut(8));
+		orderingPanel.add(Box.createVerticalStrut(6));
 
-		JPanel orderBtnPanel = new JPanel(new GridBagLayout());
-		orderBtnPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		JPanel orderBtnPanel = new JPanel(new GridLayout(1, 2, 4, 0));
+		orderBtnPanel.setBackground(new Color(30, 45, 30));
 		orderBtnPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		GridBagConstraints obgc = new GridBagConstraints();
-		obgc.fill = GridBagConstraints.HORIZONTAL;
-		obgc.weightx = 1.0;
-		obgc.insets = new Insets(0, 0, 0, 4);
-
-		nextStepButton = new JButton("Next");
+		nextStepButton = makeButton("Skip", false);
 		nextStepButton.addActionListener(e -> plugin.advanceOrderStep());
-		obgc.gridx = 0;
-		orderBtnPanel.add(nextStepButton, obgc);
+		orderBtnPanel.add(nextStepButton);
 
-		stopOrderButton = new JButton("Stop");
+		stopOrderButton = makeButton("Stop", false);
+		stopOrderButton.setBackground(BTN_DANGER);
 		stopOrderButton.addActionListener(e -> plugin.stopOrdering());
-		obgc.gridx = 1;
-		obgc.insets = new Insets(0, 0, 0, 0);
-		orderBtnPanel.add(stopOrderButton, obgc);
+		orderBtnPanel.add(stopOrderButton);
 
 		orderingPanel.add(orderBtnPanel);
+		orderSection.add(orderingPanel);
 
-		mainPanel.add(orderingPanel);
-		mainPanel.add(Box.createVerticalStrut(10));
+		mainPanel.add(orderSection);
+		mainPanel.add(Box.createVerticalStrut(6));
 
-		// === Category filter section ===
-		JLabel filterLabel = new JLabel("Filter by Category:");
-		filterLabel.setForeground(Color.WHITE);
-		filterLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		mainPanel.add(filterLabel);
-		mainPanel.add(Box.createVerticalStrut(5));
+		// === FILTER SECTION ===
+		JPanel filterSection = createSection("Filter");
 
-		JPanel filterPanel = new JPanel(new GridBagLayout());
-		filterPanel.setBackground(ColorScheme.DARK_GRAY_COLOR);
-		filterPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		JPanel filterGrid = new JPanel(new GridLayout(0, 2, 3, 3));
+		filterGrid.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		filterGrid.setAlignmentX(Component.LEFT_ALIGNMENT);
 
-		GridBagConstraints gbc = new GridBagConstraints();
-		gbc.fill = GridBagConstraints.HORIZONTAL;
-		gbc.insets = new Insets(2, 2, 2, 2);
-		gbc.weightx = 1.0;
-
-		JButton allButton = createFilterButton("All", null);
-		gbc.gridx = 0;
-		gbc.gridy = 0;
-		filterPanel.add(allButton, gbc);
+		JButton allButton = makeFilterButton("All", null);
+		filterGrid.add(allButton);
 		filterButtons.add(allButton);
 
-		int col = 1;
-		int row = 0;
 		for (ItemCategory category : ItemCategory.values())
 		{
-			JButton btn = createFilterButton(category.getDisplayName(), category);
-			gbc.gridx = col;
-			gbc.gridy = row;
-			filterPanel.add(btn, gbc);
+			JButton btn = makeFilterButton(category.getDisplayName(), category);
+			filterGrid.add(btn);
 			filterButtons.add(btn);
-
-			col++;
-			if (col > 1)
-			{
-				col = 0;
-				row++;
-			}
 		}
 
-		mainPanel.add(filterPanel);
-		mainPanel.add(Box.createVerticalStrut(15));
+		filterSection.add(filterGrid);
+		mainPanel.add(filterSection);
+		mainPanel.add(Box.createVerticalStrut(6));
 
-		// === Results section ===
-		JLabel resultsLabel = new JLabel("Misplaced Items:");
-		resultsLabel.setForeground(Color.WHITE);
-		resultsLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
-		mainPanel.add(resultsLabel);
-		mainPanel.add(Box.createVerticalStrut(5));
+		// === RESULTS SECTION ===
+		JPanel resultsSection = createSection("Scan Results");
 
 		resultsPanel = new JPanel();
 		resultsPanel.setLayout(new BoxLayout(resultsPanel, BoxLayout.Y_AXIS));
 		resultsPanel.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		resultsPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 
 		JScrollPane scrollPane = new JScrollPane(resultsPanel);
 		scrollPane.setAlignmentX(Component.LEFT_ALIGNMENT);
 		scrollPane.setBorder(BorderFactory.createEmptyBorder());
 		scrollPane.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-		scrollPane.setPreferredSize(new Dimension(0, 300));
+		scrollPane.setPreferredSize(new Dimension(0, 250));
 		scrollPane.getVerticalScrollBar().setUnitIncrement(16);
 
-		mainPanel.add(scrollPane);
+		resultsSection.add(scrollPane);
+		mainPanel.add(resultsSection);
 
-		add(mainPanel, BorderLayout.CENTER);
+		// Wrap everything in a scroll pane for the full panel
+		JScrollPane mainScroll = new JScrollPane(mainPanel);
+		mainScroll.setBorder(BorderFactory.createEmptyBorder());
+		mainScroll.setBackground(ColorScheme.DARK_GRAY_COLOR);
+		mainScroll.getVerticalScrollBar().setUnitIncrement(16);
+		add(mainScroll, BorderLayout.CENTER);
 	}
+
+	// === UI Helpers ===
+
+	private JPanel createSection(String title)
+	{
+		JPanel section = new JPanel();
+		section.setLayout(new BoxLayout(section, BoxLayout.Y_AXIS));
+		section.setBackground(ColorScheme.DARKER_GRAY_COLOR);
+		section.setBorder(BorderFactory.createCompoundBorder(
+			BorderFactory.createMatteBorder(1, 0, 0, 0, ColorScheme.MEDIUM_GRAY_COLOR),
+			new EmptyBorder(6, 6, 6, 6)
+		));
+		section.setAlignmentX(Component.LEFT_ALIGNMENT);
+
+		JLabel label = new JLabel(title);
+		label.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		label.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+		label.setAlignmentX(Component.LEFT_ALIGNMENT);
+		section.add(label);
+		section.add(Box.createVerticalStrut(4));
+
+		return section;
+	}
+
+	private JButton makeButton(String text, boolean wide)
+	{
+		JButton btn = new JButton(text);
+		btn.setFocusPainted(false);
+		btn.setFont(FontManager.getRunescapeSmallFont());
+		btn.setAlignmentX(Component.LEFT_ALIGNMENT);
+		if (wide)
+		{
+			btn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 28));
+		}
+		return btn;
+	}
+
+	private JButton makeFilterButton(String text, ItemCategory category)
+	{
+		JButton button = new JButton(text);
+		button.setFocusPainted(false);
+		button.setFont(FontManager.getRunescapeSmallFont());
+		button.setMargin(new Insets(2, 4, 2, 4));
+		if (category != null)
+		{
+			button.setForeground(plugin.getColorForCategory(category));
+		}
+		button.addActionListener(e -> plugin.setActiveFilter(category));
+		return button;
+	}
+
+	// === State Updates ===
 
 	private void toggleCategorizeMode()
 	{
@@ -300,7 +299,7 @@ public class BankOrganizerPanel extends PluginPanel
 		if (newMode)
 		{
 			categorizeButton.setText("Stop Categorizing");
-			categorizeButton.setBackground(new Color(100, 60, 60));
+			categorizeButton.setBackground(BTN_DANGER);
 			subCatToggle.setVisible(true);
 		}
 		else
@@ -313,18 +312,6 @@ public class BankOrganizerPanel extends PluginPanel
 		}
 	}
 
-	private JButton createFilterButton(String text, ItemCategory category)
-	{
-		JButton button = new JButton(text);
-		button.setPreferredSize(new Dimension(0, 25));
-		button.setFont(button.getFont().deriveFont(11f));
-		button.addActionListener(e ->
-		{
-			plugin.setActiveFilter(category);
-		});
-		return button;
-	}
-
 	public void updateResults(Map<Integer, ItemCategory> misplacedItems,
 							  Map<Integer, String> itemNames,
 							  Map<ItemCategory, Integer> tabMappings)
@@ -334,26 +321,28 @@ public class BankOrganizerPanel extends PluginPanel
 		if (misplacedItems.isEmpty())
 		{
 			JLabel noItems = new JLabel("All items are in the correct tab!");
-			noItems.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-			noItems.setBorder(new EmptyBorder(5, 5, 5, 5));
+			noItems.setForeground(new Color(80, 220, 80));
+			noItems.setFont(FontManager.getRunescapeSmallFont());
+			noItems.setBorder(new EmptyBorder(4, 4, 4, 4));
 			resultsPanel.add(noItems);
 		}
 		else
 		{
-			// Show count header
-			JLabel countLabel = new JLabel(misplacedItems.size() + " misplaced items:");
-			countLabel.setForeground(Color.WHITE);
-			countLabel.setBorder(new EmptyBorder(3, 5, 5, 5));
+			JLabel countLabel = new JLabel(misplacedItems.size() + " misplaced items");
+			countLabel.setForeground(new Color(255, 150, 150));
+			countLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD));
+			countLabel.setBorder(new EmptyBorder(2, 4, 4, 4));
 			resultsPanel.add(countLabel);
 
 			int shown = 0;
 			for (Map.Entry<Integer, ItemCategory> entry : misplacedItems.entrySet())
 			{
-				if (shown >= 100) // Limit to prevent UI freeze
+				if (shown >= 100)
 				{
-					JLabel moreLabel = new JLabel("... and " + (misplacedItems.size() - 100) + " more");
+					JLabel moreLabel = new JLabel("... +" + (misplacedItems.size() - 100) + " more");
 					moreLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
-					moreLabel.setBorder(new EmptyBorder(3, 5, 3, 5));
+					moreLabel.setFont(FontManager.getRunescapeSmallFont());
+					moreLabel.setBorder(new EmptyBorder(2, 4, 2, 4));
 					resultsPanel.add(moreLabel);
 					break;
 				}
@@ -366,15 +355,17 @@ public class BankOrganizerPanel extends PluginPanel
 				String tabStr = tabNum != null ? "Tab " + tabNum : "?";
 
 				JPanel row = new JPanel(new BorderLayout());
-				row.setBackground(ColorScheme.DARKER_GRAY_COLOR);
-				row.setBorder(new EmptyBorder(3, 5, 3, 5));
-				row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 25));
+				row.setBackground(shown % 2 == 0 ? ColorScheme.DARKER_GRAY_COLOR : new Color(35, 35, 35));
+				row.setBorder(new EmptyBorder(2, 4, 2, 4));
+				row.setMaximumSize(new Dimension(Integer.MAX_VALUE, 20));
 
 				JLabel nameLabel = new JLabel(itemName);
 				nameLabel.setForeground(plugin.getColorForCategory(correctCategory));
+				nameLabel.setFont(FontManager.getRunescapeSmallFont());
 
-				JLabel destLabel = new JLabel(" -> " + tabStr + " (" + correctCategory.getDisplayName() + ")");
+				JLabel destLabel = new JLabel(tabStr);
 				destLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+				destLabel.setFont(FontManager.getRunescapeSmallFont());
 				destLabel.setHorizontalAlignment(SwingConstants.RIGHT);
 
 				row.add(nameLabel, BorderLayout.WEST);
@@ -401,12 +392,12 @@ public class BankOrganizerPanel extends PluginPanel
 			{
 				BankOrganizerPlugin.OrderStep step = steps.get(current);
 				orderingSubCatLabel.setText("<html><b>" + step.phaseDescription + "</b></html>");
-				orderingSubCatLabel.setFont(orderingSubCatLabel.getFont().deriveFont(java.awt.Font.BOLD, 16f));
+				orderingSubCatLabel.setFont(FontManager.getRunescapeBoldFont().deriveFont(15f));
 				orderingSubCatLabel.setForeground(new Color(80, 220, 80));
 				orderingStepLabel.setText("<html>" + step.instruction + "</html>");
-				orderingStepLabel.setFont(orderingStepLabel.getFont().deriveFont(13f));
-				orderingProgressLabel.setText(step.totalOutOfPlace + " items remaining");
-				orderingProgressLabel.setFont(orderingProgressLabel.getFont().deriveFont(java.awt.Font.BOLD, 12f));
+				orderingStepLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(12f));
+				orderingProgressLabel.setText(step.totalOutOfPlace + " remaining");
+				orderingProgressLabel.setFont(FontManager.getRunescapeSmallFont().deriveFont(Font.BOLD, 11f));
 			}
 		}
 		else

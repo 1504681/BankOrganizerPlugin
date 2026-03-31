@@ -150,15 +150,19 @@ public class BankOrganizerPlugin extends Plugin
 
 		panel = new BankOrganizerPanel(this);
 
-		BufferedImage icon;
-		try
+		// Generate a simple grid icon (represents organized bank)
+		BufferedImage icon = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
+		java.awt.Graphics2D g = icon.createGraphics();
+		g.setColor(new java.awt.Color(0, 180, 255));
+		// Draw a 3x3 grid of small squares
+		for (int r = 0; r < 3; r++)
 		{
-			icon = ImageUtil.loadImageResource(getClass(), "/net/runelite/client/plugins/bank/bank_icon.png");
+			for (int c = 0; c < 3; c++)
+			{
+				g.fillRect(1 + c * 5, 1 + r * 5, 4, 4);
+			}
 		}
-		catch (Exception e)
-		{
-			icon = new BufferedImage(16, 16, BufferedImage.TYPE_INT_ARGB);
-		}
+		g.dispose();
 
 		navButton = NavigationButton.builder()
 			.tooltip("Bank Organizer")
