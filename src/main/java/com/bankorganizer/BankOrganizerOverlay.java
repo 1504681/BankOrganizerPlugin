@@ -12,14 +12,14 @@ import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.api.Client;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.client.ui.overlay.Overlay;
 import net.runelite.client.ui.overlay.OverlayLayer;
 import net.runelite.client.ui.overlay.OverlayPosition;
 
 public class BankOrganizerOverlay extends Overlay
 {
-	// Bank tab widget IDs (WidgetInfo for tabs 1-9)
+	// Bank tab widget IDs
 	private static final int BANK_TAB_CONTAINER_GROUP = 12;
 	private static final int BANK_TAB_CONTAINER_CHILD = 42;
 
@@ -70,7 +70,7 @@ public class BankOrganizerOverlay extends Overlay
 
 	private void drawUntaggedItems(Graphics2D graphics)
 	{
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null || bankItemContainer.isHidden()) return;
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null) return;
@@ -118,7 +118,7 @@ public class BankOrganizerOverlay extends Overlay
 
 	private void drawTabColors(Graphics2D graphics)
 	{
-		Widget tabContainer = client.getWidget(WidgetInfo.BANK_TAB_CONTAINER);
+		Widget tabContainer = client.getWidget(ComponentID.BANK_TAB_CONTAINER);
 		if (tabContainer == null || tabContainer.isHidden())
 		{
 			return;
@@ -172,7 +172,7 @@ public class BankOrganizerOverlay extends Overlay
 
 	private void drawAllItemCategories(Graphics2D graphics)
 	{
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null || bankItemContainer.isHidden())
 		{
 			return;
@@ -240,7 +240,7 @@ public class BankOrganizerOverlay extends Overlay
 			return;
 		}
 
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null || bankItemContainer.isHidden())
 		{
 			return;
@@ -313,7 +313,7 @@ public class BankOrganizerOverlay extends Overlay
 
 		BankOrganizerPlugin.OrderStep step = steps.get(currentStep);
 
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null || bankItemContainer.isHidden())
 		{
 			return;
@@ -410,7 +410,7 @@ public class BankOrganizerOverlay extends Overlay
 			return;
 		}
 
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null || bankItemContainer.isHidden())
 		{
 			return;

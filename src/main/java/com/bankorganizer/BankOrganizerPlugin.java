@@ -20,7 +20,7 @@ import net.runelite.api.events.ItemContainerChanged;
 import net.runelite.api.events.MenuEntryAdded;
 import net.runelite.api.events.MenuOptionClicked;
 import net.runelite.api.widgets.Widget;
-import net.runelite.api.widgets.WidgetInfo;
+import net.runelite.api.widgets.ComponentID;
 import net.runelite.client.callback.ClientThread;
 import com.google.inject.Provides;
 import net.runelite.client.config.ConfigManager;
@@ -248,10 +248,10 @@ public class BankOrganizerPlugin extends Plugin
 		// within a tab doesn't trigger ItemContainerChanged
 		if (!orderingActive) return;
 
-		Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		Widget bankWidget = client.getWidget(ComponentID.BANK_CONTAINER);
 		if (bankWidget == null || bankWidget.isHidden()) return;
 
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null) return;
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null || children.length == 0) return;
@@ -295,7 +295,7 @@ public class BankOrganizerPlugin extends Plugin
 		// === Check for bank TAB right-click (category mode only, not subcategory) ===
 		if (!subCategoryMode)
 		{
-			Widget tabContainer = client.getWidget(WidgetInfo.BANK_TAB_CONTAINER);
+			Widget tabContainer = client.getWidget(ComponentID.BANK_TAB_CONTAINER);
 			if (tabContainer != null)
 			{
 				String option = event.getOption();
@@ -324,7 +324,7 @@ public class BankOrganizerPlugin extends Plugin
 		}
 
 		// === Check for bank ITEM right-click ===
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null)
 		{
 			return;
@@ -823,9 +823,9 @@ public class BankOrganizerPlugin extends Plugin
 		return categoryKey;
 	}
 
-	private net.runelite.http.api.item.ItemEquipmentStats getEquipmentStats(int itemId)
+	private net.runelite.client.game.ItemEquipmentStats getEquipmentStats(int itemId)
 	{
-		net.runelite.http.api.item.ItemStats stats = itemManager.getItemStats(itemId, false);
+		net.runelite.client.game.ItemStats stats = itemManager.getItemStats(itemId);
 		if (stats != null && stats.isEquipable() && stats.getEquipment() != null)
 		{
 			return stats.getEquipment();
@@ -977,7 +977,7 @@ public class BankOrganizerPlugin extends Plugin
 
 	private void categorizeAllVisibleItems(ItemCategory category)
 	{
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null) return;
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null) return;
@@ -1083,7 +1083,7 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
-			Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+			Widget bankWidget = client.getWidget(ComponentID.BANK_CONTAINER);
 			if (bankWidget == null || bankWidget.isHidden())
 			{
 				log.debug("Bank is not open");
@@ -1093,7 +1093,7 @@ public class BankOrganizerPlugin extends Plugin
 			int currentTab = getCurrentBankTab();
 			ItemCategory expectedCategory = getCategoryForTab(currentTab);
 
-			Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+			Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 			if (bankItemContainer == null)
 			{
 				return;
@@ -1174,14 +1174,14 @@ public class BankOrganizerPlugin extends Plugin
 	 */
 	private void computeNextOrderStep()
 	{
-		Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+		Widget bankWidget = client.getWidget(ComponentID.BANK_CONTAINER);
 		if (bankWidget == null || bankWidget.isHidden()) return;
 
 		int currentTab = client.getVarbitValue(4150);
 		ItemCategory tabCategory = getCategoryForTab(currentTab);
 		if (tabCategory == null) return;
 
-		Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 		if (bankItemContainer == null) return;
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null) return;
@@ -1542,14 +1542,14 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		clientThread.invokeLater(() ->
 		{
-			Widget bankWidget = client.getWidget(WidgetInfo.BANK_CONTAINER);
+			Widget bankWidget = client.getWidget(ComponentID.BANK_CONTAINER);
 			if (bankWidget == null || bankWidget.isHidden()) return;
 
 			int currentTab = client.getVarbitValue(4150);
 			ItemCategory tabCategory = getCategoryForTab(currentTab);
 			if (tabCategory == null) return;
 
-			Widget bankItemContainer = client.getWidget(WidgetInfo.BANK_ITEM_CONTAINER);
+			Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
 			if (bankItemContainer == null) return;
 			Widget[] children = bankItemContainer.getDynamicChildren();
 			if (children == null) return;

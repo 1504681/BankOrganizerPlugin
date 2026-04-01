@@ -467,7 +467,7 @@ public class ItemCategorizer
 	 * Falls back to keyword matching if stats unavailable.
 	 */
 	public GearSubCategory getGearSubCategory(String itemName, int itemId,
-		net.runelite.http.api.item.ItemEquipmentStats stats)
+		net.runelite.client.game.ItemEquipmentStats stats)
 	{
 		// Check ID map first
 		GearSubCategory idSub = gearSubIdMap.get(itemId);
@@ -494,14 +494,14 @@ public class ItemCategorizer
 		return getGearSubCategory(itemName, itemId, null);
 	}
 
-	private GearSubCategory classifyByStats(net.runelite.http.api.item.ItemEquipmentStats stats)
+	private GearSubCategory classifyByStats(net.runelite.client.game.ItemEquipmentStats stats)
 	{
 		int meleeAttack = Math.max(stats.getAstab(), Math.max(stats.getAslash(), stats.getAcrush()));
 		int rangedAttack = stats.getArange();
 		int magicAttack = stats.getAmagic();
 		int meleeStr = stats.getStr();
 		int rangedStr = stats.getRstr();
-		int magicDmg = stats.getMdmg();
+		int magicDmg = (int) stats.getMdmg();
 		int slot = stats.getSlot();
 
 		// Weapon slots: 3 (weapon), also check two-handed
@@ -680,7 +680,7 @@ public class ItemCategorizer
 	 * Lower values sort first.
 	 */
 	public long getGearFullSortKey(String itemName, int itemId,
-		net.runelite.http.api.item.ItemEquipmentStats stats, GearSortMode mode)
+		net.runelite.client.game.ItemEquipmentStats stats, GearSortMode mode)
 	{
 		GearSubCategory sub = getGearSubCategory(itemName, itemId, stats);
 		int subOrder = getGearSortOrder(sub, mode);
@@ -713,7 +713,7 @@ public class ItemCategorizer
 				case MAGE_WEAPON:
 				case MAGE_ARMOR:
 					// Mage: magic damage first, then magic accuracy
-					statValue = stats.getMdmg() * 1000 + stats.getAmagic();
+					statValue = (int) stats.getMdmg() * 1000 + stats.getAmagic();
 					break;
 				default:
 					statValue = 0;
