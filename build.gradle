@@ -53,10 +53,6 @@ test {
 	jvmArgs '--add-opens=java.base/java.lang=ALL-UNNAMED'
 }
 
-sourceSets.main.resources {
-	exclude 'runelite_plugin.json'
-}
-
 tasks.register('run', JavaExec) {
 	classpath = sourceSets.test.runtimeClasspath
 	mainClass = pluginMainClass
@@ -67,7 +63,7 @@ tasks.register('run', JavaExec) {
 
 tasks.register('installPlugin', Jar) {
 	from sourceSets.main.output
-	from('src/main/resources') {
+	from('.') {
 		include 'runelite_plugin.json'
 	}
 
