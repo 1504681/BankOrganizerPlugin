@@ -437,4 +437,14 @@ public class ItemCategorizerTest
 		assertEquals(new java.util.LinkedHashSet<>(java.util.Arrays.asList(4151, 995)), back.getUserItems());
 		assertEquals(BankOrganizerProfile.DEFAULTS_NONE, BankOrganizerProfile.createBlank("b").getDefaultsVersion());
 	}
+
+	@Test
+	public void testCluesGoToMainTab()
+	{
+		assertEquals(ItemCategory.CURRENCY, categorizer.categorize("Clue scroll (hard)", 99999));
+		assertEquals(ItemCategory.CURRENCY, categorizer.categorize("Scroll box (elite)", 99999));
+		assertEquals(ItemCategory.CURRENCY, categorizer.categorize("Reward casket (master)", 99999));
+		assertEquals(ItemCategory.CURRENCY, categorizer.categorize("Clue bottle (medium)", 99999));
+		assertEquals(ItemCategory.CURRENCY, categorizer.categorize("Coins", 995));
+	}
 }

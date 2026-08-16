@@ -82,6 +82,10 @@ public class ItemCategorizer
 	};
 	private static final String[] FOOD_NAME_RULES = { "halibut" };
 	private static final String[] TELEPORT_NAME_RULES = { "achievement diary cape", "ring of wealth" };
+	// Clues and their containers live in the main tab alongside currency
+	private static final String[] CURRENCY_NAME_RULES = {
+		"clue scroll", "scroll box", "reward casket", "clue bottle", "clue nest", "clue geode", "challenge scroll"
+	};
 
 	// Farming / Herblore materials — checked before the generic keyword loop so that
 	// "Potato seed" isn't Food, "Hammerstone seed" isn't Skilling, "Mushroom spore" isn't Food, etc.
@@ -559,6 +563,7 @@ public class ItemCategorizer
 		{
 			for (String kw : TELEPORT_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.TELEPORTS;
 		}
+		for (String kw : CURRENCY_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.CURRENCY;
 
 		boolean statsKnown = statsProvider != null && statsReady.getAsBoolean();
 		net.runelite.client.game.ItemEquipmentStats stats = statsKnown ? statsProvider.apply(itemId) : null;

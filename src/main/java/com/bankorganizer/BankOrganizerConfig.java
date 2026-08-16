@@ -129,11 +129,11 @@ public interface BankOrganizerConfig extends Config
 
 	@Alpha
 	@ConfigItem(keyName = "colorFood", name = "Food", description = "Overlay color for Food", position = 3, section = colorsSection)
-	default Color colorFood() { return new Color(160, 32, 240); }
+	default Color colorFood() { return new Color(64, 224, 208); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorSkilling", name = "Skilling", description = "Overlay color for Skilling", position = 4, section = colorsSection)
-	default Color colorSkilling() { return new Color(255, 255, 0); }
+	default Color colorSkilling() { return new Color(255, 170, 60); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorMaterials", name = "Materials", description = "Overlay color for Materials", position = 5, section = colorsSection)
@@ -144,12 +144,12 @@ public interface BankOrganizerConfig extends Config
 	default Color colorHighAlch() { return new Color(255, 255, 255); }
 
 	@Alpha
-	@ConfigItem(keyName = "colorCurrency", name = "Currency", description = "Overlay color for Currency", position = 7, section = colorsSection)
+	@ConfigItem(keyName = "colorCurrency", name = "Main Tab", description = "Overlay color for Main Tab (currency, clues, valuables)", position = 7, section = colorsSection)
 	default Color colorCurrency() { return new Color(255, 215, 80); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorQuestMisc", name = "Quest/Misc", description = "Overlay color for Quest/Misc", position = 8, section = colorsSection)
-	default Color colorQuestMisc() { return new Color(180, 100, 255); }
+	default Color colorQuestMisc() { return new Color(140, 150, 165); }
 
 	// --- Manual overrides (stored as JSON string) ---
 
@@ -208,6 +208,6 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(keyName = "regexHighAlch", name = "High Alch Regex", description = "Custom regex for High Alch category", position = 6, section = regexSection)
 	default String regexHighAlch() { return ""; }
 
-	@ConfigItem(keyName = "regexCurrency", name = "Currency Regex", description = "Custom regex for Currency category", position = 7, section = regexSection)
+	@ConfigItem(keyName = "regexCurrency", name = "Main Tab Regex", description = "Custom regex for the Main Tab category", position = 7, section = regexSection)
 	default String regexCurrency() { return ""; }
 }

@@ -32,7 +32,7 @@ public enum ItemCategory
 		"bastion", "saradomin brew", "super combat", "ranging potion",
 		"stamina", "energy"
 	)),
-	FOOD("Food", new Color(160, 32, 240), Arrays.asList(
+	FOOD("Food", new Color(64, 224, 208), Arrays.asList(
 		"shark", "lobster", "swordfish", "tuna", "salmon", "trout",
 		"monkfish", "manta ray", "dark crab", "anglerfish", "karambwan",
 		"bass", "pike", "shrimps", "anchovies", "sardine", "herring",
@@ -40,7 +40,7 @@ public enum ItemCategory
 		"wine", "stew", "potato", "mushroom", "sweetcorn",
 		"cooked"
 	)),
-	SKILLING("Skilling", new Color(255, 255, 0), Arrays.asList(
+	SKILLING("Skilling", new Color(255, 170, 60), Arrays.asList(
 		"pickaxe", "hammer", "chisel", "saw", "tinderbox",
 		"needle", "spade", "rake", "seed dibber", "secateurs",
 		"watering can", "trowel", "pestle and mortar",
@@ -59,12 +59,12 @@ public enum ItemCategory
 		"wool", "flax", "clay", "sand"
 	)),
 	HIGH_ALCH("High Alch", new Color(255, 255, 255), Arrays.asList()),
-	CURRENCY("Currency", new Color(255, 215, 80), Arrays.asList(
+	CURRENCY("Main Tab", new Color(255, 215, 80), Arrays.asList(
 		"coins", "platinum token", "tokkul", "trading sticks",
 		"numulite", "pieces of eight", "warrior guild token",
 		"mermaid's tear", "hallowed mark", "molch pearl"
 	)),
-	QUEST_MISC("Quest/Misc", new Color(180, 100, 255), Arrays.asList());
+	QUEST_MISC("Quest/Misc", new Color(140, 150, 165), Arrays.asList());
 
 	private final String displayName;
 	private final Color color;

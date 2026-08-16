@@ -6,9 +6,9 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 
 ### Category Overlays
 - **Show Overlays** draws colored boxes on every bank item showing which category it belongs to
-- 9 built-in categories: Teleports, Combat, Potions, Food, Skilling, Materials, High Alch, Currency, Quest/Misc
+- 9 built-in categories: Teleports, Combat, Potions, Food, Skilling, Materials, High Alch, Main Tab (currency, clues, valuables), Quest/Misc
 - **Filter by Category** to highlight only one category at a time
-- Customizable colors for each category in plugin settings
+- Customizable colors for each category in plugin settings (**Colors** section — every category colour is yours to change)
 - Adjustable overlay opacity
 
 ### Item Categorization
@@ -56,7 +56,7 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 
 ### Setting Up Your Tabs
 1. Go to plugin settings > **Tab Mappings**
-2. Assign each bank tab (1-9) to a category (e.g., Tab 1 = Teleports, Tab 2 = Combat). **Main tab (All)** (default: Currency) sets the category for items that aren't in any numbered tab — the section at the bottom of the "All" view; scanning/ordering while viewing "All" works on just that section, and the All tab gets a colour bar too
+2. Assign each bank tab (1-9) to a category (e.g., Tab 1 = Teleports, Tab 2 = Combat). **Main tab (All)** (default: Main Tab category) sets the category for items that aren't in any numbered tab — the section at the bottom of the "All" view; scanning/ordering while viewing "All" works on just that section, and the All tab gets a colour bar too
 3. Click **Scan Tab** while viewing a tab to see which items are misplaced
 
 ### Categorizing Items
