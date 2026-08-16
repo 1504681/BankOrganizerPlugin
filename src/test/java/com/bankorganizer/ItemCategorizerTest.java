@@ -465,4 +465,19 @@ public class ItemCategorizerTest
 		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Unpowered orb", 99999));
 		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Water orb", 99999));
 	}
+
+	@Test
+	public void testTwinflameStaffIsMageAndMegaRaresPinFirst()
+	{
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Twinflame staff", 99999,
+			ItemEquipmentStats.builder().slot(3).astab(10).aslash(10).acrush(10).amagic(5).build()));
+		GearSortMode mode = GearSortMode.values()[0];
+		long scythe = categorizer.getGearFullSortKey("Scythe of vitur", 22325, null, mode);
+		long holyScythe = categorizer.getGearFullSortKey("Holy scythe of vitur (uncharged)", 25736, null, mode);
+		long tbow = categorizer.getGearFullSortKey("Twisted bow", 20997, null, mode);
+		long shadow = categorizer.getGearFullSortKey("Tumeken's shadow (uncharged)", 27277, null, mode);
+		long whip = categorizer.getGearFullSortKey("Abyssal whip", 4151,
+			ItemEquipmentStats.builder().slot(3).aslash(82).str(82).build(), mode);
+		assertTrue(scythe < tbow); assertTrue(holyScythe < tbow); assertTrue(tbow < shadow); assertTrue(shadow < whip);
+	}
 }

@@ -694,6 +694,19 @@ public class ItemCategorizer
 	 * Determine the gear sub-category using equipment stats.
 	 * Falls back to keyword matching if stats unavailable.
 	 */
+	// Best-in-slot mega-rares pinned to the very top of the Combat tab, in this order
+	private static final String[] PINNED_GEAR = { "scythe of vitur", "twisted bow", "tumeken's shadow" };
+
+	/** 0-based pin rank for items that always sort first in the Combat tab, or -1. */
+	public static int getPinnedGearRank(String lowerName)
+	{
+		for (int i = 0; i < PINNED_GEAR.length; i++)
+		{
+			if (lowerName.contains(PINNED_GEAR[i])) return i;
+		}
+		return -1;
+	}
+
 	public GearSubCategory getGearSubCategory(String itemName, int itemId,
 		net.runelite.client.game.ItemEquipmentStats stats)
 	{
@@ -703,6 +716,10 @@ public class ItemCategorizer
 		{
 			return idSub;
 		}
+
+		// Name rules that stats get wrong
+		String lower = itemName.toLowerCase();
+		if (lower.contains("twinflame staff")) return GearSubCategory.MAGE_WEAPON;
 
 		// Use equipment stats if available
 		if (stats != null)
@@ -910,6 +927,13 @@ public class ItemCategorizer
 	public long getGearFullSortKey(String itemName, int itemId,
 		net.runelite.client.game.ItemEquipmentStats stats, GearSortMode mode)
 	{
+		// Pinned mega-rares (scythe, tbow, shadow) always come first, in that order
+		int pin = getPinnedGearRank(itemName.toLowerCase());
+		if (pin >= 0)
+		{
+			return ((long) pin << 16) | (itemId & 0xFFFF);
+		}
+
 		GearSubCategory sub = getGearSubCategory(itemName, itemId, stats);
 		int subOrder = getGearSortOrder(sub, mode);
 
