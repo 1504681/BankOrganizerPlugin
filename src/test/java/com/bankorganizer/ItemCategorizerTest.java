@@ -251,4 +251,118 @@ public class ItemCategorizerTest
 		assertEquals(ItemCategory.FOOD, m.get(7178));
 		assertEquals(ItemCategory.RAW_MATERIALS, m.get(42));
 	}
+
+	// --- Materials / High Alch / name rules from user feedback ---
+
+	@Test
+	public void testMaterialRules()
+	{
+		String[] materials = {"Uncut ruby", "Rune arrowtips", "Adamant dart tip", "Diamond bolt tips", "Barb bolttips",
+			"Runite ore", "Raw shark", "Swamp paste", "Oak bird house", "Magic logs", "Bow string", "Flax",
+			"Green dragonhide", "Hard leather", "Yew roots", "Mahogany plank", "Mithril nails", "Runite bolts (unf)",
+			"Cotton yarn", "Lava scale shard", "Crab paste"};
+		for (String n : materials)
+		{
+			assertEquals(n, ItemCategory.RAW_MATERIALS, categorizer.categorize(n, 99999));
+		}
+	}
+
+	@Test
+	public void testAdamantMithrilAreHighAlchExceptAmmoAndTools()
+	{
+		assertEquals(ItemCategory.HIGH_ALCH, categorizer.categorize("Adamant platebody", 99999));
+		assertEquals(ItemCategory.HIGH_ALCH, categorizer.categorize("Mithril scimitar", 99999));
+		assertEquals(ItemCategory.HIGH_ALCH, categorizer.categorize("Mithril kiteshield", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Adamant bolts", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Mithril arrow", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Adamant pickaxe", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Mithril axe", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Mithril ore", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Adamantite bar", 99999));
+	}
+
+	@Test
+	public void testNameRules()
+	{
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Lightbearer", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Karil's crossbow 0", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Dharok's platebody 100", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Amulet of the damned", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Gem sack", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Open gem tote", 99999));
+		assertEquals(ItemCategory.FOOD, categorizer.categorize("Halibut", 99999));
+	}
+
+	@Test
+	public void testBonesAreMaterials()
+	{
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Bones", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Dragon bones", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Superior dragon bones", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Long bone", 99999));
+	}
+
+	private long mat(String name) { return categorizer.getMaterialFullSortKey(name, 99999); }
+
+	@Test
+	public void testMaterialsSortByTierWithinGroups()
+	{
+		// ores
+		assertTrue(mat("Copper ore") < mat("Iron ore")); assertTrue(mat("Iron ore") < mat("Runite ore"));
+		// gems, uncut first (typeOrder) and by tier
+		assertTrue(mat("Uncut opal") < mat("Uncut sapphire")); assertTrue(mat("Uncut sapphire") < mat("Uncut zenyte"));
+		// tips by metal, gem tips after metal tips
+		assertTrue(mat("Bronze arrowtips") < mat("Rune arrowtips")); assertTrue(mat("Rune arrowtips") < mat("Diamond bolt tips"));
+		// planks, logs
+		assertTrue(mat("Plank") < mat("Oak plank")); assertTrue(mat("Oak plank") < mat("Mahogany plank"));
+		assertTrue(mat("Logs") < mat("Yew logs")); assertTrue(mat("Yew logs") < mat("Redwood logs"));
+		// raw food by cooking level
+		assertTrue(mat("Raw shrimps") < mat("Raw lobster")); assertTrue(mat("Raw lobster") < mat("Raw shark"));
+		// bones by prayer xp
+		assertTrue(mat("Bones") < mat("Big bones")); assertTrue(mat("Big bones") < mat("Dragon bones"));
+		assertTrue(mat("Dragon bones") < mat("Superior dragon bones"));
+		// herbs: grimy before clean, by level
+		assertTrue(mat("Grimy guam leaf") < mat("Grimy torstol")); assertTrue(mat("Grimy torstol") < mat("Guam leaf"));
+		// hides
+		assertTrue(mat("Green dragonhide") < mat("Black dragonhide"));
+		// bird houses by wood
+		assertTrue(mat("Bird house") < mat("Oak bird house")); assertTrue(mat("Oak bird house") < mat("Redwood bird house"));
+	}
+
+	@Test
+	public void testMaterialGroupsUseSkillIndices()
+	{
+		assertEquals(4, categorizer.getMaterialGroupIndex("Runite ore", 99999));   // Mining
+		assertEquals(2, categorizer.getMaterialGroupIndex("Magic logs", 99999));   // Woodcutting
+		assertEquals(12, categorizer.getMaterialGroupIndex("Rune arrowtips", 99999)); // Fletching
+		assertEquals(0, categorizer.getMaterialGroupIndex("Ranarr seed", 99999));  // Farming
+		assertEquals(13, categorizer.getMaterialGroupIndex("Grimy ranarr weed", 99999)); // Herblore
+		assertEquals(13, categorizer.getMaterialGroupIndex("Eye of newt", 99999)); // Herblore secondaries
+		assertEquals(3, categorizer.getMaterialGroupIndex("Raw shark", 99999));    // Fishing
+		assertEquals(5, categorizer.getMaterialGroupIndex("Dragon bones", 99999)); // Prayer
+		assertEquals(15, categorizer.getMaterialGroupIndex("Yew bird house", 99999)); // Hunter
+	}
+
+	@Test
+	public void testLatestNameRules()
+	{
+		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Achievement diary cape", 99999));
+		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Achievement diary cape (t)", 99999));
+		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Ring of wealth (i)", 99999));
+		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Ring of wealth", 99999));
+		assertNotEquals(ItemCategory.TELEPORTS, categorizer.categorize("Ring of wealth scroll", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Bottomless compost bucket", 99999));
+		assertEquals(0, categorizer.getSkillGroupIndex("Bottomless compost bucket", 99999)); // Farming
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Drift net", 21652));
+		assertEquals(15, categorizer.getSkillGroupIndex("Drift net", 99999)); // Hunter
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Diving apparatus", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Fishbowl helmet", 99999));
+		assertEquals(0, categorizer.getSkillGroupIndex("Diving apparatus", 99999));
+		assertEquals(0, categorizer.getSkillGroupIndex("Fishbowl helmet", 99999));
+		// adjacent in the farming group
+		long a = categorizer.getSkillingFullSortKey("Diving apparatus", 7535);
+		long b = categorizer.getSkillingFullSortKey("Fishbowl helmet", 7534);
+		assertTrue(a < b);
+		assertEquals(a >> 16, (b >> 16) - 1);
+	}
 }

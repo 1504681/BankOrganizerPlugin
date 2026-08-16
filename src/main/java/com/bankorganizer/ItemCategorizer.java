@@ -51,6 +51,38 @@ public class ItemCategorizer
 		"chef's hat", "cooking gauntlets", "goldsmith gauntlets"
 	};
 
+	// Generic materials rules (user feedback): uncut gems, ammo tips, ores, raw food, pastes,
+	// bird houses, logs, strings, flax, hides/leather, roots, planks, nails, unfinished bolts.
+	private static final String[] MATERIAL_RULE_PREFIXES = {
+		"uncut ", "raw "
+	};
+	private static final String[] MATERIAL_RULE_SUFFIXES = {
+		" tips", " tip", "arrowtips", "bolttips", " ore", " paste", " logs", " string", "string", " hide", "hide", " leather", "leather",
+		" root", " roots", " plank", " planks", " nails", "bolts (unf)", " bar", " bones", "bones", " bone", "bonemeal"
+	};
+	private static final String[] MATERIAL_RULE_CONTAINS = {
+		"bird house", "birdhouse", "flax", " logs", "bow string", "bowstring", "crossbow string"
+	};
+	private static final String[] MATERIAL_RULE_EXACT = {
+		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay"
+	};
+
+	// Adamant / mithril equipment is alch fodder rather than gear (bolts and arrows excepted)
+	private static final String[] HIGH_ALCH_PREFIXES = { "adamant ", "mithril " };
+	private static final String[] HIGH_ALCH_EXCLUDE = { "bolt", "arrow", " ore", " bar", " seed", "nail", " tip", "adamantite", "mithril grapple", "pickaxe", " axe", "felling axe" };
+
+	// Small name rules that keyword matching gets wrong
+	// Barrows equipment (all pieces incl. degraded "0/25/50/75/100" variants that have no stats) is combat gear
+	private static final String[] GEAR_NAME_RULES = {
+		"lightbearer",
+		"ahrim's", "dharok's", "guthan's", "karil's", "torag's", "verac's", "amulet of the damned"
+	};
+	private static final String[] SKILLING_NAME_RULES = {
+		"gem sack", "gem tote", "gem bag", "bottomless compost bucket", "drift net", "diving apparatus", "fishbowl helmet"
+	};
+	private static final String[] FOOD_NAME_RULES = { "halibut" };
+	private static final String[] TELEPORT_NAME_RULES = { "achievement diary cape", "ring of wealth" };
+
 	// Farming / Herblore materials — checked before the generic keyword loop so that
 	// "Potato seed" isn't Food, "Hammerstone seed" isn't Skilling, "Mushroom spore" isn't Food, etc.
 	private static final String[] MATERIAL_SUFFIXES = {
@@ -80,8 +112,13 @@ public class ItemCategorizer
 		"ground kebbit teeth", "toad's legs", "swamp tar", "grenwall spikes", "papaya fruit",
 		"crystal dust", "nihil dust", "araxyte venom sack", "aldarium", "wyrmling bones",
 		"volcanic ash", "ashes", "bird nest", "birds nest", "crushed birds nest",
+		// wiki: Herblore secondaries
+		"aldarium", "ancient essence", "araxyte venom sac", "bird nest (empty)", "cactus spine", "cotton yarn",
+		"crab paste", "garlic", "goat horn", "haddock eye", "lava scale", "lava scale shard", "marlin scales",
+		"rainbow crab paste", "shrunk ogleroot", "silver dust", "squid paste", "superior dragon bones", "yellow fin",
+		"forgotten brew", "reagent pouch",
 		// farming produce & secondaries commonly banked as materials
-		"limpwurt seed", "compost", "supercompost", "ultracompost", "bottomless compost bucket",
+		"limpwurt seed", "compost", "supercompost", "ultracompost",
 		"potato", "onion", "cabbage", "tomato", "sweetcorn", "strawberry", "watermelon", "snape grass",
 		"barley", "barley malt", "hammerstone hops", "asgarnian hops", "jute fibre", "yanillian hops",
 		"krandorian hops", "wildblood hops", "marigolds", "rosemary", "nasturtiums", "woad leaf",
@@ -310,7 +347,7 @@ public class ItemCategorizer
 		itemIdMap.put(24704, ItemCategory.RAW_MATERIALS); // Daeyalt essence
 		itemIdMap.put(5075, ItemCategory.RAW_MATERIALS); // Bird nest
 		itemIdMap.put(1751, ItemCategory.RAW_MATERIALS); // Blue dragonhide
-		itemIdMap.put(21652, ItemCategory.RAW_MATERIALS); // Drift net
+		itemIdMap.put(21652, ItemCategory.SKILLING); // Drift net
 
 		// === HIGH ALCH ===
 		itemIdMap.put(1335, ItemCategory.HIGH_ALCH); // Iron warhammer
@@ -407,7 +444,6 @@ public class ItemCategorizer
 		// === SKILLING (user-contributed) ===
 		itemIdMap.put(31043, ItemCategory.SKILLING);  // Forestry item
 		itemIdMap.put(31052, ItemCategory.SKILLING);  // Forestry item
-		itemIdMap.put(13439, ItemCategory.SKILLING); // Raw anglerfish
 		itemIdMap.put(25684, ItemCategory.SKILLING); // Barronite deposit
 		itemIdMap.put(25639, ItemCategory.SKILLING); // Barronite guard
 		itemIdMap.put(5343, ItemCategory.SKILLING); // Seed dibber
@@ -502,11 +538,26 @@ public class ItemCategorizer
 			}
 		}
 
-		// Priority 2b: Farming/Herblore materials (seeds, herbs, secondaries) — before generic keywords,
-		// otherwise "Potato seed" hits the Food keyword "potato" and "Hammerstone seed" hits "hammer"
-		if (isFarmingHerbloreMaterial(lowerName))
+		// Priority 2b: Materials rules — before generic keywords, otherwise "Potato seed" hits the Food
+		// keyword "potato", "Hammerstone seed" hits "hammer", "Green dragonhide" hits "d'hide", etc.
+		if (isFarmingHerbloreMaterial(lowerName) || isMaterialByRule(lowerName))
 		{
 			return ItemCategory.RAW_MATERIALS;
+		}
+
+		// Priority 2c: Adamant / mithril equipment -> High Alch (bolts and arrows stay gear)
+		if (isHighAlchByRule(lowerName))
+		{
+			return ItemCategory.HIGH_ALCH;
+		}
+
+		// Priority 2d: small name rules
+		for (String kw : GEAR_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.GEAR;
+		for (String kw : SKILLING_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.SKILLING;
+		for (String kw : FOOD_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.FOOD;
+		if (!lowerName.contains("scroll"))
+		{
+			for (String kw : TELEPORT_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.TELEPORTS;
 		}
 
 		boolean statsKnown = statsProvider != null && statsReady.getAsBoolean();
@@ -566,6 +617,26 @@ public class ItemCategorizer
 			if (lowerName.startsWith(prefix)) return true;
 		}
 		return false;
+	}
+
+	/** Uncut gems, ammo tips, ores, raw food, pastes, bird houses, logs, strings, flax, hides, roots, planks... */
+	public static boolean isMaterialByRule(String lowerName)
+	{
+		for (String x : MATERIAL_RULE_EXACT) if (lowerName.equals(x)) return true;
+		for (String p : MATERIAL_RULE_PREFIXES) if (lowerName.startsWith(p)) return true;
+		for (String c : MATERIAL_RULE_CONTAINS) if (lowerName.contains(c)) return true;
+		for (String suf : MATERIAL_RULE_SUFFIXES) if (lowerName.endsWith(suf)) return true;
+		return false;
+	}
+
+	/** Adamant / mithril items other than bolts and arrows (and raw ore/bars, which are materials). */
+	public static boolean isHighAlchByRule(String lowerName)
+	{
+		boolean prefixed = false;
+		for (String p : HIGH_ALCH_PREFIXES) if (lowerName.startsWith(p)) prefixed = true;
+		if (!prefixed) return false;
+		for (String x : HIGH_ALCH_EXCLUDE) if (lowerName.contains(x)) return false;
+		return true;
 	}
 
 	private static boolean hasCombatStats(net.runelite.client.game.ItemEquipmentStats s)
@@ -1283,65 +1354,82 @@ public class ItemCategorizer
 		int tierOrder = 50;
 
 		// Use SAME skill indices as SKILL_NAMES so overrides are shared:
-		// Farming=0, RC=1, WC=2, Fishing=3, Mining=4, Prayer=5, Crafting=9, etc.
+		// Farming=0, RC=1, WC=2, Fishing=3, Mining=4, Prayer=5, Crafting=9, Smithing=11, Fletching=12,
+		// Herblore=13, Cooking=14, Hunting=15
 
 		// === MINING + SMITHING (skill 4 = Mining) ===
-		if (lower.contains(" ore") || lower.equals("clay") || lower.equals("coal"))
+		if (lower.endsWith(" ore") || lower.equals("clay") || lower.equals("soft clay") || lower.equals("coal"))
 		{
 			skillGroup = 4; typeOrder = 0; tierOrder = getOreTier(lower);
 		}
-		else if (lower.contains(" bar"))
+		else if (lower.endsWith(" bar") && !lower.contains("chocolate"))
 		{
 			skillGroup = 4; typeOrder = 1; tierOrder = getBarTier(lower);
 		}
-		else if (lower.contains("uncut") || isGem(lower))
+		else if (lower.startsWith("uncut ") || (isGem(lower) && !lower.contains("bolt") && !lower.contains("tip")))
 		{
 			skillGroup = 4; typeOrder = 2; tierOrder = getGemTier(lower);
 		}
+		else if (lower.endsWith(" nails") || lower.endsWith("bolts (unf)") || lower.contains("cannonball"))
+		{
+			skillGroup = 4; typeOrder = 3; tierOrder = getMetalTier(lower);
+		}
 
-		// === WOODCUTTING + FLETCHING + CONSTRUCTION (skill 2 = WC) ===
-		else if (lower.contains("logs") || lower.equals("logs"))
+		// === WOODCUTTING + CONSTRUCTION (skill 2 = WC) ===
+		else if (lower.endsWith("logs") || lower.contains(" logs"))
 		{
 			skillGroup = 2; typeOrder = 0; tierOrder = getLogTier(lower);
 		}
 		else if (lower.contains("plank"))
 		{
-			skillGroup = 2; typeOrder = 1;
-			if (lower.contains("mahogany")) tierOrder = 3;
-			else if (lower.contains("teak")) tierOrder = 2;
-			else if (lower.contains("oak")) tierOrder = 1;
-			else tierOrder = 0;
+			skillGroup = 2; typeOrder = 1; tierOrder = getPlankTier(lower);
 		}
-		else if (lower.contains("arrow shaft") || lower.contains("bow string")
-			|| lower.contains("feather") || lower.contains("headless"))
+		else if (lower.endsWith(" roots") && !lower.contains("yew") && !lower.contains("magic") && !lower.contains("limpwurt"))
 		{
-			skillGroup = 2; typeOrder = 2;
+			skillGroup = 2; typeOrder = 2; tierOrder = getLogTier(lower);
+		}
+
+		// === FLETCHING (skill 12) ===
+		else if (lower.endsWith(" tips") || lower.endsWith(" tip") || lower.contains("arrowtips") || lower.contains("bolttips"))
+		{
+			skillGroup = 12; typeOrder = 0; tierOrder = getMetalTier(lower);
+		}
+		else if (lower.contains("arrow shaft") || lower.contains("bow string") || lower.contains("bowstring")
+			|| lower.contains("crossbow string") || lower.contains("feather") || lower.contains("headless"))
+		{
+			skillGroup = 12; typeOrder = 1;
 		}
 
 		// === CRAFTING (skill 9) ===
-		else if (lower.contains("hide") || lower.contains("leather"))
+		else if (lower.endsWith("hide") || lower.endsWith("leather"))
 		{
 			skillGroup = 9; typeOrder = 0; tierOrder = getHideTier(lower);
 		}
-		else if (lower.contains("wool") || lower.contains("flax")
-			|| lower.contains("sinew") || lower.contains("sand")
-			|| lower.contains("molten glass") || lower.contains("thread"))
+		else if (lower.contains("wool") || lower.contains("flax") || lower.contains("cotton")
+			|| lower.contains("sinew") || lower.contains("sand") || lower.contains("magic string")
+			|| lower.contains("molten glass") || lower.contains("thread") || lower.contains("bolt of "))
 		{
 			skillGroup = 9; typeOrder = 1;
 		}
 
-		// === FARMING + HERBLORE (skill 0 = Farming) ===
-		else if (lower.contains("seed"))
+		// === FARMING (skill 0) ===
+		else if (lower.endsWith(" seed") || lower.endsWith(" seeds") || lower.endsWith(" spore") || lower.contains("sapling") || lower.contains("seedling"))
 		{
 			skillGroup = 0; typeOrder = 0; tierOrder = getSeedTier(lower);
-		}
-		else if (lower.contains("grimy") || lower.contains("herb"))
-		{
-			skillGroup = 0; typeOrder = 1; tierOrder = getHerbTier(lower);
 		}
 		else if (lower.contains("compost") || lower.contains("plant cure"))
 		{
 			skillGroup = 0; typeOrder = 2;
+		}
+
+		// === HERBLORE (skill 13) ===
+		else if (lower.startsWith("grimy ") || lower.contains("potion (unf)") || isCleanHerb(lower))
+		{
+			skillGroup = 13; typeOrder = 0; tierOrder = getHerbTier(lower);
+		}
+		else if (isFarmingHerbloreMaterial(lower) || lower.endsWith(" root") || lower.endsWith("roots") || lower.contains("paste"))
+		{
+			skillGroup = 13; typeOrder = 1;
 		}
 
 		// === RUNECRAFTING (skill 1) ===
@@ -1351,26 +1439,95 @@ public class ItemCategorizer
 		}
 
 		// === FISHING + COOKING (skill 3 = Fishing) ===
-		else if (lower.contains("raw "))
+		else if (lower.startsWith("raw "))
 		{
-			skillGroup = 3; typeOrder = 0;
+			skillGroup = 3; typeOrder = 0; tierOrder = getRawFoodTier(lower);
 		}
 
 		// === HUNTER (skill 15 = Hunting) ===
+		else if (lower.contains("bird house") || lower.contains("birdhouse"))
+		{
+			skillGroup = 15; typeOrder = 0; tierOrder = lower.startsWith("bird") ? 0 : getLogTier(lower);
+		}
 		else if (lower.contains("fur") || lower.contains("kebbit"))
 		{
-			skillGroup = 15; typeOrder = 0;
+			skillGroup = 15; typeOrder = 1;
 		}
 
 		// === BONES / PRAYER (skill 5) ===
 		else if (lower.contains("bone") || lower.contains("ashes"))
 		{
-			skillGroup = 5; typeOrder = 0;
+			skillGroup = 5; typeOrder = 0; tierOrder = getBoneTier(lower);
 		}
 
 		// Pack: skillGroup(8) | typeOrder(4) | tierOrder(8) | itemId(16)
 		return ((long) skillGroup << 28) | ((long)(typeOrder & 0xF) << 24)
 			| ((long)(tierOrder & 0xFF) << 16) | (itemId & 0xFFFF);
+	}
+
+	private boolean isCleanHerb(String lower)
+	{
+		switch (lower)
+		{
+			case "guam leaf": case "marrentill": case "tarromin": case "harralander": case "ranarr weed":
+			case "toadflax": case "irit leaf": case "avantoe": case "kwuarm": case "snapdragon":
+			case "cadantine": case "lantadyme": case "dwarf weed": case "torstol": case "huasca":
+				return true;
+			default:
+				return false;
+		}
+	}
+
+	/** Metal / gem tier used for tips, nails, unf bolts. */
+	private int getMetalTier(String lower)
+	{
+		if (lower.contains("bronze")) return 0;
+		if (lower.contains("iron")) return 1;
+		if (lower.contains("steel")) return 2;
+		if (lower.contains("black")) return 3;
+		if (lower.contains("mithril")) return 4;
+		if (lower.contains("adamant")) return 5;
+		if (lower.contains("rune")) return 6;
+		if (lower.contains("amethyst")) return 7;
+		if (lower.contains("dragon") && !lower.contains("dragonstone")) return 8;
+		// gem tips
+		if (lower.contains("opal")) return 20;
+		if (lower.contains("jade")) return 21;
+		if (lower.contains("pearl")) return 22;
+		if (lower.contains("topaz")) return 23;
+		if (lower.contains("sapphire")) return 24;
+		if (lower.contains("emerald")) return 25;
+		if (lower.contains("ruby")) return 26;
+		if (lower.contains("diamond")) return 27;
+		if (lower.contains("dragonstone")) return 28;
+		if (lower.contains("onyx")) return 29;
+		if (lower.contains("barb")) return 30;
+		if (lower.contains("broad")) return 31;
+		return 50;
+	}
+
+	private int getPlankTier(String lower)
+	{
+		if (lower.equals("plank") || lower.startsWith("plank")) return 0;
+		if (lower.contains("oak")) return 1;
+		if (lower.contains("teak")) return 2;
+		if (lower.contains("mahogany")) return 3;
+		return 10;
+	}
+
+	/** Raw food ordered roughly by cooking level. */
+	private int getRawFoodTier(String lower)
+	{
+		String[] order = {
+			"shrimps", "sardine", "karambwanji", "herring", "anchovies", "mackerel", "chicken", "beef", "rat meat",
+			"bear meat", "trout", "cod", "pike", "salmon", "slimy eel", "tuna", "karambwan", "lobster", "bass",
+			"swordfish", "monkfish", "shark", "sea turtle", "manta ray", "anglerfish", "dark crab"
+		};
+		for (int i = 0; i < order.length; i++)
+		{
+			if (lower.contains(order[i])) return i;
+		}
+		return 50;
 	}
 
 	private int getOreTier(String lower)
@@ -1423,6 +1580,9 @@ public class ItemCategorizer
 		if (lower.contains("blue d") || lower.contains("blue dragon")) return 2;
 		if (lower.contains("red d") || lower.contains("red dragon")) return 3;
 		if (lower.contains("black d") || lower.contains("black dragon")) return 4;
+		if (lower.contains("hard leather")) return 5;
+		if (lower.contains("snake")) return 6;
+		if (lower.contains("yak")) return 7;
 		return 50;
 	}
 
@@ -1430,18 +1590,21 @@ public class ItemCategorizer
 	{
 		return lower.contains("sapphire") || lower.contains("emerald") || lower.contains("ruby")
 			|| lower.contains("diamond") || lower.contains("dragonstone") || lower.contains("onyx")
-			|| lower.contains("zenyte");
+			|| lower.contains("zenyte") || lower.equals("opal") || lower.equals("jade") || lower.equals("red topaz");
 	}
 
 	private int getGemTier(String lower)
 	{
-		if (lower.contains("sapphire")) return 0;
-		if (lower.contains("emerald")) return 1;
-		if (lower.contains("ruby")) return 2;
-		if (lower.contains("diamond")) return 3;
-		if (lower.contains("dragonstone")) return 4;
-		if (lower.contains("onyx")) return 5;
-		if (lower.contains("zenyte")) return 6;
+		if (lower.contains("opal")) return 0;
+		if (lower.contains("jade")) return 1;
+		if (lower.contains("topaz")) return 2;
+		if (lower.contains("sapphire")) return 3;
+		if (lower.contains("emerald")) return 4;
+		if (lower.contains("ruby")) return 5;
+		if (lower.contains("diamond")) return 6;
+		if (lower.contains("dragonstone")) return 7;
+		if (lower.contains("onyx")) return 8;
+		if (lower.contains("zenyte")) return 9;
 		return 50;
 	}
 
@@ -1572,6 +1735,12 @@ public class ItemCategorizer
 		}
 		else if (lower.contains("herb sack"))
 		{ skillOrder = 0; tierOrder = lower.contains("open") ? 5 : 4; }
+		else if (lower.contains("diving apparatus"))
+		{ skillOrder = 0; tierOrder = 20; }
+		else if (lower.contains("fishbowl helmet"))
+		{ skillOrder = 0; tierOrder = 21; }
+		else if (lower.contains("drift net"))
+		{ skillOrder = 15; tierOrder = 0; }
 		else if (lower.contains("magic secateurs"))
 		{ skillOrder = 0; tierOrder = 6; }
 		else if (lower.contains("spade"))

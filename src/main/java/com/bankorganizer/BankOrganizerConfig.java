@@ -76,7 +76,7 @@ public interface BankOrganizerConfig extends Config
 	// --- Tab mappings ---
 
 	@ConfigItem(keyName = "tab0Category", name = "Main tab (All)", description = "Category for items that aren't in any numbered tab (the section shown at the bottom of the 'All' view)", position = -1, section = tabMappingSection)
-	default ItemCategory tab0Category() { return ItemCategory.QUEST_MISC; }
+	default ItemCategory tab0Category() { return ItemCategory.CURRENCY; }
 
 	@ConfigItem(keyName = "tab1Category", name = "Tab 1", description = "Category for bank tab 1", position = 0, section = tabMappingSection)
 	default ItemCategory tab1Category() { return ItemCategory.TELEPORTS; }
