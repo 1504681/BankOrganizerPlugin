@@ -134,14 +134,9 @@ public class BankOrganizerOverlay extends Overlay
 			return;
 		}
 
-		// Tab container children: index 0 is usually "all" tab, indices 1-9 are tabs 1-9
+		// Tab container children: index 0 is the "all" tab (coloured with the main-tab category), 1-9 are tabs 1-9
 		for (int i = 0; i < tabs.length && i <= 9; i++)
 		{
-			if (i == 0)
-			{
-				continue; // Skip "all items" tab
-			}
-
 			ItemCategory category = plugin.getCategoryForTab(i);
 			if (category == null)
 			{

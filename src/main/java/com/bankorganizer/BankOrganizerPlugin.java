@@ -156,6 +156,10 @@ public class BankOrganizerPlugin extends Plugin
 	protected void startUp()
 	{
 		categorizer = new ItemCategorizer();
+		// Item stats are fetched asynchronously by RuneLite; use a canary item to tell "not loaded yet"
+		// apart from "not equipable" so gear isn't demoted to Misc while stats are still loading.
+		categorizer.setStatsProvider(this::getEquipmentStats,
+			() -> itemManager.getItemStats(net.runelite.api.ItemID.ABYSSAL_WHIP) != null);
 		profileManager = new ProfileManager(config);
 		profileManager.loadProfiles();
 		updateRegexFromConfig();
@@ -620,25 +624,7 @@ public class BankOrganizerPlugin extends Plugin
 			}
 		}
 
-		Map<Integer, ItemCategory> overrides = new HashMap<>();
-		// Simple parsing: "itemId:CATEGORY,itemId:CATEGORY,..."
-		for (String entry : json.split(","))
-		{
-			String[] parts = entry.split(":");
-			if (parts.length == 2)
-			{
-				try
-				{
-					int id = Integer.parseInt(parts[0].trim());
-					ItemCategory cat = ItemCategory.valueOf(parts[1].trim());
-					overrides.put(id, cat);
-				}
-				catch (Exception ignored)
-				{
-				}
-			}
-		}
-		categorizer.loadManualOverrides(overrides);
+		categorizer.loadManualOverrides(ItemCategorizer.parseCategoryOverrides(json));
 	}
 
 	private void saveOverridesToConfig()
@@ -670,22 +656,7 @@ public class BankOrganizerPlugin extends Plugin
 			}
 		}
 
-		Map<Integer, Integer> overrides = new HashMap<>();
-		for (String entry : json.split(","))
-		{
-			String[] parts = entry.split(":");
-			if (parts.length == 2)
-			{
-				try
-				{
-					int id = Integer.parseInt(parts[0].trim());
-					int subOrder = Integer.parseInt(parts[1].trim());
-					overrides.put(id, subOrder);
-				}
-				catch (Exception ignored) {}
-			}
-		}
-		categorizer.loadSubCategoryOverrides(overrides);
+		categorizer.loadSubCategoryOverrides(ItemCategorizer.parseSubCategoryOverrides(json));
 	}
 
 	private void saveSubOverridesToConfig()
@@ -746,7 +717,7 @@ public class BankOrganizerPlugin extends Plugin
 			int imported = 0;
 			for (String entry : clipText.split(","))
 			{
-				String[] parts = entry.split(":");
+				String[] parts = entry.replace("\\:", ":").split(":");
 				if (parts.length == 2)
 				{
 					try
@@ -982,10 +953,12 @@ public class BankOrganizerPlugin extends Plugin
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null) return;
 
+		int currentTab = getCurrentBankTab();
 		int count = 0;
-		for (Widget child : children)
+		for (int slot = 0; slot < children.length; slot++)
 		{
-			if (child == null || child.isHidden()) continue;
+			Widget child = children[slot];
+			if (child == null || child.isHidden() || !isSlotInTab(currentTab, slot)) continue;
 			int itemId = child.getItemId();
 			if (itemId <= 0) continue;
 
@@ -1045,6 +1018,7 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		switch (tabNumber)
 		{
+			case 0: return config.tab0Category();
 			case 1: return config.tab1Category();
 			case 2: return config.tab2Category();
 			case 3: return config.tab3Category();
@@ -1069,12 +1043,38 @@ public class BankOrganizerPlugin extends Plugin
 				mappings.put(cat, i);
 			}
 		}
+		// Main tab (0) only claims a category no numbered tab already has
+		ItemCategory mainCat = getCategoryForTab(0);
+		if (mainCat != null && !mappings.containsKey(mainCat))
+		{
+			mappings.put(mainCat, 0);
+		}
 		return mappings;
 	}
 
 	private int getCurrentBankTab()
 	{
 		return client.getVarbitValue(4150);
+	}
+
+	/**
+	 * When the "All" view (tab 0) is open the item container holds every item: tabs 1-9 first, then
+	 * the un-tabbed "main tab" items. Returns the first slot of that main-tab section.
+	 */
+	private int getMainTabFirstSlot()
+	{
+		int sum = 0;
+		for (int varbit = net.runelite.api.Varbits.BANK_TAB_ONE_COUNT; varbit <= net.runelite.api.Varbits.BANK_TAB_NINE_COUNT; varbit++)
+		{
+			sum += client.getVarbitValue(varbit);
+		}
+		return sum;
+	}
+
+	/** True if the given container slot belongs to the tab currently being viewed. */
+	private boolean isSlotInTab(int currentTab, int slot)
+	{
+		return currentTab != 0 || slot >= getMainTabFirstSlot();
 	}
 
 	// === Scan ===
@@ -1111,7 +1111,7 @@ public class BankOrganizerPlugin extends Plugin
 			for (int slot = 0; slot < children.length; slot++)
 			{
 				Widget child = children[slot];
-				if (child == null || child.isHidden())
+				if (child == null || child.isHidden() || !isSlotInTab(currentTab, slot))
 				{
 					continue;
 				}
@@ -1186,12 +1186,12 @@ public class BankOrganizerPlugin extends Plugin
 		Widget[] children = bankItemContainer.getDynamicChildren();
 		if (children == null) return;
 
-		// Collect current items
+		// Collect current items (only the main-tab section when viewing "All")
 		List<BankItem> currentItems = new ArrayList<>();
 		for (int slot = 0; slot < children.length; slot++)
 		{
 			Widget child = children[slot];
-			if (child == null || child.isHidden()) continue;
+			if (child == null || child.isHidden() || !isSlotInTab(currentTab, slot)) continue;
 			int itemId = child.getItemId();
 			if (itemId <= 0) continue;
 			String name = itemManager.getItemComposition(itemId).getName();
@@ -1558,7 +1558,7 @@ public class BankOrganizerPlugin extends Plugin
 			for (int slot = 0; slot < children.length; slot++)
 			{
 				Widget child = children[slot];
-				if (child == null || child.isHidden()) continue;
+				if (child == null || child.isHidden() || !isSlotInTab(currentTab, slot)) continue;
 				int itemId = child.getItemId();
 				if (itemId <= 0) continue;
 				String name = itemManager.getItemComposition(itemId).getName();

@@ -137,6 +137,7 @@ public class BankOrganizerProfile
 	{
 		BankOrganizerProfile p = new BankOrganizerProfile("Default Layout");
 		// Tab mappings match BankOrganizerConfig defaults
+		p.tabMappings.put("tab0", "QUEST_MISC");
 		p.tabMappings.put("tab1", "TELEPORTS");
 		p.tabMappings.put("tab2", "GEAR");
 		p.tabMappings.put("tab3", "POTIONS");

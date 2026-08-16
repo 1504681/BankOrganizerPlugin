@@ -12,7 +12,7 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 - Adjustable overlay opacity
 
 ### Item Categorization
-- Items are auto-categorized by item ID, name keywords, and equipment stats
+- Items are auto-categorized by item ID, skilling-outfit and farming/herblore rules (all seeds, saplings, herbs, unfinished potions and secondaries → Materials), name keywords, and equipment stats (anything wearable with combat stats → Combat; non-wearable items never match gear keywords)
 - **Right-click categorization**: toggle "Start Categorizing", then right-click any bank item to assign it to a category
 - **Subcategory mode**: toggle to assign items to skill-based subcategories (Farming, Runecrafting, Woodcutting, etc.)
 - **Mass categorize**: right-click a bank tab to categorize all visible items at once
@@ -20,7 +20,7 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 
 ### Smart Sorting
 - **Combat tab**: items sorted by combat style (melee/ranged/mage), then by equipment slot, then by stat strength (highest first)
-- **Teleports tab**: rune pouch first, then skill capes, other teleport items, runes (elemental > catalytic), jewelry (grouped by type, highest charge first), tablets
+- **Teleports tab**: rune pouch first, then — in the order set by **Teleport Sort Mode** (Runes / Jewelry / Tablets first) — runes (elemental > catalytic), jewelry (grouped by type, highest charge first) and tablets; then skill capes and other teleport items last, so newly added items never jump above your runes
 - **Potions tab**: divine variants first, then by priority (super combat > ranging > sara brew > super restore > prayer pot, etc.), highest dose first
 - **Food tab**: sorted by healing amount (anglerfish > shark > monkfish, etc.)
 - **Skilling tab**: grouped by skill (Farming > Runecrafting > Woodcutting > Fishing > Mining > Prayer > Agility, etc.)
@@ -55,7 +55,7 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 
 ### Setting Up Your Tabs
 1. Go to plugin settings > **Tab Mappings**
-2. Assign each bank tab (1-9) to a category (e.g., Tab 1 = Teleports, Tab 2 = Combat)
+2. Assign each bank tab (1-9) to a category (e.g., Tab 1 = Teleports, Tab 2 = Combat). **Main tab (All)** sets the category for items that aren't in any numbered tab — the section at the bottom of the "All" view; scanning/ordering while viewing "All" works on just that section, and the All tab gets a colour bar too
 3. Click **Scan Tab** while viewing a tab to see which items are misplaced
 
 ### Categorizing Items
@@ -73,6 +73,12 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 4. Follow the green/yellow highlights to move items one at a time
 5. The sidebar shows the current phase and remaining items
 6. The plugin auto-advances when you complete each step
+
+## Contributing categorizations
+
+Item categorization is data-driven. If items land in the wrong tab, open a "Wrong category"
+issue with the item names, or — better — organise your bank, use the plugin's **Export** button
+and post the result in a "Share my profile" issue. Good profiles get merged into the defaults.
 
 ## Building from Source
 
@@ -92,7 +98,7 @@ All settings are in the RuneLite plugin configuration panel:
 | Section | Settings |
 |---------|----------|
 | General | Show sidebar icon, tab colors, overlay opacity |
-| Tab Mappings | Assign categories to bank tabs 1-9 |
+| Tab Mappings | Assign categories to the main (All) tab and bank tabs 1-9 |
 | Sorting | Gear sort mode (Combat Style / Equipment Type), Teleport sort mode |
 | Colors | Customize overlay color for each category |
 | Custom Regex | Add regex patterns for advanced item matching |

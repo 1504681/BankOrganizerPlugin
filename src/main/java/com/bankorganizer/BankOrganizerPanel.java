@@ -506,7 +506,7 @@ public class BankOrganizerPanel extends PluginPanel
 				String itemName = itemNames.getOrDefault(itemId, "Unknown");
 
 				Integer tabNum = tabMappings.get(correctCategory);
-				String tabStr = tabNum != null ? "T" + tabNum : "?";
+				String tabStr = tabNum == null ? "?" : (tabNum == 0 ? "Main" : "T" + tabNum);
 
 				JPanel row = new JPanel(new BorderLayout());
 				row.setBackground(shown % 2 == 0 ? ColorScheme.DARKER_GRAY_COLOR : new Color(35, 35, 35));
