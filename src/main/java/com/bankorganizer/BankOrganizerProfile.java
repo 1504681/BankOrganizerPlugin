@@ -15,6 +15,8 @@ public class BankOrganizerProfile
 	private Map<String, String> tabMappings = new HashMap<>(); // tab1->TELEPORTS, etc.
 	private Map<String, String> categoryColors = new HashMap<>(); // GEAR->#DC3232, etc.
 	private Map<String, String> regexPatterns = new HashMap<>(); // GEAR->pattern, etc.
+	// Plugin version whose shipped defaults this profile was created from ("" = blank profile or predates tracking)
+	private String defaultsVersion = "";
 
 	public BankOrganizerProfile(String name)
 	{
@@ -30,6 +32,9 @@ public class BankOrganizerProfile
 	public String getSubCategoryOverrides() { return subCategoryOverrides; }
 	public void setSubCategoryOverrides(String overrides) { this.subCategoryOverrides = overrides; }
 
+	public String getDefaultsVersion() { return defaultsVersion; }
+	public void setDefaultsVersion(String v) { this.defaultsVersion = v == null ? "" : v; }
+
 	public Map<String, String> getTabMappings() { return tabMappings; }
 	public Map<String, String> getCategoryColors() { return categoryColors; }
 	public Map<String, String> getRegexPatterns() { return regexPatterns; }
@@ -42,6 +47,7 @@ public class BankOrganizerProfile
 	{
 		StringBuilder sb = new StringBuilder();
 		sb.append(name).append("\n");
+		sb.append("VER:").append(defaultsVersion).append("\n");
 		sb.append("CAT:").append(categoryOverrides).append("\n");
 		sb.append("SUB:").append(subCategoryOverrides).append("\n");
 
@@ -92,7 +98,11 @@ public class BankOrganizerProfile
 		for (int i = 1; i < lines.length; i++)
 		{
 			String line = lines[i];
-			if (line.startsWith("CAT:"))
+			if (line.startsWith("VER:"))
+			{
+				profile.defaultsVersion = line.substring(4).trim();
+			}
+			else if (line.startsWith("CAT:"))
 			{
 				profile.categoryOverrides = line.substring(4);
 			}
@@ -136,6 +146,7 @@ public class BankOrganizerProfile
 	public static BankOrganizerProfile createDefault()
 	{
 		BankOrganizerProfile p = new BankOrganizerProfile("Default Layout");
+		p.defaultsVersion = BankOrganizerPlugin.VERSION;
 		// Tab mappings match BankOrganizerConfig defaults
 		p.tabMappings.put("tab0", "CURRENCY");
 		p.tabMappings.put("tab1", "TELEPORTS");

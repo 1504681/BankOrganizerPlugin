@@ -365,4 +365,17 @@ public class ItemCategorizerTest
 		assertTrue(a < b);
 		assertEquals(a >> 16, (b >> 16) - 1);
 	}
+
+	@Test
+	public void testProfileDefaultsVersionRoundTrip()
+	{
+		BankOrganizerProfile p = BankOrganizerProfile.createDefault();
+		assertEquals(BankOrganizerPlugin.VERSION, p.getDefaultsVersion());
+		BankOrganizerProfile back = BankOrganizerProfile.deserialize(p.serialize());
+		assertEquals(BankOrganizerPlugin.VERSION, back.getDefaultsVersion());
+		// legacy export without a VER line -> empty
+		BankOrganizerProfile legacy = BankOrganizerProfile.deserialize("Old\nCAT:1:GEAR\nSUB:\n");
+		assertEquals("", legacy.getDefaultsVersion());
+		assertEquals("", BankOrganizerProfile.createBlank("x").getDefaultsVersion());
+	}
 }

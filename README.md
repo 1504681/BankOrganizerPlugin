@@ -41,6 +41,7 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 - **New Blank**: create an empty profile for fully manual categorization
 - **Export/Import**: share profiles with other players via clipboard
 - Switch between profiles instantly using the dropdown
+- Each profile records which plugin version its defaults came from; the sidebar shows this under the profile selector and highlights it when the plugin has newer defaults (create a **New Default** profile to pick them up — your existing overrides stay in the old profile)
 
 ### Highlight Untagged
 - Toggle **Highlight Untagged** to see red dashed boxes on Skilling and Materials items that don't have a subcategory assigned

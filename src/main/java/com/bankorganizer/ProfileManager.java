@@ -167,6 +167,7 @@ public class ProfileManager
 	{
 		BankOrganizerProfile profile = BankOrganizerProfile.createDefault();
 		profile.setName(name);
+		profile.setDefaultsVersion(BankOrganizerPlugin.VERSION);
 
 		// Copy default overrides from resource files
 		try

@@ -42,6 +42,7 @@ public class BankOrganizerPanel extends PluginPanel
 	private ItemCategory activeFilter = null;
 
 	private static final Color ACCENT = new Color(0, 180, 255);
+	private JLabel profileInfoLabel;
 	private static final Color BTN_ACTIVE = new Color(40, 80, 40);
 	private static final Color BTN_DANGER = new Color(100, 40, 40);
 
@@ -64,6 +65,11 @@ public class BankOrganizerPanel extends PluginPanel
 		title.setFont(FontManager.getRunescapeBoldFont().deriveFont(18f));
 		title.setAlignmentX(Component.LEFT_ALIGNMENT);
 		mainPanel.add(title);
+		JLabel versionLabel = new JLabel("v" + BankOrganizerPlugin.VERSION);
+		versionLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		versionLabel.setFont(FontManager.getRunescapeSmallFont());
+		versionLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		mainPanel.add(versionLabel);
 		mainPanel.add(Box.createVerticalStrut(4));
 
 		// Profile selector
@@ -80,9 +86,18 @@ public class BankOrganizerPanel extends PluginPanel
 			if (selected != null)
 			{
 				plugin.switchProfile(selected);
+				updateProfileInfoLabel();
 			}
 		});
 		profileSection.add(profileDropdown);
+		profileSection.add(Box.createVerticalStrut(2));
+
+		// Which plugin version's defaults this profile started from
+		profileInfoLabel = new JLabel();
+		profileInfoLabel.setFont(FontManager.getRunescapeSmallFont());
+		profileInfoLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		updateProfileInfoLabel();
+		profileSection.add(profileInfoLabel);
 		profileSection.add(Box.createVerticalStrut(3));
 
 		// Collapsible management panel
@@ -402,6 +417,34 @@ public class BankOrganizerPanel extends PluginPanel
 			dropdown.addItem(name);
 		}
 		dropdown.setSelectedItem(plugin.getActiveProfileName());
+		updateProfileInfoLabel();
+	}
+
+	private void updateProfileInfoLabel()
+	{
+		if (profileInfoLabel == null) return;
+		BankOrganizerProfile profile = plugin.getActiveProfile();
+		String v = profile != null ? profile.getDefaultsVersion() : "";
+		if (v == null || v.isEmpty())
+		{
+			profileInfoLabel.setText("Defaults: none / pre-1.1.1");
+			profileInfoLabel.setToolTipText("Blank profile, or created before defaults were versioned. "
+				+ "Create a New Default profile to get the current built-in categorizations.");
+			profileInfoLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		}
+		else if (v.equals(BankOrganizerPlugin.VERSION))
+		{
+			profileInfoLabel.setText("Defaults: v" + v + " (current)");
+			profileInfoLabel.setToolTipText("This profile started from the current plugin defaults.");
+			profileInfoLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		}
+		else
+		{
+			profileInfoLabel.setText("Defaults: v" + v + " (plugin is v" + BankOrganizerPlugin.VERSION + ")");
+			profileInfoLabel.setToolTipText("This profile's defaults come from an older plugin version. "
+				+ "Create a New Default profile to get the latest categorizations (your overrides stay in this profile).");
+			profileInfoLabel.setForeground(new Color(240, 173, 78));
+		}
 	}
 
 	private JButton makeFilterButton(String text, ItemCategory category)
