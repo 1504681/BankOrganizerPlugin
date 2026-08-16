@@ -694,10 +694,13 @@ public class ItemCategorizer
 	 * Determine the gear sub-category using equipment stats.
 	 * Falls back to keyword matching if stats unavailable.
 	 */
-	// Best-in-slot mega-rares pinned to the very top of the Combat tab, in this order
+	// Best-in-slot mega-rares pinned to the top of their style's weapons: scythe (melee), tbow (ranged), shadow (mage)
 	private static final String[] PINNED_GEAR = { "scythe of vitur", "twisted bow", "tumeken's shadow" };
+	private static final GearSubCategory[] PINNED_GEAR_SUB = {
+		GearSubCategory.MELEE_WEAPON, GearSubCategory.RANGED_WEAPON, GearSubCategory.MAGE_WEAPON
+	};
 
-	/** 0-based pin rank for items that always sort first in the Combat tab, or -1. */
+	/** Index into PINNED_GEAR for items pinned to the top of their style group, or -1. */
 	public static int getPinnedGearRank(String lowerName)
 	{
 		for (int i = 0; i < PINNED_GEAR.length; i++)
@@ -717,9 +720,11 @@ public class ItemCategorizer
 			return idSub;
 		}
 
-		// Name rules that stats get wrong
+		// Name rules that stats get wrong (or that must not depend on stats being loaded)
 		String lower = itemName.toLowerCase();
 		if (lower.contains("twinflame staff")) return GearSubCategory.MAGE_WEAPON;
+		int pin = getPinnedGearRank(lower);
+		if (pin >= 0) return PINNED_GEAR_SUB[pin];
 
 		// Use equipment stats if available
 		if (stats != null)
@@ -927,15 +932,14 @@ public class ItemCategorizer
 	public long getGearFullSortKey(String itemName, int itemId,
 		net.runelite.client.game.ItemEquipmentStats stats, GearSortMode mode)
 	{
-		// Pinned mega-rares (scythe, tbow, shadow) always come first, in that order
-		int pin = getPinnedGearRank(itemName.toLowerCase());
-		if (pin >= 0)
-		{
-			return ((long) pin << 16) | (itemId & 0xFFFF);
-		}
-
 		GearSubCategory sub = getGearSubCategory(itemName, itemId, stats);
 		int subOrder = getGearSortOrder(sub, mode);
+
+		// Pinned mega-rares sit at the top of their style's weapons regardless of stats
+		if (getPinnedGearRank(itemName.toLowerCase()) >= 0)
+		{
+			return ((long) subOrder << 44) | ((long) SLOT_ORDER[3] << 36) | (itemId & 0xFFFF);
+		}
 
 		int slotOrder = 0;
 		int statValue = 0;

@@ -467,17 +467,29 @@ public class ItemCategorizerTest
 	}
 
 	@Test
-	public void testTwinflameStaffIsMageAndMegaRaresPinFirst()
+	public void testTwinflameStaffIsMageAndMegaRaresTopTheirStyle()
 	{
 		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Twinflame staff", 99999,
 			ItemEquipmentStats.builder().slot(3).astab(10).aslash(10).acrush(10).amagic(5).build()));
 		GearSortMode mode = GearSortMode.values()[0];
-		long scythe = categorizer.getGearFullSortKey("Scythe of vitur", 22325, null, mode);
-		long holyScythe = categorizer.getGearFullSortKey("Holy scythe of vitur (uncharged)", 25736, null, mode);
+		ItemEquipmentStats meleeBis = ItemEquipmentStats.builder().slot(3).aslash(150).str(150).build();
+		ItemEquipmentStats rangedBis = ItemEquipmentStats.builder().slot(3).isTwoHanded(true).arange(150).rstr(150).build();
+		ItemEquipmentStats mageBis = ItemEquipmentStats.builder().slot(3).amagic(150).mdmg(20).build();
+		long scythe = categorizer.getGearFullSortKey("Holy scythe of vitur (uncharged)", 25736, null, mode);
 		long tbow = categorizer.getGearFullSortKey("Twisted bow", 20997, null, mode);
 		long shadow = categorizer.getGearFullSortKey("Tumeken's shadow (uncharged)", 27277, null, mode);
-		long whip = categorizer.getGearFullSortKey("Abyssal whip", 4151,
-			ItemEquipmentStats.builder().slot(3).aslash(82).str(82).build(), mode);
-		assertTrue(scythe < tbow); assertTrue(holyScythe < tbow); assertTrue(tbow < shadow); assertTrue(shadow < whip);
+		long rapier = categorizer.getGearFullSortKey("Ghrazi rapier", 22324, meleeBis, mode);
+		long bowfa = categorizer.getGearFullSortKey("Bow of faerdhinen", 25865, rangedBis, mode);
+		long sang = categorizer.getGearFullSortKey("Sanguinesti staff", 22323, mageBis, mode);
+		// each pin heads its own style group...
+		assertTrue(scythe < rapier);
+		assertTrue(tbow < bowfa);
+		assertTrue(shadow < sang);
+		// ...but stays inside it: the melee group's rapier still precedes the ranged group's tbow
+		assertEquals(GearSubCategory.MELEE_WEAPON, categorizer.getGearSubCategory("Scythe of vitur", 22325));
+		assertEquals(GearSubCategory.RANGED_WEAPON, categorizer.getGearSubCategory("Twisted bow", 20997));
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Tumeken's shadow", 27275));
+		assertTrue((rapier >> 44) == (scythe >> 44));
+		assertTrue((scythe >> 44) != (tbow >> 44));
 	}
 }
