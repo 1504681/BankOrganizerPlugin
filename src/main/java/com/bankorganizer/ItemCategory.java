@@ -64,7 +64,7 @@ public enum ItemCategory
 		"numulite", "pieces of eight", "warrior guild token",
 		"mermaid's tear", "hallowed mark", "molch pearl"
 	)),
-	QUEST_MISC("Quest/Misc", new Color(140, 150, 165), Arrays.asList());
+	QUEST_MISC("Quest/Misc", new Color(150, 90, 240), Arrays.asList());
 
 	private final String displayName;
 	private final Color color;

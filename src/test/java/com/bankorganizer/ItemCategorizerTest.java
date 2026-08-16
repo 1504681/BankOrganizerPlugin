@@ -447,4 +447,22 @@ public class ItemCategorizerTest
 		assertEquals(ItemCategory.CURRENCY, categorizer.categorize("Clue bottle (medium)", 99999));
 		assertEquals(ItemCategory.CURRENCY, categorizer.categorize("Coins", 995));
 	}
+
+	@Test
+	public void testGemsOrbsCompostAndUnenchantedGemBolts()
+	{
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Onyx bolts", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Ruby bolts", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Onyx bolts (e)", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Ruby dragon bolts (e)", 99999));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Runite bolts", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Compost", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Ultracompost", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Bottomless compost bucket", 99999));
+		assertEquals(ItemCategory.POTIONS, categorizer.categorize("Compost potion(4)", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Ruby", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Zenyte", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Unpowered orb", 99999));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Water orb", 99999));
+	}
 }

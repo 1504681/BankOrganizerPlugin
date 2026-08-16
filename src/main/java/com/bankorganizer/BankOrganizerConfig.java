@@ -149,7 +149,7 @@ public interface BankOrganizerConfig extends Config
 
 	@Alpha
 	@ConfigItem(keyName = "colorQuestMisc", name = "Quest/Misc", description = "Overlay color for Quest/Misc", position = 8, section = colorsSection)
-	default Color colorQuestMisc() { return new Color(140, 150, 165); }
+	default Color colorQuestMisc() { return new Color(150, 90, 240); }
 
 	// --- Manual overrides (stored as JSON string) ---
 

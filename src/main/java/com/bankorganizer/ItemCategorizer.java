@@ -64,7 +64,16 @@ public class ItemCategorizer
 		"bird house", "birdhouse", "flax", " logs", "bow string", "bowstring", "crossbow string"
 	};
 	private static final String[] MATERIAL_RULE_EXACT = {
-		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay"
+		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay",
+		// cut gems
+		"opal", "jade", "red topaz", "sapphire", "emerald", "ruby", "diamond", "dragonstone", "onyx", "zenyte",
+		// orbs for battlestaves
+		"unpowered orb", "water orb", "earth orb", "fire orb", "air orb"
+	};
+	// Gem-tipped bolts before enchanting are crafting intermediates, not ammo
+	private static final String[] UNENCHANTED_GEM_BOLTS = {
+		"opal bolts", "jade bolts", "pearl bolts", "topaz bolts", "sapphire bolts", "emerald bolts",
+		"ruby bolts", "diamond bolts", "dragonstone bolts", "onyx bolts"
 	};
 
 	// Adamant / mithril equipment is alch fodder rather than gear (bolts and arrows excepted)
@@ -628,6 +637,13 @@ public class ItemCategorizer
 	public static boolean isMaterialByRule(String lowerName)
 	{
 		for (String x : MATERIAL_RULE_EXACT) if (lowerName.equals(x)) return true;
+		// anything compost (bottomless bucket is a Skilling tool; compost potion is a potion)
+		if (lowerName.contains("compost") && !lowerName.contains("bottomless") && !lowerName.contains("potion")) return true;
+		// "Onyx bolts" (unenchanted) yes; "Onyx bolts (e)" / "Onyx dragon bolts (e)" no
+		if (lowerName.endsWith(" bolts") || lowerName.endsWith(" bolts (unf)"))
+		{
+			for (String b : UNENCHANTED_GEM_BOLTS) if (lowerName.equals(b) || lowerName.endsWith(" " + b)) return true;
+		}
 		for (String p : MATERIAL_RULE_PREFIXES) if (lowerName.startsWith(p)) return true;
 		for (String c : MATERIAL_RULE_CONTAINS) if (lowerName.contains(c)) return true;
 		for (String suf : MATERIAL_RULE_SUFFIXES) if (lowerName.endsWith(suf)) return true;
@@ -1374,6 +1390,14 @@ public class ItemCategorizer
 		else if (lower.startsWith("uncut ") || (isGem(lower) && !lower.contains("bolt") && !lower.contains("tip")))
 		{
 			skillGroup = 4; typeOrder = 2; tierOrder = getGemTier(lower);
+		}
+		else if (lower.endsWith(" orb"))
+		{
+			skillGroup = 9; typeOrder = 2; tierOrder = lower.startsWith("unpowered") ? 0 : 1;
+		}
+		else if (lower.endsWith(" bolts") && isGem(lower.replace(" bolts", "").replace("dragon ", "")))
+		{
+			skillGroup = 12; typeOrder = 0; tierOrder = getMetalTier(lower);
 		}
 		else if (lower.endsWith(" nails") || lower.endsWith("bolts (unf)") || lower.contains("cannonball"))
 		{
