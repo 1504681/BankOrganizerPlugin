@@ -17,6 +17,11 @@ public class BankOrganizerProfile
 	private Map<String, String> regexPatterns = new HashMap<>(); // GEAR->pattern, etc.
 	// Plugin version whose shipped defaults this profile was created from ("" = blank profile or predates tracking)
 	private String defaultsVersion = "";
+	// Item ids whose category/subgroup the user set (or cleared) by hand — preserved when defaults are re-applied
+	private java.util.Set<Integer> userItems = new java.util.LinkedHashSet<>();
+
+	/** Marker for blank profiles: never receive shipped defaults automatically. */
+	public static final String DEFAULTS_NONE = "none";
 
 	public BankOrganizerProfile(String name)
 	{
@@ -35,6 +40,9 @@ public class BankOrganizerProfile
 	public String getDefaultsVersion() { return defaultsVersion; }
 	public void setDefaultsVersion(String v) { this.defaultsVersion = v == null ? "" : v; }
 
+	public java.util.Set<Integer> getUserItems() { return userItems; }
+	public void setUserItems(java.util.Collection<Integer> ids) { userItems = new java.util.LinkedHashSet<>(ids); }
+
 	public Map<String, String> getTabMappings() { return tabMappings; }
 	public Map<String, String> getCategoryColors() { return categoryColors; }
 	public Map<String, String> getRegexPatterns() { return regexPatterns; }
@@ -48,6 +56,15 @@ public class BankOrganizerProfile
 		StringBuilder sb = new StringBuilder();
 		sb.append(name).append("\n");
 		sb.append("VER:").append(defaultsVersion).append("\n");
+		sb.append("USER:");
+		boolean firstUser = true;
+		for (Integer id : userItems)
+		{
+			if (!firstUser) sb.append(",");
+			sb.append(id);
+			firstUser = false;
+		}
+		sb.append("\n");
 		sb.append("CAT:").append(categoryOverrides).append("\n");
 		sb.append("SUB:").append(subCategoryOverrides).append("\n");
 
@@ -101,6 +118,13 @@ public class BankOrganizerProfile
 			if (line.startsWith("VER:"))
 			{
 				profile.defaultsVersion = line.substring(4).trim();
+			}
+			else if (line.startsWith("USER:"))
+			{
+				for (String id : line.substring(5).split(","))
+				{
+					try { profile.userItems.add(Integer.parseInt(id.trim())); } catch (NumberFormatException ignored) { }
+				}
 			}
 			else if (line.startsWith("CAT:"))
 			{
@@ -166,6 +190,8 @@ public class BankOrganizerProfile
 	 */
 	public static BankOrganizerProfile createBlank(String name)
 	{
-		return new BankOrganizerProfile(name);
+		BankOrganizerProfile p = new BankOrganizerProfile(name);
+		p.defaultsVersion = DEFAULTS_NONE;
+		return p;
 	}
 }

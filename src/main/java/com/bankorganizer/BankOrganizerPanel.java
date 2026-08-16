@@ -163,6 +163,21 @@ public class BankOrganizerPanel extends PluginPanel
 		profileManagePanel.add(profileBtnGrid);
 		profileManagePanel.add(Box.createVerticalStrut(3));
 
+		JButton reapplyBtn = makeButton("Re-apply Defaults", true);
+		reapplyBtn.setToolTipText("Reload the plugin's built-in categorizations into this profile. "
+			+ "Items you categorized yourself are kept as you set them.");
+		reapplyBtn.addActionListener(e ->
+		{
+			int[] counts = plugin.reapplyDefaults();
+			updateProfileInfoLabel();
+			JOptionPane.showMessageDialog(this,
+				"Applied " + counts[0] + " default categorizations (v" + BankOrganizerPlugin.VERSION + ").\n"
+					+ counts[1] + " of your own categorizations were kept.",
+				"Re-apply Defaults", JOptionPane.INFORMATION_MESSAGE);
+		});
+		profileManagePanel.add(reapplyBtn);
+		profileManagePanel.add(Box.createVerticalStrut(3));
+
 		JButton deleteProfileBtn = makeButton("Delete Profile", true);
 		deleteProfileBtn.setBackground(BTN_DANGER);
 		deleteProfileBtn.addActionListener(e ->
@@ -425,12 +440,18 @@ public class BankOrganizerPanel extends PluginPanel
 		if (profileInfoLabel == null) return;
 		BankOrganizerProfile profile = plugin.getActiveProfile();
 		String v = profile != null ? profile.getDefaultsVersion() : "";
-		if (v == null || v.isEmpty())
+		if (BankOrganizerProfile.DEFAULTS_NONE.equals(v))
 		{
-			profileInfoLabel.setText("Defaults: none / pre-1.1.1");
-			profileInfoLabel.setToolTipText("Blank profile, or created before defaults were versioned. "
-				+ "Create a New Default profile to get the current built-in categorizations.");
+			profileInfoLabel.setText("Defaults: none (blank profile)");
+			profileInfoLabel.setToolTipText("Blank profile: built-in categorizations are not applied. "
+				+ "Use Manage Profiles > Re-apply Defaults to add them.");
 			profileInfoLabel.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+		}
+		else if (v == null || v.isEmpty())
+		{
+			profileInfoLabel.setText("Defaults: not yet applied");
+			profileInfoLabel.setToolTipText("Defaults will be applied automatically; your own categorizations are kept.");
+			profileInfoLabel.setForeground(new Color(240, 173, 78));
 		}
 		else if (v.equals(BankOrganizerPlugin.VERSION))
 		{
@@ -441,8 +462,8 @@ public class BankOrganizerPanel extends PluginPanel
 		else
 		{
 			profileInfoLabel.setText("Defaults: v" + v + " (plugin is v" + BankOrganizerPlugin.VERSION + ")");
-			profileInfoLabel.setToolTipText("This profile's defaults come from an older plugin version. "
-				+ "Create a New Default profile to get the latest categorizations (your overrides stay in this profile).");
+			profileInfoLabel.setToolTipText("This profile's defaults come from an older plugin version; "
+				+ "they are updated automatically on load. Use Manage Profiles > Re-apply Defaults to force it.");
 			profileInfoLabel.setForeground(new Color(240, 173, 78));
 		}
 	}

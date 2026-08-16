@@ -1,5 +1,6 @@
 package com.bankorganizer;
 
+import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.LinkedHashMap;
@@ -154,10 +155,76 @@ public class ProfileManager
 	 */
 	public void saveCurrentState(String catOverrides, String subOverrides)
 	{
+		saveCurrentState(catOverrides, subOverrides, null);
+	}
+
+	public void saveCurrentState(String catOverrides, String subOverrides, java.util.Collection<Integer> userItems)
+	{
 		BankOrganizerProfile profile = getActiveProfile();
 		profile.setCategoryOverrides(catOverrides);
 		profile.setSubCategoryOverrides(subOverrides);
+		if (userItems != null) profile.setUserItems(userItems);
 		saveProfiles();
+	}
+
+	/** Result of merging shipped defaults with a profile's own overrides. */
+	public static final class MergeResult
+	{
+		public final Map<Integer, ItemCategory> categories;
+		public final Map<Integer, Integer> subCategories;
+		public final java.util.Set<Integer> userItems;
+
+		MergeResult(Map<Integer, ItemCategory> c, Map<Integer, Integer> s, java.util.Set<Integer> u)
+		{
+			categories = c; subCategories = s; userItems = u;
+		}
+	}
+
+	/**
+	 * Shipped defaults + the user's own overrides on top. For {@code userItems} the current state wins
+	 * (including "no override" if the user cleared one). When {@code legacy} is true there is no record of
+	 * what the user touched, so every current override that differs from the shipped value is treated as
+	 * user-made and recorded.
+	 */
+	public static MergeResult mergeDefaults(Map<Integer, ItemCategory> shippedCat, Map<Integer, Integer> shippedSub,
+		Map<Integer, ItemCategory> curCat, Map<Integer, Integer> curSub,
+		java.util.Set<Integer> userItems, boolean legacy)
+	{
+		java.util.Set<Integer> user = new java.util.LinkedHashSet<>(userItems);
+		if (legacy)
+		{
+			for (Map.Entry<Integer, ItemCategory> e : curCat.entrySet())
+			{
+				if (e.getValue() != shippedCat.get(e.getKey())) user.add(e.getKey());
+			}
+			for (Map.Entry<Integer, Integer> e : curSub.entrySet())
+			{
+				if (!e.getValue().equals(shippedSub.get(e.getKey()))) user.add(e.getKey());
+			}
+		}
+		Map<Integer, ItemCategory> mergedCat = new HashMap<>(shippedCat);
+		Map<Integer, Integer> mergedSub = new HashMap<>(shippedSub);
+		for (Integer id : user)
+		{
+			ItemCategory c = curCat.get(id);
+			if (c != null) mergedCat.put(id, c); else mergedCat.remove(id);
+			Integer sub = curSub.get(id);
+			if (sub != null) mergedSub.put(id, sub); else mergedSub.remove(id);
+		}
+		return new MergeResult(mergedCat, mergedSub, user);
+	}
+
+	public String readDefaultResource(String name)
+	{
+		try (java.io.InputStream is = getClass().getResourceAsStream("/com/bankorganizer/" + name))
+		{
+			return is == null ? "" : new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).trim();
+		}
+		catch (Exception e)
+		{
+			log.warn("Failed to read {}", name, e);
+			return "";
+		}
 	}
 
 	/**

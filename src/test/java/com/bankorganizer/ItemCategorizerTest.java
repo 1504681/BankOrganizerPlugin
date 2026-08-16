@@ -376,6 +376,65 @@ public class ItemCategorizerTest
 		// legacy export without a VER line -> empty
 		BankOrganizerProfile legacy = BankOrganizerProfile.deserialize("Old\nCAT:1:GEAR\nSUB:\n");
 		assertEquals("", legacy.getDefaultsVersion());
-		assertEquals("", BankOrganizerProfile.createBlank("x").getDefaultsVersion());
+		assertEquals(BankOrganizerProfile.DEFAULTS_NONE, BankOrganizerProfile.createBlank("x").getDefaultsVersion());
+	}
+
+	// --- Defaults re-application (upgrade) ---
+
+	@Test
+	public void testMergeDefaultsPreservesTrackedUserPicks()
+	{
+		Map<Integer, ItemCategory> shipped = new HashMap<>();
+		shipped.put(1, ItemCategory.GEAR); shipped.put(2, ItemCategory.RAW_MATERIALS); shipped.put(3, ItemCategory.FOOD);
+		Map<Integer, Integer> shippedSub = new HashMap<>(); shippedSub.put(2, 4);
+		// user's current profile: 1 changed to HIGH_ALCH, 3 cleared, 9 added; sub for 2 changed to 0
+		Map<Integer, ItemCategory> cur = new HashMap<>();
+		cur.put(1, ItemCategory.HIGH_ALCH); cur.put(2, ItemCategory.RAW_MATERIALS); cur.put(9, ItemCategory.POTIONS);
+		Map<Integer, Integer> curSub = new HashMap<>(); curSub.put(2, 0);
+		java.util.Set<Integer> user = new java.util.HashSet<>(java.util.Arrays.asList(1, 3, 9, 2));
+
+		ProfileManager.MergeResult m = ProfileManager.mergeDefaults(shipped, shippedSub, cur, curSub, user, false);
+		assertEquals(ItemCategory.HIGH_ALCH, m.categories.get(1)); // user change kept
+		assertEquals(ItemCategory.RAW_MATERIALS, m.categories.get(2)); // default
+		assertNull(m.categories.get(3));                            // user cleared -> stays cleared
+		assertEquals(ItemCategory.POTIONS, m.categories.get(9));    // user addition kept
+		assertEquals(Integer.valueOf(0), m.subCategories.get(2));   // user subgroup kept
+	}
+
+	@Test
+	public void testMergeDefaultsLegacyProfileKeepsDifferences()
+	{
+		Map<Integer, ItemCategory> shipped = new HashMap<>();
+		shipped.put(1, ItemCategory.GEAR); shipped.put(2, ItemCategory.RAW_MATERIALS);
+		Map<Integer, ItemCategory> cur = new HashMap<>();
+		cur.put(1, ItemCategory.GEAR);        // same as shipped -> not a user pick
+		cur.put(2, ItemCategory.SKILLING);    // differs -> user pick
+		cur.put(5, ItemCategory.TELEPORTS);   // not shipped -> user pick
+		ProfileManager.MergeResult m = ProfileManager.mergeDefaults(shipped, new HashMap<>(), cur, new HashMap<>(), new java.util.HashSet<>(), true);
+		assertEquals(ItemCategory.GEAR, m.categories.get(1));
+		assertEquals(ItemCategory.SKILLING, m.categories.get(2));
+		assertEquals(ItemCategory.TELEPORTS, m.categories.get(5));
+		assertEquals(new java.util.HashSet<>(java.util.Arrays.asList(2, 5)), m.userItems);
+	}
+
+	@Test
+	public void testMergeDefaultsAddsNewShippedEntries()
+	{
+		Map<Integer, ItemCategory> shipped = new HashMap<>();
+		shipped.put(1, ItemCategory.GEAR); shipped.put(2, ItemCategory.RAW_MATERIALS);
+		Map<Integer, ItemCategory> cur = new HashMap<>(); cur.put(1, ItemCategory.GEAR);
+		ProfileManager.MergeResult m = ProfileManager.mergeDefaults(shipped, new HashMap<>(), cur, new HashMap<>(), new java.util.HashSet<>(), false);
+		assertEquals(2, m.categories.size());
+		assertEquals(ItemCategory.RAW_MATERIALS, m.categories.get(2));
+	}
+
+	@Test
+	public void testProfileUserItemsRoundTrip()
+	{
+		BankOrganizerProfile p = BankOrganizerProfile.createDefault();
+		p.setUserItems(java.util.Arrays.asList(4151, 995));
+		BankOrganizerProfile back = BankOrganizerProfile.deserialize(p.serialize());
+		assertEquals(new java.util.LinkedHashSet<>(java.util.Arrays.asList(4151, 995)), back.getUserItems());
+		assertEquals(BankOrganizerProfile.DEFAULTS_NONE, BankOrganizerProfile.createBlank("b").getDefaultsVersion());
 	}
 }

@@ -78,6 +78,8 @@ public class BankOrganizerPlugin extends Plugin
 	private ItemCategorizer categorizer;
 	private ProfileManager profileManager;
 
+	// Items the user categorized by hand in the active profile (survive defaults re-application)
+	private final java.util.Set<Integer> userTouched = new java.util.LinkedHashSet<>();
 	private Map<Integer, ItemCategory> misplacedItems = new HashMap<>();
 	private Map<Integer, String> misplacedItemNames = new HashMap<>();
 	private ItemCategory activeFilter;
@@ -168,6 +170,9 @@ public class BankOrganizerPlugin extends Plugin
 		updateRegexFromConfig();
 		loadOverridesFromConfig();
 		loadSubOverridesFromConfig();
+		userTouched.clear();
+		userTouched.addAll(profileManager.getActiveProfile().getUserItems());
+		applyDefaultsIfOutdated();
 
 		panel = new BankOrganizerPanel(this);
 
@@ -512,6 +517,7 @@ public class BankOrganizerPlugin extends Plugin
 			int itemId = event.getId();
 			categorizer.removeManualOverride(itemId);
 			categorizer.removeSubCategoryOverride(itemId);
+			userTouched.add(itemId);
 			saveOverridesToConfig();
 			saveSubOverridesToConfig();
 			log.info("Removed overrides for item ID {}", itemId);
@@ -547,6 +553,7 @@ public class BankOrganizerPlugin extends Plugin
 				if (cat.getDisplayName().equals(categoryName))
 				{
 					categorizer.setManualOverride(itemId, cat);
+					userTouched.add(itemId);
 					saveOverridesToConfig();
 					log.info("Set item ID {} to category {}", itemId, cat);
 					// Update overlay immediately
@@ -583,6 +590,7 @@ public class BankOrganizerPlugin extends Plugin
 				if (ItemCategorizer.SKILL_NAMES[i].equals(subName))
 				{
 					categorizer.setSubCategoryOverride(itemId, i);
+					userTouched.add(itemId);
 					saveSubOverridesToConfig();
 					log.info("Set item ID {} to subcategory {} ({})", itemId, i, subName);
 					found = true;
@@ -598,6 +606,7 @@ public class BankOrganizerPlugin extends Plugin
 					if (ItemCategorizer.SKILL_NAMES[i].equals(subName))
 					{
 						categorizer.setSubCategoryOverride(itemId, i);
+					userTouched.add(itemId);
 						saveSubOverridesToConfig();
 						log.info("Set item ID {} to material subcategory {} ({})", itemId, i, subName);
 						break;
@@ -728,6 +737,7 @@ public class BankOrganizerPlugin extends Plugin
 						int id = Integer.parseInt(parts[0].trim());
 						ItemCategory cat = ItemCategory.valueOf(parts[1].trim());
 						categorizer.setManualOverride(id, cat);
+						userTouched.add(id);
 						imported++;
 					}
 					catch (Exception ignored)
@@ -829,7 +839,8 @@ public class BankOrganizerPlugin extends Plugin
 		// Save current state first
 		profileManager.saveCurrentState(
 			buildOverrideString(categorizer.getManualOverrides()),
-			buildSubOverrideString(categorizer.getSubCategoryOverrides())
+			buildSubOverrideString(categorizer.getSubCategoryOverrides()),
+			userTouched
 		);
 
 		BankOrganizerProfile profile = profileManager.switchProfile(name);
@@ -840,6 +851,9 @@ public class BankOrganizerPlugin extends Plugin
 		loadOverridesFromConfig();
 		loadSubOverridesFromConfig();
 		updateRegexFromConfig();
+		userTouched.clear();
+		userTouched.addAll(profile.getUserItems());
+		applyDefaultsIfOutdated();
 
 		log.info("Switched to profile: {}", name);
 	}
@@ -849,7 +863,8 @@ public class BankOrganizerPlugin extends Plugin
 		// Save current state first
 		profileManager.saveCurrentState(
 			buildOverrideString(categorizer.getManualOverrides()),
-			buildSubOverrideString(categorizer.getSubCategoryOverrides())
+			buildSubOverrideString(categorizer.getSubCategoryOverrides()),
+			userTouched
 		);
 
 		BankOrganizerProfile profile;
@@ -868,6 +883,7 @@ public class BankOrganizerPlugin extends Plugin
 		config.setSubCategoryOverrides(profile.getSubCategoryOverrides());
 		loadOverridesFromConfig();
 		loadSubOverridesFromConfig();
+		userTouched.clear();
 
 		log.info("Created {} profile: {}", blank ? "blank" : "default", name);
 	}
@@ -882,6 +898,60 @@ public class BankOrganizerPlugin extends Plugin
 		config.setSubCategoryOverrides(profile.getSubCategoryOverrides());
 		loadOverridesFromConfig();
 		loadSubOverridesFromConfig();
+		userTouched.clear();
+		userTouched.addAll(profile.getUserItems());
+		applyDefaultsIfOutdated();
+	}
+
+	// === Defaults upgrade ===
+
+	/** Re-apply shipped defaults automatically when the active profile was built on an older version. */
+	private void applyDefaultsIfOutdated()
+	{
+		BankOrganizerProfile profile = profileManager.getActiveProfile();
+		if (profile == null) return;
+		String v = profile.getDefaultsVersion();
+		if (BankOrganizerProfile.DEFAULTS_NONE.equals(v) || VERSION.equals(v)) return;
+		int[] counts = reapplyDefaults();
+		log.info("Profile '{}' upgraded from defaults v{} to v{}: {} default overrides applied, {} user overrides preserved",
+			profile.getName(), v.isEmpty() ? "?" : v, VERSION, counts[0], counts[1]);
+	}
+
+	/**
+	 * Replace the active profile's overrides with the current shipped defaults, then re-apply every
+	 * override the user set by hand on top (user wins). Profiles from before user-tracking existed
+	 * treat any override that differs from the shipped defaults as user-made.
+	 *
+	 * @return {defaults applied, user overrides preserved}
+	 */
+	public int[] reapplyDefaults()
+	{
+		BankOrganizerProfile profile = profileManager.getActiveProfile();
+		Map<Integer, ItemCategory> shippedCat = ItemCategorizer.parseCategoryOverrides(profileManager.readDefaultResource("default_overrides.txt"));
+		Map<Integer, Integer> shippedSub = ItemCategorizer.parseSubCategoryOverrides(profileManager.readDefaultResource("default_sub_overrides.txt"));
+		Map<Integer, ItemCategory> curCat = new HashMap<>(categorizer.getManualOverrides());
+		Map<Integer, Integer> curSub = new HashMap<>(categorizer.getSubCategoryOverrides());
+
+		boolean legacy = userTouched.isEmpty() && !VERSION.equals(profile.getDefaultsVersion());
+		ProfileManager.MergeResult m = ProfileManager.mergeDefaults(shippedCat, shippedSub, curCat, curSub, userTouched, legacy);
+		Map<Integer, ItemCategory> mergedCat = m.categories;
+		Map<Integer, Integer> mergedSub = m.subCategories;
+		userTouched.clear();
+		userTouched.addAll(m.userItems);
+		int preserved = m.userItems.size();
+
+		categorizer.loadManualOverrides(mergedCat);
+		categorizer.loadSubCategoryOverrides(mergedSub);
+		saveOverridesToConfig();
+		saveSubOverridesToConfig();
+		profile.setDefaultsVersion(VERSION);
+		profileManager.saveCurrentState(
+			buildOverrideString(categorizer.getManualOverrides()),
+			buildSubOverrideString(categorizer.getSubCategoryOverrides()),
+			userTouched
+		);
+		if (panel != null) refreshPanel();
+		return new int[]{shippedCat.size(), preserved};
 	}
 
 	public void exportProfile()
@@ -889,7 +959,8 @@ public class BankOrganizerPlugin extends Plugin
 		// Save current state first
 		profileManager.saveCurrentState(
 			buildOverrideString(categorizer.getManualOverrides()),
-			buildSubOverrideString(categorizer.getSubCategoryOverrides())
+			buildSubOverrideString(categorizer.getSubCategoryOverrides()),
+			userTouched
 		);
 
 		String encoded = profileManager.exportProfile();
@@ -971,6 +1042,7 @@ public class BankOrganizerPlugin extends Plugin
 			if (itemId <= 0) continue;
 
 			categorizer.setManualOverride(itemId, category);
+			userTouched.add(itemId);
 			count++;
 		}
 
