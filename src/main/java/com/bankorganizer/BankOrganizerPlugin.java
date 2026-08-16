@@ -43,7 +43,7 @@ import net.runelite.client.util.ImageUtil;
 public class BankOrganizerPlugin extends Plugin
 {
 	/** Plugin version — keep in sync with build.gradle. Shown in the sidebar and stamped on profiles. */
-	public static final String VERSION = "1.1.1";
+	public static final String VERSION = "1.1.2";
 
 	private static final Logger log = LoggerFactory.getLogger(BankOrganizerPlugin.class);
 	private static final String MENU_SET_PREFIX = "Set: ";
