@@ -20,7 +20,7 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 
 ### Smart Sorting
 - **Combat tab**: items sorted by combat style (melee/ranged/mage), then by equipment slot, then by stat strength (highest first)
-- **Teleports tab**: rune pouch first, then — in the order set by **Teleport Sort Mode** (Runes / Jewelry / Tablets first) — runes (elemental > catalytic), jewelry (grouped by type, highest charge first) and tablets; then skill capes and other teleport items last, so newly added items never jump above your runes
+- **Teleports tab**: four groups — runes (rune pouches first, then elemental > catalytic), jewelry (by type, highest charge first), tablets, and teleport items (skill capes first, teleport crystals last) — in the order set by **Teleport Sort Mode** (Runes / Jewelry / Tablets / Teleport Items first, or **Custom** with a dropdown per position)
 - **Potions tab**: divine variants first, then by priority (super combat > ranging > sara brew > super restore > prayer pot, etc.), highest dose first
 - **Food tab**: sorted by healing amount (anglerfish > shark > monkfish, etc.)
 - **Skilling tab**: grouped by skill (Farming > Runecrafting > Woodcutting > Fishing > Mining > Prayer > Agility, etc.)
@@ -100,7 +100,7 @@ All settings are in the RuneLite plugin configuration panel:
 |---------|----------|
 | General | Show sidebar icon, tab colors, overlay opacity |
 | Tab Mappings | Assign categories to the main (All) tab and bank tabs 1-9 |
-| Sorting | Gear sort mode (Combat Style / Equipment Type), Teleport sort mode |
+| Sorting | Gear sort mode (Combat Style / Equipment Type), Teleport sort mode + custom group order |
 | Colors | Customize overlay color for each category |
 | Custom Regex | Add regex patterns for advanced item matching |
 

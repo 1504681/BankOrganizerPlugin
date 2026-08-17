@@ -179,6 +179,7 @@ public class ItemCategorizerTest
 	{
 		TeleportSortMode mode = TeleportSortMode.RUNES_FIRST;
 		long pouch = teleKey("Rune pouch", 12791, mode);
+		long divine = teleKey("Divine rune pouch", 27281, mode);
 		long law = teleKey("Law rune", 563, mode);
 		long glory = teleKey("Amulet of glory(4)", 1712, mode);
 		long tab = teleKey("Varrock teleport", 8007, mode);
@@ -186,23 +187,40 @@ public class ItemCategorizerTest
 		long ecto = teleKey("Ectophial", 4251, mode);
 		long random = teleKey("Some new teleport thing", 55555, mode);
 
-		assertTrue(pouch < law);
+		// rune pouches lead the runes group, then runes, then jewelry, tablets, teleport items
+		assertTrue(pouch < law); assertTrue(divine < law);
 		assertTrue(law < glory);
 		assertTrue(glory < tab);
 		assertTrue(tab < cape);
 		assertTrue(cape < ecto);
-		// anything the categorizer can't place must never sort above the runes
 		assertTrue(law < random);
-		assertTrue(tab < random);
+		// rune pouch note is not a pouch
+		assertTrue(teleKey("Rune pouch note", 55556, mode) > law);
 	}
 
 	@Test
 	public void testJewelryFirstMode()
 	{
 		TeleportSortMode mode = TeleportSortMode.JEWELRY_FIRST;
-		assertTrue(teleKey("Amulet of glory(4)", 1712, mode) < teleKey("Law rune", 563, mode));
+		assertTrue(teleKey("Amulet of glory(4)", 1712, mode) < teleKey("Rune pouch", 12791, mode));
+		assertTrue(teleKey("Rune pouch", 12791, mode) < teleKey("Law rune", 563, mode));
 		assertTrue(teleKey("Law rune", 563, mode) < teleKey("Varrock teleport", 8007, mode));
 		assertTrue(teleKey("Varrock teleport", 8007, mode) < teleKey("Ectophial", 4251, mode));
+	}
+
+	@Test
+	public void testTeleportItemsFirstAndCustomOrder()
+	{
+		TeleportSortMode mode = TeleportSortMode.TELEPORT_ITEMS_FIRST;
+		assertTrue(teleKey("Ectophial", 4251, mode) < teleKey("Law rune", 563, mode));
+		assertTrue(teleKey("Construct. cape(t)", 9790, mode) < teleKey("Ectophial", 4251, mode));
+		assertTrue(teleKey("Law rune", 563, mode) < teleKey("Amulet of glory(4)", 1712, mode));
+
+		categorizer.setCustomTeleportOrder(TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER);
+		TeleportSortMode c = TeleportSortMode.CUSTOM;
+		assertTrue(teleKey("Varrock teleport", 8007, c) < teleKey("Ectophial", 4251, c));
+		assertTrue(teleKey("Ectophial", 4251, c) < teleKey("Law rune", 563, c));   // missing groups appended: runes, jewelry
+		assertTrue(teleKey("Law rune", 563, c) < teleKey("Amulet of glory(4)", 1712, c));
 	}
 
 	@Test

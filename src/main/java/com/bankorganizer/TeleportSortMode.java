@@ -4,7 +4,9 @@ public enum TeleportSortMode
 {
 	RUNES_FIRST("Runes First"),
 	JEWELRY_FIRST("Jewelry First"),
-	TABLETS_FIRST("Tablets First");
+	TABLETS_FIRST("Tablets First"),
+	TELEPORT_ITEMS_FIRST("Teleport Items First"),
+	CUSTOM("Custom (order below)");
 
 	private final String displayName;
 

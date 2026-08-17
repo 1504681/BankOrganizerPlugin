@@ -110,8 +110,20 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(keyName = "gearSortMode", name = "Gear Sort Mode", description = "How gear is sorted within the Gear tab", position = 0, section = sortingSection)
 	default GearSortMode gearSortMode() { return GearSortMode.COMBAT_STYLE; }
 
-	@ConfigItem(keyName = "teleportSortMode", name = "Teleport Sort Mode", description = "How teleport items are sorted within the Teleports tab", position = 1, section = sortingSection)
+	@ConfigItem(keyName = "teleportSortMode", name = "Teleport Sort Mode", description = "Which group comes first in the Teleports tab. Pick 'Custom' to use the four order settings below.", position = 1, section = sortingSection)
 	default TeleportSortMode teleportSortMode() { return TeleportSortMode.RUNES_FIRST; }
+
+	@ConfigItem(keyName = "teleportOrder1", name = "Custom order: 1st", description = "First group in the Teleports tab (Custom mode)", position = 2, section = sortingSection)
+	default TeleportSubCategory teleportOrder1() { return TeleportSubCategory.RUNES; }
+
+	@ConfigItem(keyName = "teleportOrder2", name = "Custom order: 2nd", description = "Second group in the Teleports tab (Custom mode)", position = 3, section = sortingSection)
+	default TeleportSubCategory teleportOrder2() { return TeleportSubCategory.JEWELRY; }
+
+	@ConfigItem(keyName = "teleportOrder3", name = "Custom order: 3rd", description = "Third group in the Teleports tab (Custom mode)", position = 4, section = sortingSection)
+	default TeleportSubCategory teleportOrder3() { return TeleportSubCategory.TABLETS; }
+
+	@ConfigItem(keyName = "teleportOrder4", name = "Custom order: 4th", description = "Fourth group in the Teleports tab (Custom mode). Groups you don't list are appended in default order.", position = 5, section = sortingSection)
+	default TeleportSubCategory teleportOrder4() { return TeleportSubCategory.OTHER; }
 
 	// --- Colors ---
 

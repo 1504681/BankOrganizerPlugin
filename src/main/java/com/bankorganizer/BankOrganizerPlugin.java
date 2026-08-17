@@ -168,6 +168,7 @@ public class BankOrganizerPlugin extends Plugin
 		profileManager = new ProfileManager(config);
 		profileManager.loadProfiles();
 		updateRegexFromConfig();
+		updateTeleportOrderFromConfig();
 		loadOverridesFromConfig();
 		loadSubOverridesFromConfig();
 		userTouched.clear();
@@ -226,6 +227,7 @@ public class BankOrganizerPlugin extends Plugin
 		if ("bankorganizer".equals(event.getGroup()))
 		{
 			updateRegexFromConfig();
+			updateTeleportOrderFromConfig();
 
 			// Toggle sidebar icon
 			if ("showSidebarIcon".equals(event.getKey()))
@@ -1079,6 +1081,12 @@ public class BankOrganizerPlugin extends Plugin
 	}
 
 	// === Config helpers ===
+
+	private void updateTeleportOrderFromConfig()
+	{
+		categorizer.setCustomTeleportOrder(config.teleportOrder1(), config.teleportOrder2(),
+			config.teleportOrder3(), config.teleportOrder4());
+	}
 
 	private void updateRegexFromConfig()
 	{

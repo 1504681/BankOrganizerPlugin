@@ -1021,33 +1021,41 @@ public class ItemCategorizer
 	/**
 	 * Get the sort priority for a teleport item given a sort mode.
 	 */
-	public int getTeleportSortOrder(TeleportSubCategory sub, TeleportSortMode mode)
+	// Custom group order for TeleportSortMode.CUSTOM (set from config by the plugin)
+	private TeleportSubCategory[] customTeleportOrder = {
+		TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER
+	};
+
+	/** Set the group order used by TeleportSortMode.CUSTOM. Duplicates are ignored, missing groups appended. */
+	public void setCustomTeleportOrder(TeleportSubCategory... order)
 	{
-		TeleportSubCategory[] order;
+		java.util.LinkedHashSet<TeleportSubCategory> set = new java.util.LinkedHashSet<>();
+		if (order != null) for (TeleportSubCategory t : order) if (t != null) set.add(t);
+		for (TeleportSubCategory t : TeleportSubCategory.values()) set.add(t);
+		customTeleportOrder = set.toArray(new TeleportSubCategory[0]);
+	}
+
+	public TeleportSubCategory[] getTeleportGroupOrder(TeleportSortMode mode)
+	{
 		switch (mode)
 		{
-			case RUNES_FIRST:
-				order = new TeleportSubCategory[]{
-					TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY,
-					TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER
-				};
-				break;
 			case JEWELRY_FIRST:
-				order = new TeleportSubCategory[]{
-					TeleportSubCategory.JEWELRY, TeleportSubCategory.RUNES,
-					TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER
-				};
-				break;
+				return new TeleportSubCategory[]{ TeleportSubCategory.JEWELRY, TeleportSubCategory.RUNES, TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER };
 			case TABLETS_FIRST:
-				order = new TeleportSubCategory[]{
-					TeleportSubCategory.TABLETS, TeleportSubCategory.RUNES,
-					TeleportSubCategory.JEWELRY, TeleportSubCategory.OTHER
-				};
-				break;
+				return new TeleportSubCategory[]{ TeleportSubCategory.TABLETS, TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.OTHER };
+			case TELEPORT_ITEMS_FIRST:
+				return new TeleportSubCategory[]{ TeleportSubCategory.OTHER, TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.TABLETS };
+			case CUSTOM:
+				return customTeleportOrder;
+			case RUNES_FIRST:
 			default:
-				return 0;
+				return new TeleportSubCategory[]{ TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER };
 		}
+	}
 
+	public int getTeleportSortOrder(TeleportSubCategory sub, TeleportSortMode mode)
+	{
+		TeleportSubCategory[] order = getTeleportGroupOrder(mode);
 		for (int i = 0; i < order.length; i++)
 		{
 			if (order[i] == sub) return i;
@@ -1067,64 +1075,53 @@ public class ItemCategorizer
 	public long getTeleportFullSortKey(String itemName, int itemId, TeleportSortMode mode)
 	{
 		String lower = itemName.toLowerCase();
+		boolean runePouch = (RUNE_POUCH_IDS.contains(itemId) || lower.contains("rune pouch")) && !lower.contains("note");
 
-		// Tier 0: Rune pouch (always first)
-		if (RUNE_POUCH_IDS.contains(itemId) || lower.contains("rune pouch"))
+		TeleportSubCategory sub = runePouch ? TeleportSubCategory.RUNES : getTeleportSubCategory(itemName, itemId);
+		int groupOrder = getTeleportSortOrder(sub, mode); // 0..3, per sort mode / custom order
+		int typeOrder;
+		int chargeOrder = 0;
+
+		switch (sub)
 		{
-			return 0;
-		}
-
-		TeleportSubCategory sub = getTeleportSubCategory(itemName, itemId);
-
-		// Tiers 1-3: Runes / Jewelry / Tablets in the order the sort mode asks for.
-		// This used to sit *below* skillcapes and "other" teleports, so anything new added to the
-		// tab landed above the runes even in "Runes First" mode (issue #1).
-		if (sub != TeleportSubCategory.OTHER)
-		{
-			int subOrder = getTeleportSortOrder(sub, mode); // 0..2
-			int typeOrder = 0;
-			int chargeOrder = 0;
-			if (sub == TeleportSubCategory.RUNES)
-			{
-				typeOrder = getRuneSortOrder(itemId);
-			}
-			else if (sub == TeleportSubCategory.JEWELRY)
-			{
+			case RUNES:
+				// Rune pouches lead the runes group, then elemental > catalytic
+				typeOrder = runePouch ? 0 : 1 + getRuneSortOrder(itemId);
+				break;
+			case JEWELRY:
 				typeOrder = getJewelryTypeOrder(itemId, itemName);
 				chargeOrder = getChargeOrder(itemName);
-			}
-			else
-			{
+				break;
+			case TABLETS:
 				typeOrder = getTabletOrder(itemName);
-			}
-			// tier(1..3) | typeOrder(12) | chargeOrder(8) | itemId(16)
-			return ((long) (1 + subOrder) << 44) | ((long) typeOrder << 24)
-				| ((long) (chargeOrder & 0xFF) << 16) | (itemId & 0xFFFF);
+				break;
+			default: // OTHER: construction cape, farming cape, other skillcapes, other teleport items, crystals last
+				if (lower.contains("construct") && (lower.contains("cape") || lower.contains("hood")))
+				{
+					typeOrder = 0; chargeOrder = lower.contains("(t)") ? 0 : 1;
+				}
+				else if (lower.contains("farming") && (lower.contains("cape") || lower.contains("hood")))
+				{
+					typeOrder = 1; chargeOrder = lower.contains("(t)") ? 0 : 1;
+				}
+				else if ((lower.contains("cape") || lower.contains("hood")) && lower.contains("(t)") || lower.contains("skillcape"))
+				{
+					typeOrder = 2;
+				}
+				else if (lower.contains("teleport crystal") || lower.contains("crystal teleport seed") || lower.contains("eternal teleport"))
+				{
+					typeOrder = 9;
+				}
+				else
+				{
+					typeOrder = 3;
+				}
+				break;
 		}
 
-		// Tier 4: Construction skillcape, Tier 5: Farming skillcape, Tier 6: other teleport skillcapes
-		if (lower.contains("construct") && (lower.contains("cape") || lower.contains("hood")))
-		{
-			int trimOrder = lower.contains("(t)") ? 0 : 1;
-			return ((long) 4 << 44) | ((long) trimOrder << 16) | (itemId & 0xFFFF);
-		}
-		if (lower.contains("farming") && (lower.contains("cape") || lower.contains("hood")))
-		{
-			int trimOrder = lower.contains("(t)") ? 0 : 1;
-			return ((long) 5 << 44) | ((long) trimOrder << 16) | (itemId & 0xFFFF);
-		}
-		if ((lower.contains("cape") || lower.contains("hood")) && lower.contains("(t)") || lower.contains("skillcape"))
-		{
-			return ((long) 6 << 44) | (itemId & 0xFFFF);
-		}
-
-		// Tier 7: Everything else (ectophial, xeric's talisman, chronicle...) — teleport crystals last
-		if (lower.contains("teleport crystal") || lower.contains("crystal teleport seed")
-			|| lower.contains("eternal teleport"))
-		{
-			return ((long) 7 << 44) | ((long) 0xFFF << 16) | (itemId & 0xFFFF);
-		}
-		return ((long) 7 << 44) | (itemId & 0xFFFF);
+		// group(8) | typeOrder(12) | chargeOrder(8) | itemId(16)
+		return ((long) (1 + groupOrder) << 44) | ((long) (typeOrder & 0xFFF) << 24)
+			| ((long) (chargeOrder & 0xFF) << 16) | (itemId & 0xFFFF);
 	}
 
 	private int getRuneSortOrder(int itemId)
@@ -1793,9 +1790,9 @@ public class ItemCategorizer
 		else if (lower.contains("herb sack"))
 		{ skillOrder = 0; tierOrder = lower.contains("open") ? 5 : 4; }
 		else if (lower.contains("diving apparatus"))
-		{ skillOrder = 0; tierOrder = 20; }
+		{ skillOrder = 0; tierOrder = 40; }   // 40/41: kept adjacent, after the farmer's outfit (20+)
 		else if (lower.contains("fishbowl helmet"))
-		{ skillOrder = 0; tierOrder = 21; }
+		{ skillOrder = 0; tierOrder = 41; }
 		else if (lower.contains("drift net"))
 		{ skillOrder = 15; tierOrder = 0; }
 		else if (lower.contains("magic secateurs"))
