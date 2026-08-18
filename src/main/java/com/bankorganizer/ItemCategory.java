@@ -26,7 +26,7 @@ public enum ItemCategory
 		"boots", "gloves", "vambraces", "bracelet", "amulet", "necklace", "ring",
 		"coif", "hood", "hat", "body", "chaps", "d'hide"
 	)),
-	POTIONS("Potions", new Color(0, 200, 0), Arrays.asList(
+	POTIONS("Potions", new Color(0, 0, 0), Arrays.asList(
 		"potion", "brew", "restore", "mix", "overload", "prayer renewal",
 		"antidote", "antifire", "antipoison", "antivenom", "battlemage",
 		"bastion", "saradomin brew", "super combat", "ranging potion",
@@ -59,7 +59,7 @@ public enum ItemCategory
 		"wool", "flax", "clay", "sand"
 	)),
 	HIGH_ALCH("High Alch", new Color(255, 255, 255), Arrays.asList()),
-	CURRENCY("Main Tab", new Color(255, 215, 80), Arrays.asList(
+	CURRENCY("Main Tab", new Color(255, 128, 0), Arrays.asList(
 		"coins", "platinum token", "tokkul", "trading sticks",
 		"numulite", "pieces of eight", "warrior guild token",
 		"mermaid's tear", "hallowed mark", "molch pearl"

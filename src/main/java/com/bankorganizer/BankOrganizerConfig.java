@@ -137,7 +137,7 @@ public interface BankOrganizerConfig extends Config
 
 	@Alpha
 	@ConfigItem(keyName = "colorPotions", name = "Potions", description = "Overlay color for Potions", position = 2, section = colorsSection)
-	default Color colorPotions() { return new Color(0, 200, 0); }
+	default Color colorPotions() { return new Color(0, 0, 0); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorFood", name = "Food", description = "Overlay color for Food", position = 3, section = colorsSection)
@@ -157,7 +157,7 @@ public interface BankOrganizerConfig extends Config
 
 	@Alpha
 	@ConfigItem(keyName = "colorCurrency", name = "Main Tab", description = "Overlay color for Main Tab (currency, clues, valuables)", position = 7, section = colorsSection)
-	default Color colorCurrency() { return new Color(255, 215, 80); }
+	default Color colorCurrency() { return new Color(255, 128, 0); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorQuestMisc", name = "Quest/Misc", description = "Overlay color for Quest/Misc", position = 8, section = colorsSection)
