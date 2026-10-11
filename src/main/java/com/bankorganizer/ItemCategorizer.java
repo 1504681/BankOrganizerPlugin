@@ -720,9 +720,11 @@ public class ItemCategorizer
 			return idSub;
 		}
 
-		// Name rules that stats get wrong (or that must not depend on stats being loaded)
+		// Name rules that stats get wrong (or that must not depend on stats being loaded).
+		// Staves carry a crush bonus bigger than their magic bonus (battlestaff +28 crush / +12 magic,
+		// ancient staff +40 / +15, Iban's +50 / +10), so the stat heuristic calls them melee — issue #4.
 		String lower = itemName.toLowerCase();
-		if (lower.contains("twinflame staff")) return GearSubCategory.MAGE_WEAPON;
+		if (isMageWeaponByName(lower)) return GearSubCategory.MAGE_WEAPON;
 		int pin = getPinnedGearRank(lower);
 		if (pin >= 0) return PINNED_GEAR_SUB[pin];
 
@@ -734,6 +736,16 @@ public class ItemCategorizer
 
 		// Fallback to keywords
 		return classifyByKeywords(itemName);
+	}
+
+	// Every staff/battlestaff/wand/trident/sceptre is a mage weapon regardless of its melee bonuses
+	private static final String[] MAGE_WEAPON_NAME_RULES = { "staff", "wand", "trident", "sceptre", "toktz-mej-tal" };
+
+	/** True for weapon names that are always mage weapons (staves, wands, tridents, sceptres). */
+	public static boolean isMageWeaponByName(String lowerName)
+	{
+		for (String kw : MAGE_WEAPON_NAME_RULES) if (lowerName.contains(kw)) return true;
+		return false;
 	}
 
 	/**

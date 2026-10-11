@@ -510,4 +510,57 @@ public class ItemCategorizerTest
 		assertTrue((rapier >> 44) == (scythe >> 44));
 		assertTrue((scythe >> 44) != (tbow >> 44));
 	}
+	// --- Issue #4: staves have a bigger crush than magic bonus, so stats alone call them melee ---
+
+	private static ItemEquipmentStats battlestaffStats()
+	{
+		return ItemEquipmentStats.builder().slot(3).astab(7).aslash(-1).acrush(28).amagic(12).str(35).build();
+	}
+
+	@Test
+	public void testStavesAreMageWeaponsDespiteCrushBonus()
+	{
+		ItemEquipmentStats ancient = ItemEquipmentStats.builder().slot(3).astab(15).aslash(-1).acrush(40).amagic(15).str(50).build();
+		ItemEquipmentStats ibans = ItemEquipmentStats.builder().slot(3).astab(10).acrush(50).amagic(10).str(50).build();
+		ItemEquipmentStats ahrims = ItemEquipmentStats.builder().slot(3).astab(12).aslash(-1).acrush(65).amagic(15).str(68).mdmg(5).build();
+		String[] battlestaves = { "Lava battlestaff", "Mud battlestaff", "Mist battlestaff", "Mystic lava staff",
+			"Mystic air staff", "Staff of air", "Slayer's staff", "Dramen staff", "Lunar staff" };
+		for (String n : battlestaves)
+		{
+			assertEquals(n, GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory(n, 99999, battlestaffStats()));
+		}
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Ancient staff", 4675, ancient));
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Iban's staff", 1409, ibans));
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Ahrim's staff", 4710, ahrims));
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Toktz-mej-tal", 6526,
+			ItemEquipmentStats.builder().slot(3).acrush(35).amagic(15).str(35).build()));
+		// mage weapons the stats already got right still work, with or without stats
+		ItemEquipmentStats mage = ItemEquipmentStats.builder().slot(3).amagic(25).mdmg(15).build();
+		String[] mageWeapons = { "Kodai wand", "Master wand", "Trident of the seas", "Toxic staff of the dead",
+			"Nightmare staff", "Sanguinesti staff", "Tumeken's shadow", "Thammaron's sceptre", "Dawnbringer" };
+		for (String n : mageWeapons)
+		{
+			assertEquals(n, GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory(n, 99999, mage));
+		}
+		for (String n : new String[]{ "Kodai wand", "Trident of the swamp", "Ancient staff", "Lava battlestaff" })
+		{
+			assertEquals(n, GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory(n, 99999, null));
+		}
+		// melee weapons with a small magic bonus stay melee
+		assertEquals(GearSubCategory.MELEE_WEAPON, categorizer.getGearSubCategory("Void knight mace", 8841,
+			ItemEquipmentStats.builder().slot(3).acrush(42).amagic(6).str(38).build()));
+		assertEquals(GearSubCategory.MELEE_WEAPON, categorizer.getGearSubCategory("Arclight", 19675,
+			ItemEquipmentStats.builder().slot(3).astab(67).aslash(55).str(62).build()));
+		assertEquals(GearSubCategory.MELEE_WEAPON, categorizer.getGearSubCategory("Abyssal whip", 4151,
+			ItemEquipmentStats.builder().slot(3).aslash(82).str(82).build()));
+		// and in the Combat tab the staves sort into the mage group, not the melee one
+		GearSortMode mode = GearSortMode.COMBAT_STYLE;
+		long lava = categorizer.getGearFullSortKey("Lava battlestaff", 3053, battlestaffStats(), mode);
+		long whip = categorizer.getGearFullSortKey("Abyssal whip", 4151,
+			ItemEquipmentStats.builder().slot(3).aslash(82).str(82).build(), mode);
+		long sang = categorizer.getGearFullSortKey("Sanguinesti staff", 22323, mage, mode);
+		assertTrue(whip < lava);
+		assertEquals(sang >> 44, lava >> 44);
+	}
+
 }
