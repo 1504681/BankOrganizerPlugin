@@ -104,6 +104,10 @@ All settings are in the RuneLite plugin configuration panel:
 | Colors | Customize overlay color for each category |
 | Custom Regex | Add regex patterns for advanced item matching |
 
+## Changelog
+
+1.1.4: staves, battlestaves, wands, tridents and sceptres are always Magic Weapons (their crush bonus used to win). Ordering now says which items it left in place and why, and tells you when a tab is mapped to a category with no sort order, instead of a bare "complete". "Current: <skill>" in the right-click menu is clickable and pins that subcategory. Stuck-step counters reset on every Start Ordering.
+
 ## License
 
 BSD 2-Clause License
