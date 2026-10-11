@@ -579,14 +579,12 @@ public class BankOrganizerPlugin extends Plugin
 			}
 		}
 
-		// Handle subcategory assignment — check both skill names and material group names
-		if (stripped.startsWith("Sub: "))
+		// Handle subcategory assignment. "Current: <skill>" is the rule-derived subcategory; clicking it pins
+		// the same skill as an explicit override (issue #5: users had to pick another skill and switch back).
+		if (stripped.startsWith("Sub: ") || stripped.startsWith("Current: "))
 		{
-			String subName = stripped.substring(5);
+			String subName = stripped.substring(stripped.indexOf(' ') + 1);
 			int itemId = event.getId();
-			boolean found = false;
-
-			// Check skill names first
 			for (int i = 0; i < ItemCategorizer.SKILL_NAMES.length; i++)
 			{
 				if (ItemCategorizer.SKILL_NAMES[i].equals(subName))
@@ -595,24 +593,7 @@ public class BankOrganizerPlugin extends Plugin
 					userTouched.add(itemId);
 					saveSubOverridesToConfig();
 					log.info("Set item ID {} to subcategory {} ({})", itemId, i, subName);
-					found = true;
 					break;
-				}
-			}
-
-			// Then check material group names
-			if (!found)
-			{
-				for (int i = 0; i < ItemCategorizer.SKILL_NAMES.length; i++)
-				{
-					if (ItemCategorizer.SKILL_NAMES[i].equals(subName))
-					{
-						categorizer.setSubCategoryOverride(itemId, i);
-					userTouched.add(itemId);
-						saveSubOverridesToConfig();
-						log.info("Set item ID {} to material subcategory {} ({})", itemId, i, subName);
-						break;
-					}
 				}
 			}
 		}
@@ -1251,8 +1232,62 @@ public class BankOrganizerPlugin extends Plugin
 		clientThread.invokeLater(() ->
 		{
 			orderingActive = true;
+			lastStepItemId = -1;
+			stuckCounter = 0;
 			computeNextOrderStep();
 		});
+	}
+
+	/** Categories that have an in-tab sort order; the others (Main Tab, High Alch, Quest/Misc) are unordered. */
+	static boolean hasSortRules(ItemCategory c)
+	{
+		switch (c)
+		{
+			case GEAR: case TELEPORTS: case RAW_MATERIALS: case SKILLING: case POTIONS: case FOOD: return true;
+			default: return false;
+		}
+	}
+
+	/** End the ordering session and tell the user why, instead of a bare "complete". */
+	private void finishOrdering(String message)
+	{
+		orderingActive = false;
+		orderSteps.clear();
+		currentOrderStep = 0;
+		SwingUtilities.invokeLater(() ->
+		{
+			panel.updateOrderingState();
+			javax.swing.JOptionPane.showMessageDialog(null, message, "Ordering Complete",
+				javax.swing.JOptionPane.INFORMATION_MESSAGE);
+		});
+	}
+
+	/**
+	 * Ordering sorts a tab by the rules of the category it is mapped to and leaves items of other categories
+	 * where they are. Explain that whenever such items exist, since a "complete" with nothing moved reads as a
+	 * bug (issue #5); the usual cause is a tab mapping that doesn't match the tab's contents.
+	 */
+	private String foreignItemsNote(List<BankItem> items, ItemCategory tabCategory)
+	{
+		Map<ItemCategory, Integer> counts = new EnumMap<>(ItemCategory.class);
+		for (BankItem it : items)
+		{
+			ItemCategory c = categorizer.categorize(it.name, it.itemId);
+			if (c != tabCategory) counts.merge(c, 1, Integer::sum);
+		}
+		if (counts.isEmpty()) return "";
+		int foreign = 0;
+		ItemCategory top = null;
+		for (Map.Entry<ItemCategory, Integer> e : counts.entrySet())
+		{
+			foreign += e.getValue();
+			if (top == null || e.getValue() > counts.get(top)) top = e.getKey();
+		}
+		return "\n\n" + foreign + " of " + items.size() + " items are not " + tabCategory.getDisplayName()
+			+ " (mostly " + top.getDisplayName() + ") and were left in place.\n"
+			+ "Ordering only sorts items of the tab's own category; Scan Tab highlights the rest.\n"
+			+ "If this tab is meant to hold " + top.getDisplayName()
+			+ ", change its mapping in the plugin settings (Tab Mappings).";
 	}
 
 	/**
@@ -1290,6 +1325,15 @@ public class BankOrganizerPlugin extends Plugin
 		int n = currentItems.size();
 		if (n == 0) return;
 
+		if (!hasSortRules(tabCategory))
+		{
+			// Every sort key is 0 here, so the old code reported "all items in order" without moving anything
+			finishOrdering("Tab " + currentTab + " is mapped to " + tabCategory.getDisplayName()
+				+ ", which has no sort order.\nMap the tab to the category of the items it holds"
+				+ " (plugin settings, Tab Mappings) and start ordering again." + foreignItemsNote(currentItems, tabCategory));
+			return;
+		}
+
 		// Compute ideal order
 		GearSortMode gearMode = config.gearSortMode();
 		TeleportSortMode teleportMode = config.teleportSortMode();
@@ -1318,17 +1362,7 @@ public class BankOrganizerPlugin extends Plugin
 		if (allCorrect)
 		{
 			log.info("All {} items in correct order — ordering complete", n);
-			orderingActive = false;
-			orderSteps.clear();
-			currentOrderStep = 0;
-			SwingUtilities.invokeLater(() ->
-			{
-				panel.updateOrderingState();
-				javax.swing.JOptionPane.showMessageDialog(null,
-					"All items are now in order!",
-					"Ordering Complete",
-					javax.swing.JOptionPane.INFORMATION_MESSAGE);
-			});
+			finishOrdering("All items are now in order!" + foreignItemsNote(currentItems, tabCategory));
 			return;
 		}
 
@@ -1486,29 +1520,11 @@ public class BankOrganizerPlugin extends Plugin
 			{
 				if (perm[i] != i) skippedCount++;
 			}
-			final int skipped = skippedCount;
-			log.info("Ordering done — {} unsorted items skipped (unknown subcategory)", skipped);
-			orderingActive = false;
-			orderSteps.clear();
-			currentOrderStep = 0;
-			SwingUtilities.invokeLater(() ->
-			{
-				panel.updateOrderingState();
-				if (skipped > 0)
-				{
-					javax.swing.JOptionPane.showMessageDialog(null,
-						"Ordering complete! " + skipped + " items with no subcategory were left in place.",
-						"Ordering Complete",
-						javax.swing.JOptionPane.INFORMATION_MESSAGE);
-				}
-				else
-				{
-					javax.swing.JOptionPane.showMessageDialog(null,
-						"All items are now in order!",
-						"Ordering Complete",
-						javax.swing.JOptionPane.INFORMATION_MESSAGE);
-				}
-			});
+			log.info("Ordering done — {} unsorted items skipped (unknown subcategory)", skippedCount);
+			String msg = skippedCount > 0
+				? "Ordering complete! " + skippedCount + " items with no subcategory were left in place."
+				: "All items are now in order!";
+			finishOrdering(msg + foreignItemsNote(currentItems, tabCategory));
 		}
 	}
 

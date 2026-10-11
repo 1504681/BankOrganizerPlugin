@@ -384,6 +384,32 @@ public class ItemCategorizerTest
 		assertEquals(a >> 16, (b >> 16) - 1);
 	}
 
+	// --- Issue #5: the planner's "has a subcategory" check must agree with the key it sorts by ---
+
+	@Test
+	public void testGroupIndexMatchesSortKeyWithOverrides()
+	{
+		// a Materials item (gem) in a Skilling tab: key says group 99 (not Skilling), index must say the same
+		categorizer.setSubCategoryOverride(1623, 4); // Uncut sapphire -> Mining
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Uncut sapphire", 1623));
+		assertEquals(99, categorizer.getSkillGroupIndex("Uncut sapphire", 1623));
+		assertEquals(categorizer.getSkillingFullSortKey("Uncut sapphire", 1623) >> 28, categorizer.getSkillGroupIndex("Uncut sapphire", 1623));
+		// in the Materials tab the override and the rule both say Mining
+		assertEquals(4, categorizer.getMaterialGroupIndex("Uncut sapphire", 1623));
+		assertEquals(4, categorizer.getMaterialGroupIndex("Uncut sapphire", 99999));
+		// an override on a Skilling item is honoured by both
+		categorizer.setSubCategoryOverride(99998, 3); // some tool -> Fishing
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Rune pickaxe", 99998));
+		assertEquals(3, categorizer.getSkillGroupIndex("Rune pickaxe", 99998));
+		assertEquals(3, categorizer.getSkillingFullSortKey("Rune pickaxe", 99998) >> 28);
+		// tabs mapped to an unordered category are reported, not silently "complete"
+		assertTrue(BankOrganizerPlugin.hasSortRules(ItemCategory.GEAR));
+		assertTrue(BankOrganizerPlugin.hasSortRules(ItemCategory.POTIONS));
+		assertFalse(BankOrganizerPlugin.hasSortRules(ItemCategory.QUEST_MISC));
+		assertFalse(BankOrganizerPlugin.hasSortRules(ItemCategory.CURRENCY));
+		assertFalse(BankOrganizerPlugin.hasSortRules(ItemCategory.HIGH_ALCH));
+	}
+
 	@Test
 	public void testProfileDefaultsVersionRoundTrip()
 	{
@@ -484,32 +510,6 @@ public class ItemCategorizerTest
 		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Water orb", 99999));
 	}
 
-	@Test
-	public void testTwinflameStaffIsMageAndMegaRaresTopTheirStyle()
-	{
-		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Twinflame staff", 99999,
-			ItemEquipmentStats.builder().slot(3).astab(10).aslash(10).acrush(10).amagic(5).build()));
-		GearSortMode mode = GearSortMode.values()[0];
-		ItemEquipmentStats meleeBis = ItemEquipmentStats.builder().slot(3).aslash(150).str(150).build();
-		ItemEquipmentStats rangedBis = ItemEquipmentStats.builder().slot(3).isTwoHanded(true).arange(150).rstr(150).build();
-		ItemEquipmentStats mageBis = ItemEquipmentStats.builder().slot(3).amagic(150).mdmg(20).build();
-		long scythe = categorizer.getGearFullSortKey("Holy scythe of vitur (uncharged)", 25736, null, mode);
-		long tbow = categorizer.getGearFullSortKey("Twisted bow", 20997, null, mode);
-		long shadow = categorizer.getGearFullSortKey("Tumeken's shadow (uncharged)", 27277, null, mode);
-		long rapier = categorizer.getGearFullSortKey("Ghrazi rapier", 22324, meleeBis, mode);
-		long bowfa = categorizer.getGearFullSortKey("Bow of faerdhinen", 25865, rangedBis, mode);
-		long sang = categorizer.getGearFullSortKey("Sanguinesti staff", 22323, mageBis, mode);
-		// each pin heads its own style group...
-		assertTrue(scythe < rapier);
-		assertTrue(tbow < bowfa);
-		assertTrue(shadow < sang);
-		// ...but stays inside it: the melee group's rapier still precedes the ranged group's tbow
-		assertEquals(GearSubCategory.MELEE_WEAPON, categorizer.getGearSubCategory("Scythe of vitur", 22325));
-		assertEquals(GearSubCategory.RANGED_WEAPON, categorizer.getGearSubCategory("Twisted bow", 20997));
-		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Tumeken's shadow", 27275));
-		assertTrue((rapier >> 44) == (scythe >> 44));
-		assertTrue((scythe >> 44) != (tbow >> 44));
-	}
 	// --- Issue #4: staves have a bigger crush than magic bonus, so stats alone call them melee ---
 
 	private static ItemEquipmentStats battlestaffStats()
@@ -563,4 +563,30 @@ public class ItemCategorizerTest
 		assertEquals(sang >> 44, lava >> 44);
 	}
 
+	@Test
+	public void testTwinflameStaffIsMageAndMegaRaresTopTheirStyle()
+	{
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Twinflame staff", 99999,
+			ItemEquipmentStats.builder().slot(3).astab(10).aslash(10).acrush(10).amagic(5).build()));
+		GearSortMode mode = GearSortMode.values()[0];
+		ItemEquipmentStats meleeBis = ItemEquipmentStats.builder().slot(3).aslash(150).str(150).build();
+		ItemEquipmentStats rangedBis = ItemEquipmentStats.builder().slot(3).isTwoHanded(true).arange(150).rstr(150).build();
+		ItemEquipmentStats mageBis = ItemEquipmentStats.builder().slot(3).amagic(150).mdmg(20).build();
+		long scythe = categorizer.getGearFullSortKey("Holy scythe of vitur (uncharged)", 25736, null, mode);
+		long tbow = categorizer.getGearFullSortKey("Twisted bow", 20997, null, mode);
+		long shadow = categorizer.getGearFullSortKey("Tumeken's shadow (uncharged)", 27277, null, mode);
+		long rapier = categorizer.getGearFullSortKey("Ghrazi rapier", 22324, meleeBis, mode);
+		long bowfa = categorizer.getGearFullSortKey("Bow of faerdhinen", 25865, rangedBis, mode);
+		long sang = categorizer.getGearFullSortKey("Sanguinesti staff", 22323, mageBis, mode);
+		// each pin heads its own style group...
+		assertTrue(scythe < rapier);
+		assertTrue(tbow < bowfa);
+		assertTrue(shadow < sang);
+		// ...but stays inside it: the melee group's rapier still precedes the ranged group's tbow
+		assertEquals(GearSubCategory.MELEE_WEAPON, categorizer.getGearSubCategory("Scythe of vitur", 22325));
+		assertEquals(GearSubCategory.RANGED_WEAPON, categorizer.getGearSubCategory("Twisted bow", 20997));
+		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Tumeken's shadow", 27275));
+		assertTrue((rapier >> 44) == (scythe >> 44));
+		assertTrue((scythe >> 44) != (tbow >> 44));
+	}
 }

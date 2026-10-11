@@ -1936,20 +1936,18 @@ public class ItemCategorizer
 	// Materials use the same SKILL_NAMES indices — no separate names needed.
 	// getMaterialGroupIndex returns skill indices directly.
 
+	// Both indices are derived from the same key the ordering planner sorts by, so "has a subcategory"
+	// (planner skip check, untagged highlight, right-click menu) always agrees with the planned order.
+	// An explicit override is honoured inside the key functions; it must not short-circuit here, otherwise
+	// a non-Skilling item with an override looks sortable while the key still sends it to group 99 (issue #5).
 	public int getSkillGroupIndex(String itemName, int itemId)
 	{
-		Integer subOverride = subCategoryOverrides.get(itemId);
-		if (subOverride != null) return subOverride;
-
 		long key = getSkillingFullSortKey(itemName, itemId);
 		return (int)(key >> 28);
 	}
 
 	public int getMaterialGroupIndex(String itemName, int itemId)
 	{
-		Integer subOverride = subCategoryOverrides.get(itemId);
-		if (subOverride != null) return subOverride;
-
 		long key = getMaterialFullSortKey(itemName, itemId);
 		return (int)(key >> 28);
 	}
