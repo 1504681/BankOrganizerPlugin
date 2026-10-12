@@ -30,6 +30,9 @@ public class ItemCategorizer
 	// Tells us whether the stats source has actually loaded (RuneLite fetches item stats asynchronously);
 	// until it has, a null lookup means "unknown", not "not equipable".
 	private java.util.function.BooleanSupplier statsReady = () -> true;
+	// Optional: true for items that look like quest items (untradeable and unstackable, per ItemComposition).
+	// Only consulted when nothing else matched, to split Quest from Misc.
+	private java.util.function.IntPredicate questHint;
 
 	// Skilling outfit pieces — checked before the generic keyword loop so that
 	// "Rogue gloves" / "Angler boots" etc. don't get caught by GEAR keywords like "gloves".
@@ -581,7 +584,7 @@ public class ItemCategorizer
 		// Priority 3: Keyword matching
 		for (ItemCategory category : ItemCategory.values())
 		{
-			if (category == ItemCategory.QUEST_MISC)
+			if (category == ItemCategory.QUEST_MISC || category == ItemCategory.QUEST)
 			{
 				continue;
 			}
@@ -616,6 +619,12 @@ public class ItemCategorizer
 			return ItemCategory.GEAR;
 		}
 
+		// Priority 6: nothing matched. Untradeable, unstackable leftovers are almost always quest items
+		// (keys, letters, quest-only tools); everything else is Misc.
+		if (questHint != null && questHint.test(itemId))
+		{
+			return ItemCategory.QUEST;
+		}
 		return ItemCategory.QUEST_MISC;
 	}
 
@@ -689,6 +698,12 @@ public class ItemCategorizer
 	{
 		this.statsProvider = provider;
 		this.statsReady = ready != null ? ready : () -> true;
+	}
+
+	/** @param hint true for item IDs that are untradeable and unstackable (quest-item shaped); null disables the Quest split */
+	public void setQuestHint(java.util.function.IntPredicate hint)
+	{
+		this.questHint = hint;
 	}
 
 	/**

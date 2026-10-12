@@ -6,13 +6,14 @@ A RuneLite plugin that helps you organize your bank by categorizing items, highl
 
 ### Category Overlays
 - **Show Overlays** draws colored boxes on every bank item showing which category it belongs to
-- 9 built-in categories: Teleports, Combat, Potions, Food, Skilling, Materials, High Alch, Main Tab (currency, clues, valuables), Quest/Misc
+- 10 built-in categories: Teleports, Combat, Potions, Food, Skilling, Materials, High Alch, Main Tab (currency, clues, valuables), Quest, Misc
+- **Merge Categories**: send one category to another category's tab (Food → Potions for a single supplies tab, Quest → Misc for one quest/misc tab). Scan treats merged items as correctly placed; Ordering sorts them after the tab's own items, each group by its own rules
 - **Filter by Category** to highlight only one category at a time
 - Customizable colors for each category in plugin settings (**Colors** section — every category colour is yours to change)
 - Adjustable overlay opacity
 
 ### Item Categorization
-- Items are auto-categorized by item ID, then rules (skilling outfits → Skilling; seeds, herbs, secondaries, uncut gems, ores, bars, logs, planks, hides, raw food, bones, ammo tips → Materials; adamant/mithril equipment → High Alch; Barrows gear → Combat), then name keywords, then equipment stats (anything wearable with combat stats → Combat; non-wearable items never match gear keywords)
+- Items are auto-categorized by item ID, then rules (skilling outfits → Skilling; seeds, herbs, secondaries, uncut gems, ores, bars, logs, planks, hides, raw food, bones, ammo tips → Materials; adamant/mithril equipment → High Alch; Barrows gear → Combat), then name keywords, then equipment stats (anything wearable with combat stats → Combat; non-wearable items never match gear keywords). Whatever is left is Quest if it is untradeable and unstackable (keys, letters, quest-only tools), otherwise Misc
 - **Right-click categorization**: toggle "Start Categorizing", then right-click any bank item to assign it to a category
 - **Subcategory mode**: toggle to assign items to skill-based subcategories (Farming, Runecrafting, Woodcutting, etc.)
 - **Mass categorize**: right-click a bank tab to categorize all visible items at once
@@ -100,11 +101,14 @@ All settings are in the RuneLite plugin configuration panel:
 |---------|----------|
 | General | Show sidebar icon, tab colors, overlay opacity |
 | Tab Mappings | Assign categories to the main (All) tab and bank tabs 1-9 |
+| Merge Categories | Per category, which other category's tab it shares. Quest → Misc by default; set it to Keep separate and map a tab to Quest for a dedicated quest tab |
 | Sorting | Gear sort mode (Combat Style / Equipment Type), Teleport sort mode + custom group order |
 | Colors | Customize overlay color for each category |
 | Custom Regex | Add regex patterns for advanced item matching |
 
 ## Changelog
+
+1.2.0: Quest is its own category (untradeable, unstackable leftovers; 19 shipped defaults such as the Family Crest 'perfect' items, Bone key and Ring of Charos moved there), the old Quest/Misc is now Misc. New Merge Categories settings: any category can share another category's tab, e.g. Food → Potions; merged items count as correctly placed in Scan and are ordered after the tab's own items by their own rules. Quest is merged into Misc by default, so existing layouts keep working (#6).
 
 1.1.5: gems follow the wiki Gems list: every uncut and cut gem (opal to zenyte) is a Material in the Mining group, uncut gems sort before cut gems, each by tier. Crushed gem, Amethyst, Zenyte shard and Oyster pearls are Materials too (they used to be Quest/Misc). Pinning a Mining/Crafting/... subcategory on a Material now keeps the ore, bar, gem and tier order inside that group instead of falling back to item id.
 

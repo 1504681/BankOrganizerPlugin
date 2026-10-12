@@ -52,16 +52,24 @@ public interface BankOrganizerConfig extends Config
 	String tabMappingSection = "tabMappings";
 
 	@ConfigSection(
+		name = "Merge Categories",
+		description = "Send a category's items to another category's tab. Scan treats them as correctly placed there; Ordering sorts them after the tab's own items, each group by its own rules.",
+		position = 1,
+		closedByDefault = true
+	)
+	String mergeSection = "merge";
+
+	@ConfigSection(
 		name = "Sorting",
 		description = "How items are sorted within tabs",
-		position = 1
+		position = 2
 	)
 	String sortingSection = "sorting";
 
 	@ConfigSection(
 		name = "Colors",
 		description = "Customize overlay colors for each category",
-		position = 2,
+		position = 3,
 		closedByDefault = true
 	)
 	String colorsSection = "colors";
@@ -69,7 +77,7 @@ public interface BankOrganizerConfig extends Config
 	@ConfigSection(
 		name = "Custom Regex",
 		description = "Custom regex patterns per category for additional item matching",
-		position = 3
+		position = 4
 	)
 	String regexSection = "customRegex";
 
@@ -104,6 +112,38 @@ public interface BankOrganizerConfig extends Config
 
 	@ConfigItem(keyName = "tab9Category", name = "Tab 9", description = "Category for bank tab 9", position = 8, section = tabMappingSection)
 	default ItemCategory tab9Category() { return ItemCategory.QUEST_MISC; }
+
+	// --- Merge categories ---
+
+	@ConfigItem(keyName = "mergeTeleports", name = "Teleports go to", description = "Tab (by category) that Teleports share. 'Keep separate' = their own tab.", position = 0, section = mergeSection)
+	default MergeInto mergeTeleports() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergeCombat", name = "Combat goes to", description = "Tab (by category) that Combat gear shares.", position = 1, section = mergeSection)
+	default MergeInto mergeCombat() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergePotions", name = "Potions go to", description = "Tab (by category) that Potions share, e.g. Food for one supplies tab.", position = 2, section = mergeSection)
+	default MergeInto mergePotions() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergeFood", name = "Food goes to", description = "Tab (by category) that Food shares, e.g. Potions for one supplies tab.", position = 3, section = mergeSection)
+	default MergeInto mergeFood() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergeSkilling", name = "Skilling goes to", description = "Tab (by category) that Skilling tools and outfits share.", position = 4, section = mergeSection)
+	default MergeInto mergeSkilling() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergeMaterials", name = "Materials go to", description = "Tab (by category) that Materials share.", position = 5, section = mergeSection)
+	default MergeInto mergeMaterials() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergeHighAlch", name = "High Alch goes to", description = "Tab (by category) that High Alch items share.", position = 6, section = mergeSection)
+	default MergeInto mergeHighAlch() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergeCurrency", name = "Main Tab goes to", description = "Tab (by category) that Main Tab items (currency, clues, valuables) share.", position = 7, section = mergeSection)
+	default MergeInto mergeCurrency() { return MergeInto.NONE; }
+
+	@ConfigItem(keyName = "mergeQuest", name = "Quest goes to", description = "Tab (by category) that Quest items share. Default Misc: one Quest/Misc tab as before. Set to 'Keep separate' and map a tab to Quest for a dedicated quest tab.", position = 8, section = mergeSection)
+	default MergeInto mergeQuest() { return MergeInto.MISC; }
+
+	@ConfigItem(keyName = "mergeMisc", name = "Misc goes to", description = "Tab (by category) that Misc items share.", position = 9, section = mergeSection)
+	default MergeInto mergeMisc() { return MergeInto.NONE; }
 
 	// --- Sorting ---
 
@@ -160,7 +200,10 @@ public interface BankOrganizerConfig extends Config
 	default Color colorCurrency() { return new Color(255, 128, 0); }
 
 	@Alpha
-	@ConfigItem(keyName = "colorQuestMisc", name = "Quest/Misc", description = "Overlay color for Quest/Misc", position = 8, section = colorsSection)
+	@ConfigItem(keyName = "colorQuest", name = "Quest", description = "Overlay color for Quest", position = 8, section = colorsSection)
+	default Color colorQuest() { return new Color(80, 200, 80); }
+
+	@ConfigItem(keyName = "colorQuestMisc", name = "Misc", description = "Overlay color for Misc", position = 9, section = colorsSection)
 	default Color colorQuestMisc() { return new Color(150, 90, 240); }
 
 	// --- Manual overrides (stored as JSON string) ---
@@ -222,4 +265,7 @@ public interface BankOrganizerConfig extends Config
 
 	@ConfigItem(keyName = "regexCurrency", name = "Main Tab Regex", description = "Custom regex for the Main Tab category", position = 7, section = regexSection)
 	default String regexCurrency() { return ""; }
+
+	@ConfigItem(keyName = "regexQuest", name = "Quest Regex", description = "Custom regex for the Quest category", position = 8, section = regexSection)
+	default String regexQuest() { return ""; }
 }

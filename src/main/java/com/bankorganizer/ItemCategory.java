@@ -64,7 +64,9 @@ public enum ItemCategory
 		"numulite", "pieces of eight", "warrior guild token",
 		"mermaid's tear", "hallowed mark", "molch pearl"
 	)),
-	QUEST_MISC("Quest/Misc", new Color(150, 90, 240), Arrays.asList());
+	QUEST("Quest", new Color(80, 200, 80), Arrays.asList()),
+	// Constant name kept for saved profiles and config; shown as "Misc" since 1.2.0 (Quest is its own category)
+	QUEST_MISC("Misc", new Color(150, 90, 240), Arrays.asList());
 
 	private final String displayName;
 	private final Color color;

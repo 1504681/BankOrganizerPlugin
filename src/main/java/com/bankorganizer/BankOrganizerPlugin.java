@@ -43,7 +43,7 @@ import net.runelite.client.util.ImageUtil;
 public class BankOrganizerPlugin extends Plugin
 {
 	/** Plugin version — keep in sync with build.gradle. Shown in the sidebar and stamped on profiles. */
-	public static final String VERSION = "1.1.5";
+	public static final String VERSION = "1.2.0";
 
 	private static final Logger log = LoggerFactory.getLogger(BankOrganizerPlugin.class);
 	private static final String MENU_SET_PREFIX = "Set: ";
@@ -132,6 +132,7 @@ public class BankOrganizerPlugin extends Plugin
 			case RAW_MATERIALS: return config.colorMaterials();
 			case HIGH_ALCH: return config.colorHighAlch();
 			case CURRENCY: return config.colorCurrency();
+			case QUEST: return config.colorQuest();
 			case QUEST_MISC: return config.colorQuestMisc();
 			default: return category.getColor();
 		}
@@ -165,6 +166,12 @@ public class BankOrganizerPlugin extends Plugin
 		// apart from "not equipable" so gear isn't demoted to Misc while stats are still loading.
 		categorizer.setStatsProvider(this::getEquipmentStats,
 			() -> itemManager.getItemStats(net.runelite.api.ItemID.ABYSSAL_WHIP) != null);
+		// Untradeable + unstackable leftovers are quest items; checked only after every other rule
+		categorizer.setQuestHint(id ->
+		{
+			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(id);
+			return comp != null && !comp.isTradeable() && !comp.isStackable();
+		});
 		profileManager = new ProfileManager(config);
 		profileManager.loadProfiles();
 		updateRegexFromConfig();
@@ -530,7 +537,7 @@ public class BankOrganizerPlugin extends Plugin
 				ItemCategory newCat = categorizer.categorize(name, itemId);
 				int currentTab = client.getVarbitValue(4150);
 				ItemCategory expectedCat = getCategoryForTab(currentTab);
-				if (expectedCat != null && newCat == expectedCat)
+				if (expectedCat != null && accepts(expectedCat, newCat))
 				{
 					misplacedItems.remove(itemId);
 					misplacedItemNames.remove(itemId);
@@ -562,7 +569,7 @@ public class BankOrganizerPlugin extends Plugin
 					int currentTab = client.getVarbitValue(4150);
 					ItemCategory expectedCat = getCategoryForTab(currentTab);
 					String itemName = itemManager.getItemComposition(itemId).getName();
-					if (expectedCat != null && cat == expectedCat)
+					if (expectedCat != null && accepts(expectedCat, cat))
 					{
 						misplacedItems.remove(itemId);
 						misplacedItemNames.remove(itemId);
@@ -759,7 +766,11 @@ public class BankOrganizerPlugin extends Plugin
 	private long getItemSortKey(BankItem item, ItemCategory tabCategory,
 		GearSortMode gearMode, TeleportSortMode teleportMode)
 	{
+		// Merged categories sort after the tab's own items, each group by its own rules
+		ItemCategory rule = ruleCategory(item, tabCategory);
+		long group = rule == tabCategory ? 0 : 1 + rule.ordinal();
 		long categoryKey = 0;
+		tabCategory = rule;
 		if (tabCategory == ItemCategory.GEAR)
 		{
 			categoryKey = categorizer.getGearFullSortKey(item.name, item.itemId,
@@ -787,7 +798,7 @@ public class BankOrganizerPlugin extends Plugin
 		}
 
 		// All sort key methods now include item ID for guaranteed uniqueness
-		return categoryKey;
+		return (group << 56) | (categoryKey & ((1L << 56) - 1));
 	}
 
 	private net.runelite.client.game.ItemEquipmentStats getEquipmentStats(int itemId)
@@ -1080,6 +1091,7 @@ public class BankOrganizerPlugin extends Plugin
 		patterns.put(ItemCategory.RAW_MATERIALS, config.regexRawMaterials());
 		patterns.put(ItemCategory.HIGH_ALCH, config.regexHighAlch());
 		patterns.put(ItemCategory.CURRENCY, config.regexCurrency());
+		patterns.put(ItemCategory.QUEST, config.regexQuest());
 		categorizer.setRegexPatterns(patterns);
 	}
 
@@ -1118,7 +1130,42 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			mappings.put(mainCat, 0);
 		}
-		return mappings;
+		return CategoryMerges.applyMerges(mappings, this::mergeTarget);
+	}
+
+	/** The category whose tab {@code c} shares (Merge Categories settings), or {@code c} itself. One hop only. */
+	public ItemCategory mergeTarget(ItemCategory c)
+	{
+		MergeInto m;
+		switch (c)
+		{
+			case TELEPORTS: m = config.mergeTeleports(); break;
+			case GEAR: m = config.mergeCombat(); break;
+			case POTIONS: m = config.mergePotions(); break;
+			case FOOD: m = config.mergeFood(); break;
+			case SKILLING: m = config.mergeSkilling(); break;
+			case RAW_MATERIALS: m = config.mergeMaterials(); break;
+			case HIGH_ALCH: m = config.mergeHighAlch(); break;
+			case CURRENCY: m = config.mergeCurrency(); break;
+			case QUEST: m = config.mergeQuest(); break;
+			case QUEST_MISC: m = config.mergeMisc(); break;
+			default: m = MergeInto.NONE;
+		}
+		ItemCategory t = m == null ? null : m.getCategory();
+		return t == null ? c : t;
+	}
+
+	/** True when an item of {@code itemCat} belongs in a tab mapped to {@code tabCat} (same category or merged into it). */
+	public boolean accepts(ItemCategory tabCat, ItemCategory itemCat)
+	{
+		return CategoryMerges.accepts(tabCat, itemCat, this::mergeTarget);
+	}
+
+	/** The category whose sort rules apply to an item in this tab: its own when merged into the tab, else the tab's. */
+	private ItemCategory ruleCategory(BankItem item, ItemCategory tabCategory)
+	{
+		ItemCategory own = categorizer.categorize(item.name, item.itemId);
+		return own != tabCategory && accepts(tabCategory, own) ? own : tabCategory;
 	}
 
 	private int getCurrentBankTab()
@@ -1200,7 +1247,7 @@ public class BankOrganizerPlugin extends Plugin
 				ItemCategory correctCategory = categorizer.categorize(itemName, itemId);
 				log.debug("Item: {} (ID: {}) -> {}", itemName, itemId, correctCategory);
 
-				if (expectedCategory != null && correctCategory != expectedCategory)
+				if (expectedCategory != null && !accepts(expectedCategory, correctCategory))
 				{
 					newMisplaced.put(itemId, correctCategory);
 					newNames.put(itemId, itemName);
@@ -1238,7 +1285,7 @@ public class BankOrganizerPlugin extends Plugin
 		});
 	}
 
-	/** Categories that have an in-tab sort order; the others (Main Tab, High Alch, Quest/Misc) are unordered. */
+	/** Categories that have an in-tab sort order; the others (Main Tab, High Alch, Quest, Misc) are unordered. */
 	static boolean hasSortRules(ItemCategory c)
 	{
 		switch (c)
@@ -1273,7 +1320,7 @@ public class BankOrganizerPlugin extends Plugin
 		for (BankItem it : items)
 		{
 			ItemCategory c = categorizer.categorize(it.name, it.itemId);
-			if (c != tabCategory) counts.merge(c, 1, Integer::sum);
+			if (!accepts(tabCategory, c)) counts.merge(c, 1, Integer::sum);
 		}
 		if (counts.isEmpty()) return "";
 		int foreign = 0;
@@ -1390,24 +1437,26 @@ public class BankOrganizerPlugin extends Plugin
 						currentItems.get(idealPos).name, currentItems.get(idealPos).itemId);
 				}
 
+				ItemCategory ruleCat = ruleCategory(idealItem, tabCategory);
 				// Skip items without subcategory (group 99)
-				if (tabCategory == ItemCategory.SKILLING)
+				if (ruleCat == ItemCategory.SKILLING)
 				{
 					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 					if (skillIdx >= 99) continue;
 				}
-				else if (tabCategory == ItemCategory.RAW_MATERIALS)
+				else if (ruleCat == ItemCategory.RAW_MATERIALS)
 				{
 					int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
 					if (grpIdx >= 99) continue;
 				}
 
 				BankItem currentAtTarget = currentItems.get(idealPos);
-				String subCatName = getSubCategoryName(idealItem, tabCategory);
+				String subCatName = getSubCategoryName(idealItem, ruleCat);
 
 				// Build phase description
 				String phase = "Sorting";
-				if (tabCategory == ItemCategory.SKILLING)
+				if (ruleCat != tabCategory) phase = ruleCat.getDisplayName() + ": sorting";
+				if (ruleCat == ItemCategory.SKILLING)
 				{
 					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 					if (skillIdx < ItemCategorizer.SKILL_NAMES.length)
@@ -1415,7 +1464,7 @@ public class BankOrganizerPlugin extends Plugin
 						phase = "Grouping " + ItemCategorizer.SKILL_NAMES[skillIdx] + " items";
 					}
 				}
-				else if (tabCategory == ItemCategory.RAW_MATERIALS)
+				else if (ruleCat == ItemCategory.RAW_MATERIALS)
 				{
 					int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
 					if (grpIdx < ItemCategorizer.SKILL_NAMES.length)
@@ -1423,11 +1472,11 @@ public class BankOrganizerPlugin extends Plugin
 						phase = "Grouping " + ItemCategorizer.SKILL_NAMES[grpIdx];
 					}
 				}
-				else if (tabCategory == ItemCategory.GEAR)
+				else if (ruleCat == ItemCategory.GEAR)
 				{
 				phase = "Grouping " + subCatName;
 				}
-				else if (tabCategory == ItemCategory.TELEPORTS)
+				else if (ruleCat == ItemCategory.TELEPORTS)
 				{
 					phase = "Grouping " + subCatName;
 				}
@@ -1469,12 +1518,13 @@ public class BankOrganizerPlugin extends Plugin
 							&& currentItems.get(pos).itemId != idealOrder.get(pos).itemId)
 						{
 							BankItem idealItem = idealOrder.get(pos);
-							if (tabCategory == ItemCategory.SKILLING)
+							ItemCategory ruleCat = ruleCategory(idealItem, tabCategory);
+							if (ruleCat == ItemCategory.SKILLING)
 							{
 								int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
 								if (skillIdx >= 99) continue;
 							}
-							else if (tabCategory == ItemCategory.RAW_MATERIALS)
+							else if (ruleCat == ItemCategory.RAW_MATERIALS)
 							{
 								int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
 								if (grpIdx >= 99) continue;
@@ -1483,7 +1533,7 @@ public class BankOrganizerPlugin extends Plugin
 							nextStep = new OrderStep(
 								idealItem.itemId, idealItem.name, pos,
 								"Insert " + idealItem.name + " before " + currentAtTarget.name,
-								getSubCategoryName(idealItem, tabCategory),
+								getSubCategoryName(idealItem, ruleCat),
 								currentAtTarget.itemId,
 								"Sorting", perm[pos] != pos ? 1 : 0
 							);
@@ -1683,12 +1733,13 @@ public class BankOrganizerPlugin extends Plugin
 			{
 				BankItem item = sorted.get(i);
 				String subCat = "";
-				if (tabCategory == ItemCategory.GEAR)
+				ItemCategory ruleCat = ruleCategory(item, tabCategory);
+				if (ruleCat == ItemCategory.GEAR)
 				{
 					subCat = categorizer.getGearSubCategory(item.name, item.itemId,
 						getEquipmentStats(item.itemId)).getDisplayName();
 				}
-				else if (tabCategory == ItemCategory.TELEPORTS)
+				else if (ruleCat == ItemCategory.TELEPORTS)
 				{
 					subCat = categorizer.getTeleportSubCategory(item.name, item.itemId).getDisplayName();
 				}

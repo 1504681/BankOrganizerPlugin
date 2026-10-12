@@ -639,4 +639,21 @@ public class ItemCategorizerTest
 		assertEquals(9, categorizer.getMaterialGroupIndex("Uncut sapphire", 1623));
 		assertTrue(categorizer.getMaterialFullSortKey("Uncut sapphire", 1623) < categorizer.getMaterialFullSortKey("Uncut zenyte", 19496));
 	}
+
+	@Test
+	public void untradeableLeftoversAreQuestTradeableAreMisc()
+	{
+		ItemCategorizer c = new ItemCategorizer();
+		c.setQuestHint(id -> id == 1);
+		assertEquals(ItemCategory.QUEST, c.categorize("Ghost's skull", 1));
+		assertEquals(ItemCategory.QUEST_MISC, c.categorize("Ghost's skull", 2));
+		// a keyword match still wins over the quest hint
+		assertEquals(ItemCategory.FOOD, c.categorize("Shark", 1));
+	}
+
+	@Test
+	public void questSplitIsOffWithoutAHint()
+	{
+		assertEquals(ItemCategory.QUEST_MISC, new ItemCategorizer().categorize("Ghost's skull", 1));
+	}
 }
