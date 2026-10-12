@@ -327,8 +327,11 @@ public class ItemCategorizerTest
 	{
 		// ores
 		assertTrue(mat("Copper ore") < mat("Iron ore")); assertTrue(mat("Iron ore") < mat("Runite ore"));
-		// gems, uncut first (typeOrder) and by tier
+		// gems: every uncut gem before every cut gem, each block by tier, amethyst and crushed gem last
 		assertTrue(mat("Uncut opal") < mat("Uncut sapphire")); assertTrue(mat("Uncut sapphire") < mat("Uncut zenyte"));
+		assertTrue(mat("Uncut zenyte") < mat("Opal")); assertTrue(mat("Opal") < mat("Zenyte"));
+		assertTrue(mat("Zenyte") < mat("Amethyst")); assertTrue(mat("Amethyst") < mat("Crushed gem"));
+		assertTrue(mat("Zenyte") < mat("Bronze nails")); assertTrue(mat("Runite bar") < mat("Uncut opal"));
 		// tips by metal, gem tips after metal tips
 		assertTrue(mat("Bronze arrowtips") < mat("Rune arrowtips")); assertTrue(mat("Rune arrowtips") < mat("Diamond bolt tips"));
 		// planks, logs
@@ -588,5 +591,52 @@ public class ItemCategorizerTest
 		assertEquals(GearSubCategory.MAGE_WEAPON, categorizer.getGearSubCategory("Tumeken's shadow", 27275));
 		assertTrue((rapier >> 44) == (scythe >> 44));
 		assertTrue((scythe >> 44) != (tbow >> 44));
+	}
+	/** Every gem on the wiki Gems page (uncut and cut) is a Material in the Mining group; quest gems are not. */
+	@Test
+	public void testWikiGemsAreMiningMaterials()
+	{
+		Object[][] gems = {
+			{"Uncut sapphire", 1623}, {"Sapphire", 1607}, {"Uncut emerald", 1621}, {"Emerald", 1605},
+			{"Uncut ruby", 1619}, {"Ruby", 1603}, {"Uncut diamond", 1617}, {"Diamond", 1601},
+			{"Uncut dragonstone", 1631}, {"Dragonstone", 1615}, {"Uncut onyx", 6571}, {"Onyx", 6573},
+			{"Uncut zenyte", 19496}, {"Zenyte", 19493}, {"Uncut opal", 1625}, {"Opal", 1609},
+			{"Uncut jade", 1627}, {"Jade", 1611}, {"Uncut red topaz", 1629}, {"Red topaz", 1613},
+			{"Crushed gem", 1633}, {"Zenyte shard", 19529}, {"Amethyst", 21347}, {"Oyster pearl", 411}, {"Oyster pearls", 413}
+		};
+		for (Object[] g : gems)
+		{
+			String name = (String) g[0]; int id = (Integer) g[1];
+			assertEquals(name, ItemCategory.RAW_MATERIALS, categorizer.categorize(name, id));
+			assertEquals(name, 4, categorizer.getMaterialGroupIndex(name, id));
+		}
+		for (String quest : new String[] {"Blood diamond", "Ice diamond", "Smoke diamond", "Shadow diamond", "Enchanted gem", "Eternal gem"})
+		{
+			assertEquals(quest, ItemCategory.QUEST_MISC, categorizer.categorize(quest, 99999));
+		}
+		// cut gem before its uncut version by id must not matter: the uncut block always comes first
+		assertTrue(mat("Uncut sapphire") < mat("Sapphire"));
+		assertTrue(mat("Uncut onyx") < mat("Onyx"));
+		assertTrue(categorizer.getMaterialFullSortKey("Uncut zenyte", 19496) < categorizer.getMaterialFullSortKey("Zenyte shard", 19529));
+		assertTrue(mat("Zenyte shard") < mat("Opal"));
+	}
+
+	/** Pinning a subcategory keeps ore -> bar -> gem -> tier order inside the pinned group. */
+	@Test
+	public void testSubCategoryOverrideKeepsMaterialTierOrder()
+	{
+		categorizer.setSubCategoryOverride(1623, 4); // Uncut sapphire -> Mining (already Mining by rule)
+		categorizer.setSubCategoryOverride(19496, 4); // Uncut zenyte -> Mining
+		categorizer.setSubCategoryOverride(440, 4); // Iron ore -> Mining
+		long ore = categorizer.getMaterialFullSortKey("Iron ore", 440);
+		long sapphire = categorizer.getMaterialFullSortKey("Uncut sapphire", 1623);
+		long zenyte = categorizer.getMaterialFullSortKey("Uncut zenyte", 19496);
+		assertTrue(ore < sapphire); assertTrue(sapphire < zenyte);
+		assertEquals(4, categorizer.getMaterialGroupIndex("Uncut zenyte", 19496));
+		// pinned to another group: moves group, keeps relative order
+		categorizer.setSubCategoryOverride(1623, 9); // Uncut sapphire -> Crafting
+		categorizer.setSubCategoryOverride(19496, 9); // Uncut zenyte -> Crafting
+		assertEquals(9, categorizer.getMaterialGroupIndex("Uncut sapphire", 1623));
+		assertTrue(categorizer.getMaterialFullSortKey("Uncut sapphire", 1623) < categorizer.getMaterialFullSortKey("Uncut zenyte", 19496));
 	}
 }

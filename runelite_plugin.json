@@ -4,5 +4,5 @@
   "author": "1504681",
   "description": "Scans bank items and highlights misplaced ones based on category presets",
   "tags": ["bank", "organizer", "sort", "tab", "category"],
-  "version": "1.1.4"
+  "version": "1.1.5"
 }

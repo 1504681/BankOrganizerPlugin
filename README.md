@@ -106,6 +106,8 @@ All settings are in the RuneLite plugin configuration panel:
 
 ## Changelog
 
+1.1.5: gems follow the wiki Gems list: every uncut and cut gem (opal to zenyte) is a Material in the Mining group, uncut gems sort before cut gems, each by tier. Crushed gem, Amethyst, Zenyte shard and Oyster pearls are Materials too (they used to be Quest/Misc). Pinning a Mining/Crafting/... subcategory on a Material now keeps the ore, bar, gem and tier order inside that group instead of falling back to item id.
+
 1.1.4: staves, battlestaves, wands, tridents and sceptres are always Magic Weapons (their crush bonus used to win). Ordering now says which items it left in place and why, and tells you when a tab is mapped to a category with no sort order, instead of a bare "complete". "Current: <skill>" in the right-click menu is clickable and pins that subcategory. Stuck-step counters reset on every Start Ordering.
 
 ## License

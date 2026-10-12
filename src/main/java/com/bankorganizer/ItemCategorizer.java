@@ -65,8 +65,9 @@ public class ItemCategorizer
 	};
 	private static final String[] MATERIAL_RULE_EXACT = {
 		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay",
-		// cut gems
+		// cut gems (wiki: Gems) plus the gem-adjacent crafting items
 		"opal", "jade", "red topaz", "sapphire", "emerald", "ruby", "diamond", "dragonstone", "onyx", "zenyte",
+		"crushed gem", "amethyst", "zenyte shard", "oyster pearl", "oyster pearls",
 		// orbs for battlestaves
 		"unpowered orb", "water orb", "earth orb", "fire orb", "air orb"
 	};
@@ -1399,12 +1400,9 @@ public class ItemCategorizer
 
 	public long getMaterialFullSortKey(String itemName, int itemId)
 	{
-		// Check subcategory override
+		// A subcategory override only moves the item to another skill group; the
+		// type/tier order below still applies so pinned gems keep ore -> bar -> gem -> tier.
 		Integer subOverride = subCategoryOverrides.get(itemId);
-		if (subOverride != null)
-		{
-			return ((long) subOverride << 28) | (itemId & 0xFFFF);
-		}
 
 		String lower = itemName.toLowerCase();
 		int skillGroup = 99;
@@ -1424,9 +1422,14 @@ public class ItemCategorizer
 		{
 			skillGroup = 4; typeOrder = 1; tierOrder = getBarTier(lower);
 		}
-		else if (lower.startsWith("uncut ") || (isGem(lower) && !lower.contains("bolt") && !lower.contains("tip")))
+		else if (lower.startsWith("uncut ") || lower.equals("zenyte shard"))
 		{
 			skillGroup = 4; typeOrder = 2; tierOrder = getGemTier(lower);
+		}
+		else if ((isGem(lower) && !lower.contains("bolt") && !lower.contains("tip"))
+			|| lower.equals("amethyst") || lower.equals("crushed gem") || lower.startsWith("oyster pearl"))
+		{
+			skillGroup = 4; typeOrder = 3; tierOrder = getGemTier(lower);
 		}
 		else if (lower.endsWith(" orb"))
 		{
@@ -1438,7 +1441,7 @@ public class ItemCategorizer
 		}
 		else if (lower.endsWith(" nails") || lower.endsWith("bolts (unf)") || lower.contains("cannonball"))
 		{
-			skillGroup = 4; typeOrder = 3; tierOrder = getMetalTier(lower);
+			skillGroup = 4; typeOrder = 4; tierOrder = getMetalTier(lower);
 		}
 
 		// === WOODCUTTING + CONSTRUCTION (skill 2 = WC) ===
@@ -1524,6 +1527,11 @@ public class ItemCategorizer
 		else if (lower.contains("bone") || lower.contains("ashes"))
 		{
 			skillGroup = 5; typeOrder = 0; tierOrder = getBoneTier(lower);
+		}
+
+		if (subOverride != null)
+		{
+			skillGroup = subOverride;
 		}
 
 		// Pack: skillGroup(8) | typeOrder(4) | tierOrder(8) | itemId(16)
@@ -1671,6 +1679,7 @@ public class ItemCategorizer
 		if (lower.contains("dragonstone")) return 7;
 		if (lower.contains("onyx")) return 8;
 		if (lower.contains("zenyte")) return 9;
+		if (lower.equals("amethyst")) return 10;
 		return 50;
 	}
 
