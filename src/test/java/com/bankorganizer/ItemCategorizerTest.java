@@ -656,4 +656,27 @@ public class ItemCategorizerTest
 	{
 		assertEquals(ItemCategory.QUEST_MISC, new ItemCategorizer().categorize("Ghost's skull", 1));
 	}
+	/** Unstrung amulets and symbols are crafting intermediates: Materials, Crafting group, gold first then by gem. */
+	@Test
+	public void testUnstrungJewelleryIsCraftingMaterial()
+	{
+		Object[][] items = {
+			{"Gold amulet (u)", 1673}, {"Sapphire amulet (u)", 1675}, {"Emerald amulet (u)", 1677}, {"Ruby amulet (u)", 1679},
+			{"Diamond amulet (u)", 1681}, {"Dragonstone amulet (u)", 1683}, {"Onyx amulet (u)", 6579}, {"Zenyte amulet (u)", 19501},
+			{"Opal amulet (u)", 21133}, {"Jade amulet (u)", 21139}, {"Topaz amulet (u)", 21145},
+			{"Unstrung symbol", 1714}, {"Unstrung emblem", 1720}
+		};
+		for (Object[] it : items)
+		{
+			String name = (String) it[0]; int id = (Integer) it[1];
+			assertEquals(name, ItemCategory.RAW_MATERIALS, categorizer.categorize(name, id));
+			assertEquals(name, 9, categorizer.getMaterialGroupIndex(name, id));
+		}
+		assertTrue(mat("Gold amulet (u)") < mat("Sapphire amulet (u)"));
+		assertTrue(mat("Sapphire amulet (u)") < mat("Zenyte amulet (u)"));
+		assertTrue(mat("Zenyte amulet (u)") < mat("Unstrung symbol"));
+		// strung jewellery is untouched
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Sapphire amulet", 1694));
+		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Amulet of glory", 1704));
+	}
 }

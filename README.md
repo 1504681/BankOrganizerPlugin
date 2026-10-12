@@ -108,6 +108,8 @@ All settings are in the RuneLite plugin configuration panel:
 
 ## Changelog
 
+1.2.1: unstrung jewellery (every "amulet (u)", Unstrung symbol, Unstrung emblem) is a Material in the Crafting group, gold first then by gem. It used to be Gear.
+
 1.2.0: Quest is its own category (untradeable, unstackable leftovers; 19 shipped defaults such as the Family Crest 'perfect' items, Bone key and Ring of Charos moved there), the old Quest/Misc is now Misc. New Merge Categories settings: any category can share another category's tab, e.g. Food → Potions; merged items count as correctly placed in Scan and are ordered after the tab's own items by their own rules. Quest is merged into Misc by default, so existing layouts keep working (#6).
 
 1.1.5: gems follow the wiki Gems list: every uncut and cut gem (opal to zenyte) is a Material in the Mining group, uncut gems sort before cut gems, each by tier. Crushed gem, Amethyst, Zenyte shard and Oyster pearls are Materials too (they used to be Quest/Misc). Pinning a Mining/Crafting/... subcategory on a Material now keeps the ore, bar, gem and tier order inside that group instead of falling back to item id.

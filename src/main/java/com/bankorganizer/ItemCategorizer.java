@@ -647,6 +647,7 @@ public class ItemCategorizer
 	public static boolean isMaterialByRule(String lowerName)
 	{
 		for (String x : MATERIAL_RULE_EXACT) if (lowerName.equals(x)) return true;
+		if (isUnstrungJewellery(lowerName)) return true;
 		// anything compost (bottomless bucket is a Skilling tool; compost potion is a potion)
 		if (lowerName.contains("compost") && !lowerName.contains("bottomless") && !lowerName.contains("potion")) return true;
 		// "Onyx bolts" (unenchanted) yes; "Onyx bolts (e)" / "Onyx dragon bolts (e)" no
@@ -658,6 +659,12 @@ public class ItemCategorizer
 		for (String c : MATERIAL_RULE_CONTAINS) if (lowerName.contains(c)) return true;
 		for (String suf : MATERIAL_RULE_SUFFIXES) if (lowerName.endsWith(suf)) return true;
 		return false;
+	}
+
+	/** "Sapphire amulet (u)", "Gold amulet (u)", "Unstrung symbol", "Unstrung emblem": crafting intermediates, never gear. */
+	public static boolean isUnstrungJewellery(String lowerName)
+	{
+		return (lowerName.endsWith(" (u)") && lowerName.contains("amulet")) || lowerName.startsWith("unstrung ");
 	}
 
 	/** Adamant / mithril items other than bolts and arrows (and raw ore/bars, which are materials). */
@@ -1428,8 +1435,13 @@ public class ItemCategorizer
 		// Farming=0, RC=1, WC=2, Fishing=3, Mining=4, Prayer=5, Crafting=9, Smithing=11, Fletching=12,
 		// Herblore=13, Cooking=14, Hunting=15
 
+		// === CRAFTING: unstrung jewellery (skill 9) — before the gem branch, which would match "sapphire" ===
+		if (isUnstrungJewellery(lower))
+		{
+			skillGroup = 9; typeOrder = 3; tierOrder = lower.startsWith("gold ") ? 0 : lower.startsWith("unstrung ") ? 40 : getGemTier(lower) + 1;
+		}
 		// === MINING + SMITHING (skill 4 = Mining) ===
-		if (lower.endsWith(" ore") || lower.equals("clay") || lower.equals("soft clay") || lower.equals("coal"))
+		else if (lower.endsWith(" ore") || lower.equals("clay") || lower.equals("soft clay") || lower.equals("coal"))
 		{
 			skillGroup = 4; typeOrder = 0; tierOrder = getOreTier(lower);
 		}
