@@ -36,6 +36,15 @@ public interface BankOrganizerConfig extends Config
 	default boolean showTabColors() { return true; }
 
 	@ConfigItem(
+		keyName = "showPatterns",
+		name = "Category Patterns",
+		description = "Draw stripes (Potions, Food, Materials, Misc) or crosshatch (Main Tab, High Alch) over the overlay so categories with similar colours stay distinguishable",
+		position = 3,
+		section = generalSection
+	)
+	default boolean showPatterns() { return true; }
+
+	@ConfigItem(
 		keyName = "overlayOpacity",
 		name = "Overlay Opacity",
 		description = "Opacity of category overlay boxes (0-100)",
@@ -177,34 +186,34 @@ public interface BankOrganizerConfig extends Config
 
 	@Alpha
 	@ConfigItem(keyName = "colorPotions", name = "Potions", description = "Overlay color for Potions", position = 2, section = colorsSection)
-	default Color colorPotions() { return new Color(0, 0, 0); }
+	default Color colorPotions() { return new Color(190, 90, 255); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorFood", name = "Food", description = "Overlay color for Food", position = 3, section = colorsSection)
-	default Color colorFood() { return new Color(64, 224, 208); }
+	default Color colorFood() { return new Color(255, 225, 0); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorSkilling", name = "Skilling", description = "Overlay color for Skilling", position = 4, section = colorsSection)
-	default Color colorSkilling() { return new Color(255, 170, 60); }
+	default Color colorSkilling() { return new Color(255, 140, 0); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorMaterials", name = "Materials", description = "Overlay color for Materials", position = 5, section = colorsSection)
-	default Color colorMaterials() { return new Color(255, 0, 200); }
+	default Color colorMaterials() { return new Color(0, 225, 210); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorHighAlch", name = "High Alch", description = "Overlay color for High Alch", position = 6, section = colorsSection)
-	default Color colorHighAlch() { return new Color(255, 255, 255); }
+	default Color colorHighAlch() { return new Color(255, 60, 190); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorCurrency", name = "Main Tab", description = "Overlay color for Main Tab (currency, clues, valuables)", position = 7, section = colorsSection)
-	default Color colorCurrency() { return new Color(255, 128, 0); }
+	default Color colorCurrency() { return new Color(255, 255, 255); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorQuest", name = "Quest", description = "Overlay color for Quest", position = 8, section = colorsSection)
-	default Color colorQuest() { return new Color(80, 200, 80); }
+	default Color colorQuest() { return new Color(60, 200, 60); }
 
 	@ConfigItem(keyName = "colorQuestMisc", name = "Misc", description = "Overlay color for Misc", position = 9, section = colorsSection)
-	default Color colorQuestMisc() { return new Color(150, 90, 240); }
+	default Color colorQuestMisc() { return new Color(170, 170, 170); }
 
 	// --- Manual overrides (stored as JSON string) ---
 

@@ -218,10 +218,42 @@ public class BankOrganizerOverlay extends Overlay
 
 			graphics.setColor(fillColor);
 			graphics.fill(bounds);
+			drawPattern(graphics, bounds, category, color, Math.min(255, fillAlpha + 50));
 			graphics.setColor(borderColor);
 			graphics.draw(bounds);
 		}
 
+		graphics.setClip(oldClip);
+	}
+
+	private static final int PATTERN_SPACING = 6;
+
+	/** Diagonal stripes or crosshatch inside bounds, so categories with close hues still read apart. */
+	private void drawPattern(Graphics2D graphics, Rectangle bounds, ItemCategory category, Color color, int alpha)
+	{
+		ItemCategory.Pattern pattern = category.getPattern();
+		if (pattern == ItemCategory.Pattern.SOLID || !plugin.getConfig().showPatterns())
+		{
+			return;
+		}
+
+		java.awt.Shape oldClip = graphics.getClip();
+		graphics.clip(bounds);
+		graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
+		int x0 = bounds.x;
+		int y0 = bounds.y;
+		int h = bounds.height;
+		int spacing = pattern == ItemCategory.Pattern.CROSSHATCH ? PATTERN_SPACING + 2 : PATTERN_SPACING;
+		for (int d = -h; d < bounds.width; d += spacing)
+		{
+			// "/" lines
+			graphics.drawLine(x0 + d, y0 + h, x0 + d + h, y0);
+			if (pattern == ItemCategory.Pattern.CROSSHATCH)
+			{
+				// "\" lines
+				graphics.drawLine(x0 + d, y0, x0 + d + h, y0 + h);
+			}
+		}
 		graphics.setClip(oldClip);
 	}
 
@@ -292,6 +324,7 @@ public class BankOrganizerOverlay extends Overlay
 
 			graphics.setColor(fillColor);
 			graphics.fill(bounds);
+			drawPattern(graphics, bounds, correctCategory, color, 120);
 			graphics.setColor(borderColor);
 			graphics.draw(bounds);
 		}

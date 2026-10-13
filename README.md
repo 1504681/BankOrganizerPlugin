@@ -99,7 +99,7 @@ All settings are in the RuneLite plugin configuration panel:
 
 | Section | Settings |
 |---------|----------|
-| General | Show sidebar icon, tab colors, overlay opacity |
+| General | Show sidebar icon, tab colors, overlay opacity, category patterns |
 | Tab Mappings | Assign categories to the main (All) tab and bank tabs 1-9 |
 | Merge Categories | Per category, which other category's tab it shares. Quest → Misc by default; set it to Keep separate and map a tab to Quest for a dedicated quest tab |
 | Sorting | Gear sort mode (Combat Style / Equipment Type), Teleport sort mode + custom group order |
@@ -107,6 +107,8 @@ All settings are in the RuneLite plugin configuration panel:
 | Custom Regex | Add regex patterns for advanced item matching |
 
 ## Changelog
+
+1.2.2: new default colours so no two categories look alike (Potions was black, Skilling and Main Tab were both orange, Food and Quest both green-ish). Potions, Food, Materials and Misc are striped, Main Tab and High Alch crosshatched; turn it off with General → Category Patterns. Teleports and Combat keep their colours; colours you changed yourself are kept.
 
 1.2.1: unstrung jewellery (every "amulet (u)", Unstrung symbol, Unstrung emblem) is a Material in the Crafting group, gold first then by gem. It used to be Gear.
 
