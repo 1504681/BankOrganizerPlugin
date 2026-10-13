@@ -36,7 +36,7 @@ public enum ItemCategory
 	FOOD("Food", new Color(255, 225, 0), Pattern.STRIPES, Arrays.asList(
 		"shark", "lobster", "swordfish", "tuna", "salmon", "trout",
 		"monkfish", "manta ray", "dark crab", "anglerfish", "karambwan",
-		"bass", "pike", "shrimps", "anchovies", "sardine", "herring",
+		"bass", "shrimps", "anchovies", "sardine", "herring",
 		"mackerel", "cod", "cake", "bread", "meat", "chicken",
 		"wine", "stew", "potato", "mushroom", "sweetcorn",
 		"cooked"
@@ -63,7 +63,8 @@ public enum ItemCategory
 	CURRENCY("Main Tab", new Color(255, 255, 255), Pattern.CROSSHATCH, Arrays.asList(
 		"coins", "platinum token", "tokkul", "trading sticks",
 		"numulite", "pieces of eight", "warrior guild token",
-		"mermaid's tear", "hallowed mark", "molch pearl"
+		"mermaid's tear", "hallowed mark", "molch pearl",
+		"blood money", "golden nugget", "agility arena ticket"
 	)),
 	QUEST("Quest", new Color(60, 200, 60), Pattern.SOLID, Arrays.asList()),
 	// Constant name kept for saved profiles and config; shown as "Misc" since 1.2.0 (Quest is its own category)

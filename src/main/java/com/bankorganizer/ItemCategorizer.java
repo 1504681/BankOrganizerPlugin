@@ -71,6 +71,7 @@ public class ItemCategorizer
 		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay", "ashes", "grapes",
 		"gold leaf", "limestone brick", "snakeskin", "silk", "leaping trout", "leaping salmon", "leaping sturgeon",
 		"sacred eel", "infernal eel", "kebbit claws", "granite (500g)", "granite (2kg)", "granite (5kg)",
+		"moonlight moth", "sunlight moth", "calquat fruit", "moonlight antelope fur", "sunlight antelope fur",
 		// cut gems (wiki: Gems) plus the gem-adjacent crafting items
 		"opal", "jade", "red topaz", "sapphire", "emerald", "ruby", "diamond", "dragonstone", "onyx", "zenyte",
 		"crushed gem", "amethyst", "zenyte shard", "oyster pearl", "oyster pearls",
@@ -90,19 +91,19 @@ public class ItemCategorizer
 	// Small name rules that keyword matching gets wrong
 	// Barrows equipment (all pieces incl. degraded "0/25/50/75/100" variants that have no stats) is combat gear
 	private static final String[] GEAR_NAME_RULES = {
-		"lightbearer",
+		"lightbearer", "soulreaper axe", "zombie axe",
 		"ahrim's", "dharok's", "guthan's", "karil's", "torag's", "verac's", "amulet of the damned"
 	};
 	private static final String[] SKILLING_NAME_RULES = {
 		"lobster pot", "karambwan vessel", "cake tin", "beekeeper's", " mould", "bird snare", "rabbit snare", "noose wand",
-		"medium pouch", "large pouch", "abyssal lantern", "gem sack", "gem tote", "gem bag", "bottomless compost bucket", "drift net", "diving apparatus", "fishbowl helmet"
+		"medium pouch", "large pouch", "abyssal lantern", "gricoller's can", "fox whistle", "gem sack", "gem tote", "gem bag", "bottomless compost bucket", "drift net", "diving apparatus", "fishbowl helmet"
 	};
 	private static final String[] FOOD_NAME_RULES = { "halibut", "sweets", "pizza", "rainbow fish", "cave eel", "lava eel", "kebab" };
 	private static final String[] TELEPORT_NAME_RULES = { "achievement diary cape", "ring of wealth", "ring of the elements", "construct. cape",
-		"eternal glory", "western banner", "rune pouch", "crafting cape", "farming cape", "dorgesh-kaan sphere", "plain of mud sphere" };
+		"eternal glory", "western banner", "rune pouch", "crafting cape", "farming cape", "dorgesh-kaan sphere", "plain of mud sphere", "calcified moth" };
 	// Clues and their containers live in the main tab alongside currency
 	private static final String[] CURRENCY_NAME_RULES = {
-		"clue scroll", "scroll box", "reward casket", "clue bottle", "clue nest", "clue geode", "challenge scroll"
+		"clue scroll", "scroll box", "ancient emblem", "ancient totem", "ancient statuette", "ancient medallion", "ancient effigy", "ancient relic", "reward casket", "clue bottle", "clue nest", "clue geode", "challenge scroll"
 	};
 
 	// Farming / Herblore materials — checked before the generic keyword loop so that
@@ -674,11 +675,14 @@ public class ItemCategorizer
 		return lowerName.endsWith("longbow (u)") || lowerName.endsWith("shortbow (u)") || lowerName.endsWith("crossbow (u)");
 	}
 
-	/** "Wild pie", "Half a redberry pie", "Curry" (not "Map piece", "Pie dish", "Scurry", "Curry leaf"); mud pie is a thrown weapon. */
+	/** "Wild pie", "Half a redberry pie", "Curry", "Pike" (not "Map piece", "Pie dish", "Scurry", "Curry leaf"); mud pie is a thrown weapon. */
 	private static boolean isPieOrCurry(String lowerName)
 	{
 		if (lowerName.contains("mud pie")) return false;
-		return lowerName.endsWith(" pie") || lowerName.equals("curry") || lowerName.endsWith(" curry");
+		return lowerName.endsWith(" pie") || lowerName.equals("curry") || lowerName.endsWith(" curry")
+			// exact names: "pike" as a keyword hit "Spiked manacles"
+			|| lowerName.equals("pike") || lowerName.equals("cheese") || lowerName.equals("giant frog legs")
+			|| lowerName.equals("spider on stick") || lowerName.equals("spider on shaft");
 	}
 
 	/** "Sapphire amulet (u)", "Gold amulet (u)", "Unstrung symbol", "Unstrung emblem": crafting intermediates, never gear. */

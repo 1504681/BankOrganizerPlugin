@@ -708,6 +708,11 @@ public class ItemCategorizerTest
 			{"Runite limbs", 9431, ItemCategory.RAW_MATERIALS}, {"Leaping sturgeon", 11332, ItemCategory.RAW_MATERIALS},
 			{"Sacred eel", 13339, ItemCategory.RAW_MATERIALS}, {"Snakeskin", 6289, ItemCategory.RAW_MATERIALS},
 			{"Embalming manual", 4686, ItemCategory.QUEST_MISC},
+			{"Pike", 351, ItemCategory.FOOD}, {"Spiked manacles", 23389, ItemCategory.QUEST_MISC}, {"Kebbit spike", 10105, ItemCategory.QUEST_MISC},
+			{"Soulreaper axe", 25484, ItemCategory.GEAR}, {"Cheese", 1985, ItemCategory.FOOD},
+			{"Ancient emblem", 21807, ItemCategory.CURRENCY}, {"Blood money", 13307, ItemCategory.CURRENCY},
+			{"Sunlight moth", 28890, ItemCategory.RAW_MATERIALS}, {"Calcified moth", 29090, ItemCategory.TELEPORTS},
+			{"Gricoller's can", 13353, ItemCategory.SKILLING},
 		};
 		for (Object[] it : items)
 		{
