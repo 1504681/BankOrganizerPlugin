@@ -715,6 +715,10 @@ public class ItemCategorizerTest
 			{"Gricoller's can", 13353, ItemCategory.SKILLING},
 			{"Confliction gauntlets", 31106, ItemCategory.GEAR}, {"Avernic treads", 31088, ItemCategory.GEAR},
 			{"Avernic treads (max)", 99998, ItemCategory.GEAR},
+			{"Banana", 1963, ItemCategory.FOOD}, {"Potato", 1942, ItemCategory.FOOD}, {"Garlic", 1550, ItemCategory.FOOD},
+			{"Tomatoes(5)", 5968, ItemCategory.FOOD}, {"Potatoes(10)", 5438, ItemCategory.FOOD}, {"Calquat fruit", 5980, ItemCategory.FOOD},
+			{"Potato seed", 5318, ItemCategory.RAW_MATERIALS}, {"Potato cactus", 3138, ItemCategory.RAW_MATERIALS},
+			{"White berries", 239, ItemCategory.RAW_MATERIALS}, {"Zamorak's grapes", 20749, ItemCategory.RAW_MATERIALS},
 		};
 		for (Object[] it : items)
 		{

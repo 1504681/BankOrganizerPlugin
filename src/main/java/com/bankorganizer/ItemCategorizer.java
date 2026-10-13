@@ -62,16 +62,16 @@ public class ItemCategorizer
 	private static final String[] MATERIAL_RULE_SUFFIXES = {
 		" tips", " tip", "arrowtips", "bolttips", " ore", " paste", " logs", " string", "string", " hide", "hide", " leather", "leather",
 		" root", " roots", " plank", " planks", " nails", "bolts (unf)", " bar", " bones", "bones", " bone", "bonemeal",
-		" ashes", " limbs", " stock", " grapes", "seaweed"
+		" ashes", " limbs", " stock", "seaweed"
 	};
 	private static final String[] MATERIAL_RULE_CONTAINS = {
 		"bird house", "birdhouse", "flax", " logs", "bow string", "bowstring", "crossbow string"
 	};
 	private static final String[] MATERIAL_RULE_EXACT = {
-		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay", "ashes", "grapes",
+		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay", "ashes", "zamorak's grapes",
 		"gold leaf", "limestone brick", "snakeskin", "silk", "leaping trout", "leaping salmon", "leaping sturgeon",
 		"sacred eel", "infernal eel", "kebbit claws", "granite (500g)", "granite (2kg)", "granite (5kg)",
-		"moonlight moth", "sunlight moth", "calquat fruit", "moonlight antelope fur", "sunlight antelope fur",
+		"moonlight moth", "sunlight moth", "moonlight antelope fur", "sunlight antelope fur",
 		// cut gems (wiki: Gems) plus the gem-adjacent crafting items
 		"opal", "jade", "red topaz", "sapphire", "emerald", "ruby", "diamond", "dragonstone", "onyx", "zenyte",
 		"crushed gem", "amethyst", "zenyte shard", "oyster pearl", "oyster pearls",
@@ -132,24 +132,36 @@ public class ItemCategorizer
 		"zulrah's scales", "amylase crystal", "crushed superior dragon bones", "lily of the sands",
 		"cave nightshade", "yew roots", "magic roots", "coconut milk", "blue dragon scale", "goat horn dust",
 		"desert goat horn", "unicorn horn", "chocolate bar", "kebbit teeth dust", "kebbit teeth",
-		"ground kebbit teeth", "toad's legs", "swamp tar", "grenwall spikes", "papaya fruit",
+		"ground kebbit teeth", "toad's legs", "swamp tar", "grenwall spikes",
 		"crystal dust", "nihil dust", "araxyte venom sack", "aldarium", "wyrmling bones",
 		"volcanic ash", "ashes", "bird nest", "birds nest", "crushed birds nest",
 		// wiki: Herblore secondaries
 		"aldarium", "ancient essence", "araxyte venom sac", "bird nest (empty)", "cactus spine", "cotton yarn",
-		"crab paste", "garlic", "goat horn", "haddock eye", "lava scale", "lava scale shard", "marlin scales",
+		"crab paste", "goat horn", "haddock eye", "lava scale", "lava scale shard", "marlin scales",
 		"rainbow crab paste", "shrunk ogleroot", "silver dust", "squid paste", "superior dragon bones", "yellow fin",
 		"forgotten brew", "reagent pouch",
-		// farming produce & secondaries commonly banked as materials
-		"limpwurt seed", "compost", "supercompost", "ultracompost",
-		"potato", "onion", "cabbage", "tomato", "sweetcorn", "strawberry", "watermelon", "snape grass",
+		// farming produce & secondaries commonly banked as materials (fruit and veg are Food: FRUIT_VEG)
+		"limpwurt seed", "compost", "supercompost", "ultracompost", "snape grass",
 		"barley", "barley malt", "hammerstone hops", "asgarnian hops", "jute fibre", "yanillian hops",
 		"krandorian hops", "wildblood hops", "marigolds", "rosemary", "nasturtiums", "woad leaf",
-		"white lily", "cactus spine", "mushroom", "morchella mushroom", "redberries", "cadava berries",
-		"dwellberries", "whiteberries", "poison ivy berries", "cooking apple", "banana", "orange",
-		"curry leaf", "pineapple", "papaya", "coconut", "dragonfruit", "celastrus bark",
+		"white lily", "cactus spine", "morchella mushroom", "whiteberries", "poison ivy berries",
+		"curry leaf", "celastrus bark",
 		"redwood logs", "hespori seed"
 	));
+
+	// Fruit and veg are Food (herblore-only berries and grapes above stay Materials)
+	private static final Set<String> FRUIT_VEG = new HashSet<>(Arrays.asList(
+		"potato", "onion", "cabbage", "tomato", "sweetcorn", "garlic", "mushroom", "sliced mushrooms",
+		"chopped onion", "chopped tomato", "chopped garlic",
+		"strawberry", "watermelon", "watermelon slice", "cooking apple", "banana", "sliced banana", "red banana",
+		"orange", "orange chunks", "orange slices", "pineapple", "pineapple chunks", "pineapple ring",
+		"lemon", "lemon chunks", "lemon slices", "lime", "lime chunks", "lime slices",
+		"papaya fruit", "coconut", "dragonfruit", "grapes", "calquat fruit", "strange fruit",
+		"redberries", "cadava berries", "dwellberries"
+	));
+	// "Apples(5)", "Potatoes(10)": farming baskets and sacks
+	private static final Pattern PRODUCE_CONTAINER = Pattern.compile(
+		"^(apples|bananas|oranges|strawberries|tomatoes|cabbages|onions|potatoes)\\(\\d+\\)$");
 
 	// Keyword sets for sub-categories
 	private static final Set<String> MELEE_WEAPON_KEYWORDS = new HashSet<>(Arrays.asList(
@@ -578,7 +590,7 @@ public class ItemCategorizer
 		for (String kw : GEAR_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.GEAR;
 		for (String kw : SKILLING_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.SKILLING;
 		for (String kw : FOOD_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.FOOD;
-		if (isPieOrCurry(lowerName)) return ItemCategory.FOOD;
+		if (isPieOrCurry(lowerName) || FRUIT_VEG.contains(lowerName) || PRODUCE_CONTAINER.matcher(lowerName).matches()) return ItemCategory.FOOD;
 		if (!lowerName.contains("scroll"))
 		{
 			for (String kw : TELEPORT_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.TELEPORTS;
