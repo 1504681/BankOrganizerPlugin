@@ -713,6 +713,8 @@ public class ItemCategorizerTest
 			{"Ancient emblem", 21807, ItemCategory.CURRENCY}, {"Blood money", 13307, ItemCategory.CURRENCY},
 			{"Sunlight moth", 28890, ItemCategory.RAW_MATERIALS}, {"Calcified moth", 29090, ItemCategory.TELEPORTS},
 			{"Gricoller's can", 13353, ItemCategory.SKILLING},
+			{"Confliction gauntlets", 31106, ItemCategory.GEAR}, {"Avernic treads", 31088, ItemCategory.GEAR},
+			{"Avernic treads (max)", 99998, ItemCategory.GEAR},
 		};
 		for (Object[] it : items)
 		{

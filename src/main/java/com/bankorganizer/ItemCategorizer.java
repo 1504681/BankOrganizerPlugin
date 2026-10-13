@@ -91,7 +91,7 @@ public class ItemCategorizer
 	// Small name rules that keyword matching gets wrong
 	// Barrows equipment (all pieces incl. degraded "0/25/50/75/100" variants that have no stats) is combat gear
 	private static final String[] GEAR_NAME_RULES = {
-		"lightbearer", "soulreaper axe", "zombie axe",
+		"lightbearer", "soulreaper axe", "zombie axe", "confliction gauntlets", "avernic treads",
 		"ahrim's", "dharok's", "guthan's", "karil's", "torag's", "verac's", "amulet of the damned"
 	};
 	private static final String[] SKILLING_NAME_RULES = {
