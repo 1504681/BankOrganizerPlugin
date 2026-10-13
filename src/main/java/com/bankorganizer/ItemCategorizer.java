@@ -61,13 +61,16 @@ public class ItemCategorizer
 	};
 	private static final String[] MATERIAL_RULE_SUFFIXES = {
 		" tips", " tip", "arrowtips", "bolttips", " ore", " paste", " logs", " string", "string", " hide", "hide", " leather", "leather",
-		" root", " roots", " plank", " planks", " nails", "bolts (unf)", " bar", " bones", "bones", " bone", "bonemeal"
+		" root", " roots", " plank", " planks", " nails", "bolts (unf)", " bar", " bones", "bones", " bone", "bonemeal",
+		" ashes", " limbs", " stock", " grapes", "seaweed"
 	};
 	private static final String[] MATERIAL_RULE_CONTAINS = {
 		"bird house", "birdhouse", "flax", " logs", "bow string", "bowstring", "crossbow string"
 	};
 	private static final String[] MATERIAL_RULE_EXACT = {
-		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay",
+		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay", "ashes", "grapes",
+		"gold leaf", "limestone brick", "snakeskin", "silk", "leaping trout", "leaping salmon", "leaping sturgeon",
+		"sacred eel", "infernal eel", "kebbit claws", "granite (500g)", "granite (2kg)", "granite (5kg)",
 		// cut gems (wiki: Gems) plus the gem-adjacent crafting items
 		"opal", "jade", "red topaz", "sapphire", "emerald", "ruby", "diamond", "dragonstone", "onyx", "zenyte",
 		"crushed gem", "amethyst", "zenyte shard", "oyster pearl", "oyster pearls",
@@ -82,7 +85,7 @@ public class ItemCategorizer
 
 	// Adamant / mithril equipment is alch fodder rather than gear (bolts and arrows excepted)
 	private static final String[] HIGH_ALCH_PREFIXES = { "adamant ", "mithril " };
-	private static final String[] HIGH_ALCH_EXCLUDE = { "bolt", "arrow", " ore", " bar", " seed", "nail", " tip", "adamantite", "mithril grapple", "pickaxe", " axe", "felling axe" };
+	private static final String[] HIGH_ALCH_EXCLUDE = { "bolt", "arrow", " ore", " bar", " seed", "nail", " tip", "adamantite", "mithril grapple", "pickaxe", " axe", "felling axe", "gloves" };
 
 	// Small name rules that keyword matching gets wrong
 	// Barrows equipment (all pieces incl. degraded "0/25/50/75/100" variants that have no stats) is combat gear
@@ -91,10 +94,12 @@ public class ItemCategorizer
 		"ahrim's", "dharok's", "guthan's", "karil's", "torag's", "verac's", "amulet of the damned"
 	};
 	private static final String[] SKILLING_NAME_RULES = {
-		"gem sack", "gem tote", "gem bag", "bottomless compost bucket", "drift net", "diving apparatus", "fishbowl helmet"
+		"lobster pot", "karambwan vessel", "cake tin", "beekeeper's", " mould", "bird snare", "rabbit snare", "noose wand",
+		"medium pouch", "large pouch", "abyssal lantern", "gem sack", "gem tote", "gem bag", "bottomless compost bucket", "drift net", "diving apparatus", "fishbowl helmet"
 	};
-	private static final String[] FOOD_NAME_RULES = { "halibut" };
-	private static final String[] TELEPORT_NAME_RULES = { "achievement diary cape", "ring of wealth" };
+	private static final String[] FOOD_NAME_RULES = { "halibut", "sweets", "pizza", "rainbow fish", "cave eel", "lava eel", "kebab" };
+	private static final String[] TELEPORT_NAME_RULES = { "achievement diary cape", "ring of wealth", "ring of the elements", "construct. cape",
+		"eternal glory", "western banner", "rune pouch", "crafting cape", "farming cape", "dorgesh-kaan sphere", "plain of mud sphere" };
 	// Clues and their containers live in the main tab alongside currency
 	private static final String[] CURRENCY_NAME_RULES = {
 		"clue scroll", "scroll box", "reward casket", "clue bottle", "clue nest", "clue geode", "challenge scroll"
@@ -572,6 +577,7 @@ public class ItemCategorizer
 		for (String kw : GEAR_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.GEAR;
 		for (String kw : SKILLING_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.SKILLING;
 		for (String kw : FOOD_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.FOOD;
+		if (isPieOrCurry(lowerName)) return ItemCategory.FOOD;
 		if (!lowerName.contains("scroll"))
 		{
 			for (String kw : TELEPORT_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.TELEPORTS;
@@ -658,7 +664,21 @@ public class ItemCategorizer
 		for (String p : MATERIAL_RULE_PREFIXES) if (lowerName.startsWith(p)) return true;
 		for (String c : MATERIAL_RULE_CONTAINS) if (lowerName.contains(c)) return true;
 		for (String suf : MATERIAL_RULE_SUFFIXES) if (lowerName.endsWith(suf)) return true;
+		if (isUnstrungBow(lowerName) || lowerName.startsWith("ensouled ")) return true;
 		return false;
+	}
+
+	/** "Yew longbow (u)", "Magic shortbow (u)", "Rune crossbow (u)": fletching intermediates, never gear ("Craw's bow (u)" is uncharged gear). */
+	public static boolean isUnstrungBow(String lowerName)
+	{
+		return lowerName.endsWith("longbow (u)") || lowerName.endsWith("shortbow (u)") || lowerName.endsWith("crossbow (u)");
+	}
+
+	/** "Wild pie", "Half a redberry pie", "Curry" (not "Map piece", "Pie dish", "Scurry", "Curry leaf"); mud pie is a thrown weapon. */
+	private static boolean isPieOrCurry(String lowerName)
+	{
+		if (lowerName.contains("mud pie")) return false;
+		return lowerName.endsWith(" pie") || lowerName.equals("curry") || lowerName.endsWith(" curry");
 	}
 
 	/** "Sapphire amulet (u)", "Gold amulet (u)", "Unstrung symbol", "Unstrung emblem": crafting intermediates, never gear. */
@@ -1495,6 +1515,10 @@ public class ItemCategorizer
 		{
 			skillGroup = 12; typeOrder = 1;
 		}
+		else if (isUnstrungBow(lower))
+		{
+			skillGroup = 12; typeOrder = 2; tierOrder = getLogTier(lower);
+		}
 
 		// === CRAFTING (skill 9) ===
 		else if (lower.endsWith("hide") || lower.endsWith("leather"))
@@ -1554,6 +1578,10 @@ public class ItemCategorizer
 		else if (lower.contains("bone") || lower.contains("ashes"))
 		{
 			skillGroup = 5; typeOrder = 0; tierOrder = getBoneTier(lower);
+		}
+		else if (lower.startsWith("ensouled "))
+		{
+			skillGroup = 5; typeOrder = 1;
 		}
 
 		if (subOverride != null)
@@ -1899,7 +1927,7 @@ public class ItemCategorizer
 		{ skillOrder = 3; tierOrder = 10; }
 		else if (lower.contains("harpoon"))
 		{ skillOrder = 3; tierOrder = 20 + getToolTier(lower); }
-		else if (lower.contains("rod") || lower.contains("net"))
+		else if (lower.contains("rod") || lower.contains("net") || lower.contains("lobster pot"))
 		{ skillOrder = 3; tierOrder = 30; }
 
 		// === MINING (skill 4) ===

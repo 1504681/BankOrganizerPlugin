@@ -123,7 +123,7 @@ public class ItemCategorizerTest
 
 		// "bolt" / "ring" keywords are false positives for these — they are not equipable
 		assertEquals(ItemCategory.QUEST_MISC, categorizer.categorize("Bolt of linen", 1002));
-		assertEquals(ItemCategory.QUEST_MISC, categorizer.categorize("Ring mould", 1003));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Ring mould", 1003)); // crafting tool, never gear
 		// real gear with a keyword AND stats still works
 		stats.put(1004, ItemEquipmentStats.builder().slot(3).aslash(50).build());
 		assertEquals(ItemCategory.GEAR, categorizer.categorize("Rune scimitar", 1004));
@@ -678,5 +678,68 @@ public class ItemCategorizerTest
 		// strung jewellery is untouched
 		assertEquals(ItemCategory.GEAR, categorizer.categorize("Sapphire amulet", 1694));
 		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Amulet of glory", 1704));
+	}
+
+	/** Common-item audit, 1.2.2: rules that used to send these to the wrong tab. */
+	@Test
+	public void testCommonItemAuditRules()
+	{
+		Object[][] items = {
+			{"Mithril gloves", 7458, ItemCategory.GEAR}, {"Adamant gloves", 7459, ItemCategory.GEAR},
+			{"Adamant platebody", 1123, ItemCategory.HIGH_ALCH},
+			{"Lobster pot", 301, ItemCategory.SKILLING}, {"Lobster", 379, ItemCategory.FOOD},
+			{"Sanfew serum(4)", 10925, ItemCategory.POTIONS},
+			{"Purple sweets", 10476, ItemCategory.FOOD}, {"Curry", 2011, ItemCategory.FOOD},
+			{"Wild pie", 7208, ItemCategory.FOOD}, {"Half a redberry pie", 2333, ItemCategory.FOOD},
+			{"Ring of the elements", 26815, ItemCategory.TELEPORTS}, {"Construct. cape", 9789, ItemCategory.TELEPORTS},
+			{"Ensouled dragon head", 13510, ItemCategory.RAW_MATERIALS},
+			{"Yew longbow (u)", 66, ItemCategory.RAW_MATERIALS}, {"Runite crossbow (u)", 9465, ItemCategory.RAW_MATERIALS},
+			// near misses the new rules must leave alone
+			{"Map piece", 22009, ItemCategory.QUEST_MISC}, {"Unfired pie dish", 1789, ItemCategory.QUEST_MISC},
+			{"Scurry", 28801, ItemCategory.QUEST_MISC}, {"Curry leaf", 5970, ItemCategory.RAW_MATERIALS},
+			{"Super attack(4)", 2436, ItemCategory.POTIONS}, {"Super strength(4)", 2440, ItemCategory.POTIONS},
+			{"Super defence(4)", 2442, ItemCategory.POTIONS}, {"Relicym's balm(4)", 4842, ItemCategory.POTIONS},
+			{"Rainbow fish", 10136, ItemCategory.FOOD}, {"Cave eel", 5003, ItemCategory.FOOD}, {"Ugthanki kebab", 1883, ItemCategory.FOOD},
+			{"Karambwan vessel", 3157, ItemCategory.SKILLING}, {"Ring mould", 1592, ItemCategory.SKILLING},
+			{"Bird snare", 10006, ItemCategory.SKILLING}, {"Medium pouch", 5510, ItemCategory.SKILLING},
+			{"Beekeeper's hat", 25129, ItemCategory.SKILLING}, {"Cake tin", 1887, ItemCategory.SKILLING},
+			{"Amulet of eternal glory", 19707, ItemCategory.TELEPORTS}, {"Divine rune pouch", 27281, ItemCategory.TELEPORTS},
+			{"Fiendish ashes", 25766, ItemCategory.RAW_MATERIALS}, {"Yew stock", 9452, ItemCategory.RAW_MATERIALS},
+			{"Runite limbs", 9431, ItemCategory.RAW_MATERIALS}, {"Leaping sturgeon", 11332, ItemCategory.RAW_MATERIALS},
+			{"Sacred eel", 13339, ItemCategory.RAW_MATERIALS}, {"Snakeskin", 6289, ItemCategory.RAW_MATERIALS},
+			{"Embalming manual", 4686, ItemCategory.QUEST_MISC},
+		};
+		for (Object[] it : items)
+		{
+			assertEquals((String) it[0], it[2], categorizer.categorize((String) it[0], (Integer) it[1]));
+		}
+		assertEquals(5, categorizer.getMaterialGroupIndex("Ensouled dragon head", 13510));
+		assertEquals(12, categorizer.getMaterialGroupIndex("Yew longbow (u)", 66));
+		assertTrue(mat("Oak longbow (u)") < mat("Magic longbow (u)"));
+		assertEquals(3, categorizer.getSkillGroupIndex("Lobster pot", 301));
+	}
+
+	/** Shipped defaults corrected in the 1.2.2 audit. */
+	@Test
+	public void testAuditedShippedDefaults() throws Exception
+	{
+		Map<Integer, ItemCategory> d = ItemCategorizer.parseCategoryOverrides(readResource("default_overrides.txt"));
+		assertEquals(ItemCategory.GEAR, d.get(4153));      // Granite maul
+		assertEquals(ItemCategory.GEAR, d.get(810));       // Adamant dart
+		assertEquals(ItemCategory.GEAR, d.get(6328));      // Snakeskin boots
+		assertEquals(ItemCategory.GEAR, d.get(892));       // Rune arrow
+		assertEquals(ItemCategory.FOOD, d.get(329));       // Salmon
+		assertEquals(ItemCategory.FOOD, d.get(333));       // Trout
+		assertEquals(ItemCategory.SKILLING, d.get(1275));  // Rune pickaxe
+		assertEquals(ItemCategory.SKILLING, d.get(1359));  // Rune axe
+		assertEquals(ItemCategory.CURRENCY, d.get(11849)); // Mark of grace
+		assertEquals(ItemCategory.HIGH_ALCH, d.get(1127)); // Rune platebody stays alch fodder
+		assertEquals(ItemCategory.GEAR, d.get(890));       // Adamant arrow
+		assertEquals(ItemCategory.GEAR, d.get(9245));      // Onyx bolts (e)
+		// real gear is never pinned to Misc by a shipped default
+		for (int id : new int[]{7158, 859, 12853, 2570, 22975, 4081, 9244, 1351})
+		{
+			assertNull("shipped default still pins " + id, d.get(id));
+		}
 	}
 }

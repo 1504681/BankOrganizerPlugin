@@ -30,7 +30,8 @@ public enum ItemCategory
 		"potion", "brew", "restore", "mix", "overload", "prayer renewal",
 		"antidote", "antifire", "antipoison", "antivenom", "battlemage",
 		"bastion", "saradomin brew", "super combat", "ranging potion",
-		"stamina", "energy"
+		"stamina", "energy", "sanfew serum", "super attack", "super strength", "super defence",
+		"super ranging", "super magic", "relicym's balm", "weapon poison", "remedy"
 	)),
 	FOOD("Food", new Color(255, 225, 0), Pattern.STRIPES, Arrays.asList(
 		"shark", "lobster", "swordfish", "tuna", "salmon", "trout",
