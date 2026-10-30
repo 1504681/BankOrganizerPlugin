@@ -753,4 +753,28 @@ public class ItemCategorizerTest
 			assertNull("shipped default still pins " + id, d.get(id));
 		}
 	}
+
+	@Test
+	public void testInventoryActionRules()
+	{
+		java.util.Map<Integer, String[]> acts = new java.util.HashMap<>();
+		acts.put(90001, new String[]{null, "Wear", "Teleport", null, "Drop"});
+		acts.put(90002, new String[]{"Drink", null, null, null, "Drop"});
+		acts.put(90003, new String[]{"Eat", null, null, null, "Drop"});
+		acts.put(90004, new String[]{"Break", null, null, null, "Drop"});
+		acts.put(90005, new String[]{null, "Wear", null, "Break", "Drop"});
+		acts.put(90006, new String[]{"Bury", null, null, null, "Drop"});
+		acts.put(90007, new String[]{null, "Wear", "Teleport", null, "Drop"});
+		categorizer.setActionsProvider(acts::get);
+
+		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Desert amulet 2", 90001));
+		assertEquals(ItemCategory.POTIONS, categorizer.categorize("Xeric's aid (+)(4)", 90002));
+		assertEquals(ItemCategory.FOOD, categorizer.categorize("Worm batta", 90003));
+		assertEquals(ItemCategory.TELEPORTS, categorizer.categorize("Goblin village sphere", 90004));
+		// worn items that "Break" aren't teleports
+		assertNotEquals(ItemCategory.TELEPORTS, categorizer.categorize("Bracelet of slaughter", 90005));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Zadimus corpse", 90006));
+		// max cape teleports but is worn gear
+		assertNotEquals(ItemCategory.TELEPORTS, categorizer.categorize("Max cape", 90007));
+	}
 }

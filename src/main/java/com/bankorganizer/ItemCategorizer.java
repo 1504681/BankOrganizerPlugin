@@ -33,6 +33,7 @@ public class ItemCategorizer
 	// Optional: true for items that look like quest items (untradeable and unstackable, per ItemComposition).
 	// Only consulted when nothing else matched, to split Quest from Misc.
 	private java.util.function.IntPredicate questHint;
+	private java.util.function.IntFunction<String[]> actionsProvider;
 
 	// Skilling outfit pieces — checked before the generic keyword loop so that
 	// "Rogue gloves" / "Angler boots" etc. don't get caught by GEAR keywords like "gloves".
@@ -597,6 +598,14 @@ public class ItemCategorizer
 		}
 		for (String kw : CURRENCY_NAME_RULES) if (lowerName.contains(kw)) return ItemCategory.CURRENCY;
 
+		// Priority 2e: anything with a "Teleport" inventory option (Desert amulet, Explorer's ring,
+		// Fremennik sea boots, skillcapes...). Max cape and ironman helms teleport too but are worn gear.
+		String[] actions = actionsProvider != null ? actionsProvider.apply(itemId) : null;
+		if (hasAction(actions, "teleport") && !lowerName.contains("max cape") && !lowerName.contains("ironman helm"))
+		{
+			return ItemCategory.TELEPORTS;
+		}
+
 		boolean statsKnown = statsProvider != null && statsReady.getAsBoolean();
 		net.runelite.client.game.ItemEquipmentStats stats = statsKnown ? statsProvider.apply(itemId) : null;
 
@@ -636,6 +645,13 @@ public class ItemCategorizer
 		if (stats != null && hasCombatStats(stats))
 		{
 			return ItemCategory.GEAR;
+		}
+
+		// Priority 5b: what the item does when clicked in the inventory
+		ItemCategory byAction = categorizeByActions(actions);
+		if (byAction != null)
+		{
+			return byAction;
 		}
 
 		// Priority 6: nothing matched. Untradeable, unstackable leftovers are almost always quest items
@@ -741,6 +757,37 @@ public class ItemCategorizer
 	{
 		this.statsProvider = provider;
 		this.statsReady = ready != null ? ready : () -> true;
+	}
+
+	/** Eat → Food, Drink → Potions, Break (not worn) → Teleports, Bury/Scatter/Clean → Materials; null if none apply. */
+	static ItemCategory categorizeByActions(String[] actions)
+	{
+		if (actions == null) return null;
+		if (hasAction(actions, "eat")) return ItemCategory.FOOD;
+		if (hasAction(actions, "drink")) return ItemCategory.POTIONS;
+		// Ring of recoil / bracelets "Break" too, but they're worn
+		if (hasAction(actions, "break") && !hasAction(actions, "wear") && !hasAction(actions, "wield") && !hasAction(actions, "equip"))
+		{
+			return ItemCategory.TELEPORTS;
+		}
+		if (hasAction(actions, "bury") || hasAction(actions, "scatter") || hasAction(actions, "clean")) return ItemCategory.RAW_MATERIALS;
+		return null;
+	}
+
+	private static boolean hasAction(String[] actions, String action)
+	{
+		if (actions == null) return false;
+		for (String a : actions)
+		{
+			if (a != null && a.equalsIgnoreCase(action)) return true;
+		}
+		return false;
+	}
+
+	/** @param provider inventory right-click options by item ID ("Eat", "Teleport", "Wear"...); null disables action rules */
+	public void setActionsProvider(java.util.function.IntFunction<String[]> provider)
+	{
+		this.actionsProvider = provider;
 	}
 
 	/** @param hint true for item IDs that are untradeable and unstackable (quest-item shaped); null disables the Quest split */

@@ -327,6 +327,13 @@ public class BankOrganizerOverlay extends Overlay
 		Rectangle containerBounds = bankItemContainer.getBounds();
 		Stroke oldStroke = graphics.getStroke();
 
+		// The steps are Insert moves; in Swap mode following them scrambles the tab, so show a warning instead
+		if (!plugin.isInsertMode())
+		{
+			drawSwapModeWarning(graphics, containerBounds);
+			return;
+		}
+
 		for (Widget child : children)
 		{
 			if (child == null || child.isHidden()) continue;
@@ -399,6 +406,28 @@ public class BankOrganizerOverlay extends Overlay
 		}
 
 		graphics.setStroke(oldStroke);
+	}
+
+	private void drawSwapModeWarning(Graphics2D graphics, Rectangle area)
+	{
+		if (area == null) return;
+		String line1 = "Bank is in Swap mode";
+		String line2 = "Click Insert at the bottom of the bank";
+		Font oldFont = graphics.getFont();
+		graphics.setFont(oldFont.deriveFont(Font.BOLD, 14f));
+		java.awt.FontMetrics fm = graphics.getFontMetrics();
+		int w = Math.max(fm.stringWidth(line1), fm.stringWidth(line2)) + 20;
+		int h = fm.getHeight() * 2 + 12;
+		int x = area.x + (area.width - w) / 2;
+		int y = area.y + 20;
+		graphics.setColor(new Color(0, 0, 0, 200));
+		graphics.fillRect(x, y, w, h);
+		graphics.setColor(new Color(255, 120, 60));
+		graphics.drawRect(x, y, w, h);
+		graphics.drawString(line1, x + (w - fm.stringWidth(line1)) / 2, y + 6 + fm.getAscent());
+		graphics.setColor(Color.WHITE);
+		graphics.drawString(line2, x + (w - fm.stringWidth(line2)) / 2, y + 6 + fm.getHeight() + fm.getAscent());
+		graphics.setFont(oldFont);
 	}
 
 	private void drawPreview(Graphics2D graphics)

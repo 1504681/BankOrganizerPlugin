@@ -7,3 +7,5 @@
 - 1.2.3 existing install: colours unchanged after update, "New colour scheme" box at the top of the panel; "Use new colours" switches overlay, tab bars and filter buttons, box disappears and stays gone after restart.
 - 1.2.3 fresh install (new RuneLite profile): new colours straight away, no box.
 - 1.2.3 patterns: item in the middle of a striped/crosshatched/dotted box is fully readable; tab bars striped/dotted; Category Patterns off makes both solid.
+- 1.2.3 actions: Desert amulet 2, Hunter cape and Fremennik sea boots 1 are Teleports; Xeric's aid (+)(4) and Asgarnian ale are Potions; Worm batta is Food; Max cape stays Gear.
+- 1.2.3 Insert/Swap: start ordering in Swap mode → panel shows the orange Swap warning and the bank shows "Bank is in Swap mode" instead of highlights; click Insert → green "Insert mode on" and highlights return without restarting.

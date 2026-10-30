@@ -110,6 +110,7 @@ public class BankOrganizerPlugin extends Plugin
 
 	// Ordering state
 	private boolean orderingActive = false;
+	private volatile boolean insertMode = true;
 	private List<OrderStep> orderSteps = new ArrayList<>();
 	private int currentOrderStep = 0;
 	private int lastStepItemId = -1;
@@ -133,6 +134,8 @@ public class BankOrganizerPlugin extends Plugin
 	public boolean isHighlightUntagged() { return highlightUntagged; }
 	public void setHighlightUntagged(boolean highlight) { this.highlightUntagged = highlight; }
 	public boolean isOrderingActive() { return orderingActive; }
+	/** Bank rearrange mode is Insert (varbit 3959 = 1). The ordering guide's steps assume Insert. */
+	public boolean isInsertMode() { return insertMode; }
 	public List<OrderStep> getOrderSteps() { return orderSteps; }
 	public int getCurrentOrderStep() { return currentOrderStep; }
 	public ItemCategorizer getCategorizer() { return categorizer; }
@@ -190,6 +193,11 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(id);
 			return comp != null && !comp.isTradeable() && !comp.isStackable();
+		});
+		categorizer.setActionsProvider(id ->
+		{
+			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(id);
+			return comp != null ? comp.getInventoryActions() : null;
 		});
 		migratePalette();
 		profileManager = new ProfileManager(config);
@@ -284,6 +292,19 @@ public class BankOrganizerPlugin extends Plugin
 		}
 
 		recomputeOrderSteps();
+	}
+
+	@Subscribe
+	public void onVarbitChanged(net.runelite.api.events.VarbitChanged event)
+	{
+		if (event.getVarbitId() != net.runelite.api.gameval.VarbitID.BANK_INSERTMODE) return;
+		boolean insert = event.getValue() == 1;
+		if (insert == insertMode) return;
+		insertMode = insert;
+		if (orderingActive)
+		{
+			SwingUtilities.invokeLater(() -> panel.updateOrderingState());
+		}
 	}
 
 	@Subscribe
@@ -1346,6 +1367,7 @@ public class BankOrganizerPlugin extends Plugin
 		clientThread.invokeLater(() ->
 		{
 			orderingActive = true;
+			insertMode = client.getVarbitValue(net.runelite.api.gameval.VarbitID.BANK_INSERTMODE) == 1;
 			lastStepItemId = -1;
 			stuckCounter = 0;
 			computeNextOrderStep();

@@ -32,6 +32,7 @@ public class BankOrganizerPanel extends PluginPanel
 	private final JPanel orderingPanel;
 	private final JLabel orderingStepLabel;
 	private final JLabel orderingSubCatLabel;
+	private final JLabel orderingModeLabel;
 	private final JLabel orderingProgressLabel;
 	private final JButton categorizeButton;
 	private final JButton subCatToggle;
@@ -353,10 +354,10 @@ public class BankOrganizerPanel extends PluginPanel
 		orderingPanel.setAlignmentX(Component.LEFT_ALIGNMENT);
 		orderingPanel.setVisible(false);
 
-		JLabel insertNote = new JLabel("Use Insert mode!");
-		insertNote.setForeground(new Color(255, 200, 100));
-		insertNote.setFont(FontManager.getRunescapeSmallFont());
-		orderingPanel.add(insertNote);
+		orderingModeLabel = new JLabel("");
+		orderingModeLabel.setFont(FontManager.getRunescapeSmallFont());
+		orderingModeLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+		orderingPanel.add(orderingModeLabel);
 		orderingPanel.add(Box.createVerticalStrut(4));
 
 		orderingSubCatLabel = new JLabel("");
@@ -681,6 +682,16 @@ public class BankOrganizerPanel extends PluginPanel
 		if (plugin.isOrderingActive())
 		{
 			orderingPanel.setVisible(true);
+			if (plugin.isInsertMode())
+			{
+				orderingModeLabel.setText("Insert mode on");
+				orderingModeLabel.setForeground(new Color(80, 220, 80));
+			}
+			else
+			{
+				orderingModeLabel.setText("<html>Swap mode: switch the bank to <b>Insert</b> (bottom of the bank)</html>");
+				orderingModeLabel.setForeground(new Color(255, 120, 60));
+			}
 			List<BankOrganizerPlugin.OrderStep> steps = plugin.getOrderSteps();
 			int current = plugin.getCurrentOrderStep();
 
