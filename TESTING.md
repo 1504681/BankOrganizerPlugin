@@ -19,3 +19,4 @@
 - 1.2.3 Materials: seeds at the very bottom of the tab. Seed vault reminder on: seeds green, a seed placeholder red; off: nothing.
 - 1.2.3 Tools: Bronze/Steel/Adamant pickaxe show Misc, Rune pickaxe Skilling; Low-tier tools in Skilling on → all Skilling.
 - 1.2.3 Keep armour sets together on: Combat tab orders Torva helm/body/legs together before loose gear.
+- 1.2.3 Highest tier first (default on): Materials Mining starts Runite ore … Copper ore, then Clay/Soft clay/Dynamite, then Runite bar … Bronze bar; Magic logs before Logs; Dragon pickaxe before Rune. Off: reversed, clay still after the ores.

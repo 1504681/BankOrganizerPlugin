@@ -38,6 +38,7 @@ public class ItemCategorizer
 	private boolean runePouchFirst;
 	private boolean keepLowTierTools;
 	private boolean groupGearSets;
+	private boolean highestTierFirst = true;
 
 	// Skilling outfit pieces — checked before the generic keyword loop so that
 	// "Rogue gloves" / "Angler boots" etc. don't get caught by GEAR keywords like "gloves".
@@ -1252,6 +1253,11 @@ public class ItemCategorizer
 		this.groupGearSets = group;
 	}
 
+	public void setHighestTierFirst(boolean highestTierFirst)
+	{
+		this.highestTierFirst = highestTierFirst;
+	}
+
 	/** Rune pouches go to the very top of the Teleports tab instead of leading the runes group. */
 	public void setRunePouchFirst(boolean first)
 	{
@@ -1881,22 +1887,27 @@ public class ItemCategorizer
 			skillGroup = 9; typeOrder = 3; tierOrder = lower.startsWith("gold ") ? 0 : lower.startsWith("unstrung ") ? 40 : getGemTier(lower) + 1;
 		}
 		// === MINING + SMITHING (skill 4 = Mining) ===
-		else if (lower.endsWith(" ore") || lower.equals("clay") || lower.equals("soft clay") || lower.equals("coal"))
+		else if (lower.endsWith(" ore") || lower.equals("coal"))
 		{
 			skillGroup = 4; typeOrder = 0; tierOrder = getOreTier(lower);
 		}
+		// Clay and dynamite after all the ores, not between tin and iron
+		else if (lower.equals("clay") || lower.equals("soft clay") || lower.equals("dynamite"))
+		{
+			skillGroup = 4; typeOrder = 1; tierOrder = lower.equals("dynamite") ? 2 : lower.startsWith("soft") ? 1 : 0;
+		}
 		else if (lower.endsWith(" bar") && !lower.contains("chocolate"))
 		{
-			skillGroup = 4; typeOrder = 1; tierOrder = getBarTier(lower);
+			skillGroup = 4; typeOrder = 2; tierOrder = getBarTier(lower);
 		}
 		else if (lower.startsWith("uncut ") || lower.equals("zenyte shard"))
 		{
-			skillGroup = 4; typeOrder = 2; tierOrder = getGemTier(lower);
+			skillGroup = 4; typeOrder = 3; tierOrder = getGemTier(lower);
 		}
 		else if ((isGem(lower) && !lower.contains("bolt") && !lower.contains("tip"))
 			|| lower.equals("amethyst") || lower.equals("crushed gem") || lower.startsWith("oyster pearl"))
 		{
-			skillGroup = 4; typeOrder = 3; tierOrder = getGemTier(lower);
+			skillGroup = 4; typeOrder = 4; tierOrder = getGemTier(lower);
 		}
 		else if (lower.endsWith(" orb"))
 		{
@@ -1908,7 +1919,7 @@ public class ItemCategorizer
 		}
 		else if (lower.endsWith(" nails") || lower.endsWith("bolts (unf)") || lower.contains("cannonball"))
 		{
-			skillGroup = 4; typeOrder = 4; tierOrder = getMetalTier(lower);
+			skillGroup = 4; typeOrder = 5; tierOrder = getMetalTier(lower);
 		}
 
 		// === WOODCUTTING + CONSTRUCTION (skill 2 = WC) ===
@@ -2002,6 +2013,14 @@ public class ItemCategorizer
 		else if (lower.startsWith("ensouled "))
 		{
 			skillGroup = 5; typeOrder = 1;
+		}
+
+		// Highest tier first: flip the known tiers (< 50) inside each hundred, so herbs keep grimy before clean
+		// and unknown tiers (50) stay last. Jewellery (gold first), orbs (unpowered first) and clay/dynamite aren't tiers.
+		boolean notTiered = skillGroup == 9 && (typeOrder == 2 || typeOrder == 3) || skillGroup == 4 && typeOrder == 1;
+		if (highestTierFirst && !notTiered)
+		{
+			tierOrder = tierOrder / 100 * 100 + flipTier(tierOrder % 100);
 		}
 
 		if (subOverride != null)
@@ -2365,7 +2384,7 @@ public class ItemCategorizer
 		else if (lower.contains("log basket") || lower.contains("forestry kit"))
 		{ skillOrder = 2; tierOrder = 10; }
 		else if (lower.contains("axe") && !lower.contains("pickaxe") && !lower.contains("battleaxe"))
-		{ skillOrder = 2; tierOrder = 20 + getToolTier(lower); }
+		{ skillOrder = 2; tierOrder = 20 + flipTier(getToolTier(lower)); }
 
 		// === FISHING (skill 3) ===
 		else if (lower.contains("angler"))
@@ -2373,7 +2392,7 @@ public class ItemCategorizer
 		else if (lower.contains("fish barrel") || lower.contains("tackle box"))
 		{ skillOrder = 3; tierOrder = 10; }
 		else if (lower.contains("harpoon"))
-		{ skillOrder = 3; tierOrder = 20 + getToolTier(lower); }
+		{ skillOrder = 3; tierOrder = 20 + flipTier(getToolTier(lower)); }
 		else if (lower.contains("rod") || lower.contains("net") || lower.contains("lobster pot"))
 		{ skillOrder = 3; tierOrder = 30; }
 
@@ -2383,7 +2402,7 @@ public class ItemCategorizer
 		else if (lower.contains("gem bag") || lower.contains("coal bag"))
 		{ skillOrder = 4; tierOrder = 10; }
 		else if (lower.contains("pickaxe"))
-		{ skillOrder = 4; tierOrder = 20 + getToolTier(lower); }
+		{ skillOrder = 4; tierOrder = 20 + flipTier(getToolTier(lower)); }
 
 		// === PRAYER (skill 5) ===
 		else if (lower.contains("bone") || lower.contains("skull"))
@@ -2537,6 +2556,11 @@ public class ItemCategorizer
 		if (lower.contains("boots")) return 4;
 		if (lower.contains("cape") || lower.contains("cloak")) return 5;
 		return 10;
+	}
+
+	private int flipTier(int tier)
+	{
+		return highestTierFirst && tier < 50 ? 49 - tier : tier;
 	}
 
 	private int getToolTier(String lower)

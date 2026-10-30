@@ -329,6 +329,7 @@ public class ItemCategorizerTest
 	@Test
 	public void testMaterialsSortByTierWithinGroups()
 	{
+		categorizer.setHighestTierFirst(false);
 		// ores
 		assertTrue(mat("Copper ore") < mat("Iron ore")); assertTrue(mat("Iron ore") < mat("Runite ore"));
 		// gems: every uncut gem before every cut gem, each block by tier, amethyst and crushed gem last
@@ -629,6 +630,7 @@ public class ItemCategorizerTest
 	@Test
 	public void testSubCategoryOverrideKeepsMaterialTierOrder()
 	{
+		categorizer.setHighestTierFirst(false);
 		categorizer.setSubCategoryOverride(1623, 4); // Uncut sapphire -> Mining (already Mining by rule)
 		categorizer.setSubCategoryOverride(19496, 4); // Uncut zenyte -> Mining
 		categorizer.setSubCategoryOverride(440, 4); // Iron ore -> Mining
@@ -688,6 +690,7 @@ public class ItemCategorizerTest
 	@Test
 	public void testCommonItemAuditRules()
 	{
+		categorizer.setHighestTierFirst(false);
 		Object[][] items = {
 			{"Mithril gloves", 7458, ItemCategory.GEAR}, {"Adamant gloves", 7459, ItemCategory.GEAR},
 			{"Adamant platebody", 1123, ItemCategory.HIGH_ALCH},
@@ -991,6 +994,7 @@ public class ItemCategorizerTest
 	@Test
 	public void testSeedsLastInMaterials()
 	{
+		categorizer.setHighestTierFirst(false);
 		assertTrue(mat("Ranarr seed") > mat("Grimy ranarr weed"));
 		assertTrue(mat("Ranarr seed") > mat("Supercompost"));
 		assertTrue(mat("Mushroom spore") > mat("Big bones"));
@@ -1000,5 +1004,25 @@ public class ItemCategorizerTest
 		assertFalse(ItemCategorizer.isFarmingSeed("crystal armour seed"));
 		assertFalse(ItemCategorizer.isFarmingSeed("mithril seeds"));
 		assertFalse(ItemCategorizer.isFarmingSeed("golovanova seed"));
+	}
+
+	@Test
+	public void testHighestTierFirstAndClayAfterOres()
+	{
+		// default: highest tier first
+		assertTrue(mat("Runite ore") < mat("Copper ore"));
+		assertTrue(mat("Magic logs") < mat("Logs"));
+		assertTrue(mat("Grimy torstol") < mat("Grimy guam leaf"));
+		assertTrue(mat("Grimy guam leaf") < mat("Torstol"));
+		assertTrue(mat("Copper ore") < mat("Clay"));
+		assertTrue(mat("Clay") < mat("Soft clay"));
+		assertTrue(mat("Soft clay") < mat("Dynamite"));
+		assertTrue(mat("Dynamite") < mat("Runite bar"));
+		assertEquals(4, categorizer.getMaterialGroupIndex("Dynamite", 13573));
+		assertTrue(categorizer.getSkillingFullSortKey("Dragon pickaxe", 11920) < categorizer.getSkillingFullSortKey("Rune pickaxe", 1275));
+		categorizer.setHighestTierFirst(false);
+		assertTrue(mat("Copper ore") < mat("Runite ore"));
+		assertTrue(mat("Runite ore") < mat("Clay"));
+		assertTrue(categorizer.getSkillingFullSortKey("Rune pickaxe", 1275) < categorizer.getSkillingFullSortKey("Dragon pickaxe", 11920));
 	}
 }

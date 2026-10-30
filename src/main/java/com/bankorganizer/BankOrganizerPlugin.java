@@ -1188,6 +1188,7 @@ public class BankOrganizerPlugin extends Plugin
 		categorizer.setRunePouchFirst(config.runePouchFirst());
 		categorizer.setKeepLowTierTools(config.keepLowTierTools());
 		categorizer.setGroupGearSets(config.groupGearSets());
+		categorizer.setHighestTierFirst(config.highestTierFirst());
 	}
 
 	private void updateRegexFromConfig()
