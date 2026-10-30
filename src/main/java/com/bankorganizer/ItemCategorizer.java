@@ -34,6 +34,7 @@ public class ItemCategorizer
 	// Only consulted when nothing else matched, to split Quest from Misc.
 	private java.util.function.IntPredicate questHint;
 	private java.util.function.IntFunction<String[]> actionsProvider;
+	private java.util.function.IntUnaryOperator canonicalizer;
 
 	// Skilling outfit pieces — checked before the generic keyword loop so that
 	// "Rogue gloves" / "Angler boots" etc. don't get caught by GEAR keywords like "gloves".
@@ -63,13 +64,15 @@ public class ItemCategorizer
 	private static final String[] MATERIAL_RULE_SUFFIXES = {
 		" tips", " tip", "arrowtips", "bolttips", " ore", " paste", " logs", " string", "string", " hide", "hide", " leather", "leather",
 		" root", " roots", " plank", " planks", " nails", "bolts (unf)", " bar", " bones", "bones", " bone", "bonemeal",
-		" ashes", " limbs", " stock", "seaweed"
+		" ashes", " limbs", " stock", "seaweed", " coral"
 	};
 	private static final String[] MATERIAL_RULE_CONTAINS = {
-		"bird house", "birdhouse", "flax", " logs", "bow string", "bowstring", "crossbow string"
+		"bird house", "birdhouse", "flax", " logs", "bow string", "bowstring", "crossbow string",
+		// boss/upgrade components and Sailing materials
+		"hull parts", "godsword shard", "sacred oil(", "noxious point", "noxious blade", "noxious pommel"
 	};
 	private static final String[] MATERIAL_RULE_EXACT = {
-		"logs", "plank", "leather", "flax", "coal", "clay", "soft clay", "ashes", "zamorak's grapes",
+		"logs", "plank", "leather", "bucket of water", "mixed hide base", "cache of runes", "flax", "coal", "clay", "soft clay", "ashes", "zamorak's grapes",
 		"gold leaf", "limestone brick", "snakeskin", "silk", "leaping trout", "leaping salmon", "leaping sturgeon",
 		"sacred eel", "infernal eel", "kebbit claws", "granite (500g)", "granite (2kg)", "granite (5kg)",
 		"moonlight moth", "sunlight moth", "moonlight antelope fur", "sunlight antelope fur",
@@ -87,13 +90,13 @@ public class ItemCategorizer
 
 	// Adamant / mithril equipment is alch fodder rather than gear (bolts and arrows excepted)
 	private static final String[] HIGH_ALCH_PREFIXES = { "adamant ", "mithril " };
-	private static final String[] HIGH_ALCH_EXCLUDE = { "bolt", "arrow", " ore", " bar", " seed", "nail", " tip", "adamantite", "mithril grapple", "pickaxe", " axe", "felling axe", "gloves" };
+	private static final String[] HIGH_ALCH_EXCLUDE = { "bolt", "arrow", " ore", " bar", " seed", "nail", " tip", "adamantite", "mithril grapple", "pickaxe", " axe", "felling axe", "gloves", "brutal" };
 
 	// Small name rules that keyword matching gets wrong
 	// Barrows equipment (all pieces incl. degraded "0/25/50/75/100" variants that have no stats) is combat gear
 	private static final String[] GEAR_NAME_RULES = {
 		"lightbearer", "soulreaper axe", "zombie axe", "confliction gauntlets", "avernic treads",
-		"ahrim's", "dharok's", "guthan's", "karil's", "torag's", "verac's", "amulet of the damned"
+		"ahrim's", "dharok's", "guthan's", "karil's", "torag's", "verac's", "amulet of the damned", "mixed hide"
 	};
 	private static final String[] SKILLING_NAME_RULES = {
 		"lobster pot", "karambwan vessel", "cake tin", "beekeeper's", " mould", "bird snare", "rabbit snare", "noose wand",
@@ -549,8 +552,14 @@ public class ItemCategorizer
 	 */
 	public ItemCategory categorize(String itemName, int itemId)
 	{
-		// Priority 0: Manual override
+		int rawId = itemId;
+		itemId = canon(itemId);
+		// Priority 0: Manual override (older versions stored placeholder ids as-is)
 		ItemCategory override = manualOverrides.get(itemId);
+		if (override == null && rawId != itemId)
+		{
+			override = manualOverrides.get(rawId);
+		}
 		if (override != null)
 		{
 			return override;
@@ -648,7 +657,7 @@ public class ItemCategorizer
 		}
 
 		// Priority 5b: what the item does when clicked in the inventory
-		ItemCategory byAction = categorizeByActions(actions);
+		ItemCategory byAction = categorizeByActions(actions, lowerName);
 		if (byAction != null)
 		{
 			return byAction;
@@ -759,12 +768,12 @@ public class ItemCategorizer
 		this.statsReady = ready != null ? ready : () -> true;
 	}
 
-	/** Eat → Food, Drink → Potions, Break (not worn) → Teleports, Bury/Scatter/Clean → Materials; null if none apply. */
-	static ItemCategory categorizeByActions(String[] actions)
+	/** Eat → Food, Drink → Potions (ales, cocktails and tea → Food), Break (not worn) → Teleports, Bury/Scatter/Clean → Materials; null if none apply. */
+	static ItemCategory categorizeByActions(String[] actions, String lowerName)
 	{
 		if (actions == null) return null;
 		if (hasAction(actions, "eat")) return ItemCategory.FOOD;
-		if (hasAction(actions, "drink")) return ItemCategory.POTIONS;
+		if (hasAction(actions, "drink")) return isPotionName(lowerName) ? ItemCategory.POTIONS : ItemCategory.FOOD;
 		// Ring of recoil / bracelets "Break" too, but they're worn
 		if (hasAction(actions, "break") && !hasAction(actions, "wear") && !hasAction(actions, "wield") && !hasAction(actions, "equip"))
 		{
@@ -772,6 +781,15 @@ public class ItemCategorizer
 		}
 		if (hasAction(actions, "bury") || hasAction(actions, "scatter") || hasAction(actions, "clean")) return ItemCategory.RAW_MATERIALS;
 		return null;
+	}
+
+	// Potion doses are "Nectar (4)", "Xeric's aid (+)(4)", "Anti-venom+(2)", "Guthix rest(1)";
+	// ales and cocktails are "Asgarnian ale(1)", "Cider(m2)"
+	private static final Pattern POTION_DOSE = Pattern.compile("( \\(\\d\\)|\\)\\(\\d\\)|\\+\\(\\d\\))$");
+
+	private static boolean isPotionName(String lowerName)
+	{
+		return POTION_DOSE.matcher(lowerName).find() || lowerName.startsWith("guthix rest");
 	}
 
 	private static boolean hasAction(String[] actions, String action)
@@ -782,6 +800,22 @@ public class ItemCategorizer
 			if (a != null && a.equalsIgnoreCase(action)) return true;
 		}
 		return false;
+	}
+
+	/** @param canonicalizer maps placeholder and noted ids to the real item's id; null leaves ids as-is */
+	public void setCanonicalizer(java.util.function.IntUnaryOperator canonicalizer)
+	{
+		this.canonicalizer = canonicalizer;
+	}
+
+	public int canonicalId(int itemId)
+	{
+		return canon(itemId);
+	}
+
+	private int canon(int itemId)
+	{
+		return canonicalizer != null ? canonicalizer.applyAsInt(itemId) : itemId;
 	}
 
 	/** @param provider inventory right-click options by item ID ("Eat", "Teleport", "Wear"...); null disables action rules */
@@ -819,6 +853,7 @@ public class ItemCategorizer
 	public GearSubCategory getGearSubCategory(String itemName, int itemId,
 		net.runelite.client.game.ItemEquipmentStats stats)
 	{
+		itemId = canon(itemId);
 		// Check ID map first
 		GearSubCategory idSub = gearSubIdMap.get(itemId);
 		if (idSub != null)
@@ -859,6 +894,7 @@ public class ItemCategorizer
 	 */
 	public GearSubCategory getGearSubCategory(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		return getGearSubCategory(itemName, itemId, null);
 	}
 
@@ -982,6 +1018,7 @@ public class ItemCategorizer
 	 */
 	public TeleportSubCategory getTeleportSubCategory(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		if (RUNE_IDS.contains(itemId))
 		{
 			return TeleportSubCategory.RUNES;
@@ -1050,6 +1087,7 @@ public class ItemCategorizer
 	public long getGearFullSortKey(String itemName, int itemId,
 		net.runelite.client.game.ItemEquipmentStats stats, GearSortMode mode)
 	{
+		itemId = canon(itemId);
 		GearSubCategory sub = getGearSubCategory(itemName, itemId, stats);
 		int subOrder = getGearSortOrder(sub, mode);
 
@@ -1192,6 +1230,7 @@ public class ItemCategorizer
 	 */
 	public long getTeleportFullSortKey(String itemName, int itemId, TeleportSortMode mode)
 	{
+		itemId = canon(itemId);
 		String lower = itemName.toLowerCase();
 		boolean runePouch = (RUNE_POUCH_IDS.contains(itemId) || lower.contains("rune pouch")) && !lower.contains("note");
 
@@ -1395,6 +1434,7 @@ public class ItemCategorizer
 	 */
 	public long getFoodFullSortKey(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		int healAmount = getFoodHealAmount(itemName.toLowerCase());
 		// Invert so highest healing sorts first
 		// Pack with item ID for uniqueness
@@ -1442,6 +1482,7 @@ public class ItemCategorizer
 
 	public long getPotionFullSortKey(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		String lower = itemName.toLowerCase();
 		int isDivine = lower.contains("divine") ? 0 : 1; // Divine potions first
 		int potionPriority = getPotionPriority(lower);
@@ -1505,6 +1546,7 @@ public class ItemCategorizer
 
 	public long getMaterialFullSortKey(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		// A subcategory override only moves the item to another skill group; the
 		// type/tier order below still applies so pinned gems keep ore -> bar -> gem -> tier.
 		Integer subOverride = subCategoryOverrides.get(itemId);
@@ -1901,6 +1943,7 @@ public class ItemCategorizer
 
 	public long getSkillingFullSortKey(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		// If this item is categorized as something other than Skilling, push to end
 		ItemCategory cat = categorize(itemName, itemId);
 		if (cat != ItemCategory.SKILLING)
@@ -2069,12 +2112,14 @@ public class ItemCategorizer
 	// a non-Skilling item with an override looks sortable while the key still sends it to group 99 (issue #5).
 	public int getSkillGroupIndex(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		long key = getSkillingFullSortKey(itemName, itemId);
 		return (int)(key >> 28);
 	}
 
 	public int getMaterialGroupIndex(String itemName, int itemId)
 	{
+		itemId = canon(itemId);
 		long key = getMaterialFullSortKey(itemName, itemId);
 		return (int)(key >> 28);
 	}
@@ -2225,17 +2270,20 @@ public class ItemCategorizer
 
 	public void setManualOverride(int itemId, ItemCategory category)
 	{
+		manualOverrides.remove(itemId);
+		itemId = canon(itemId);
 		manualOverrides.put(itemId, category);
 	}
 
 	public void removeManualOverride(int itemId)
 	{
 		manualOverrides.remove(itemId);
+		manualOverrides.remove(canon(itemId));
 	}
 
 	public boolean hasManualOverride(int itemId)
 	{
-		return manualOverrides.containsKey(itemId);
+		return manualOverrides.containsKey(itemId) || manualOverrides.containsKey(canon(itemId));
 	}
 
 	public Map<Integer, ItemCategory> getManualOverrides()
@@ -2256,16 +2304,19 @@ public class ItemCategorizer
 
 	public void setSubCategoryOverride(int itemId, int skillOrder)
 	{
+		itemId = canon(itemId);
 		subCategoryOverrides.put(itemId, skillOrder);
 	}
 
 	public void removeSubCategoryOverride(int itemId)
 	{
+		itemId = canon(itemId);
 		subCategoryOverrides.remove(itemId);
 	}
 
 	public boolean hasSubCategoryOverride(int itemId)
 	{
+		itemId = canon(itemId);
 		return subCategoryOverrides.containsKey(itemId);
 	}
 

@@ -17,6 +17,8 @@ public class BankOrganizerProfile
 	private Map<String, String> regexPatterns = new HashMap<>(); // GEAR->pattern, etc.
 	// Plugin version whose shipped defaults this profile was created from ("" = blank profile or predates tracking)
 	private String defaultsVersion = "";
+	// Plugin version whose retired_overrides.txt was last applied ("" = never: every retired default is cleaned up once)
+	private String retiredVersion = "";
 	// Item ids whose category/subgroup the user set (or cleared) by hand — preserved when defaults are re-applied
 	private java.util.Set<Integer> userItems = new java.util.LinkedHashSet<>();
 
@@ -40,6 +42,9 @@ public class BankOrganizerProfile
 	public String getDefaultsVersion() { return defaultsVersion; }
 	public void setDefaultsVersion(String v) { this.defaultsVersion = v == null ? "" : v; }
 
+	public String getRetiredVersion() { return retiredVersion; }
+	public void setRetiredVersion(String v) { this.retiredVersion = v == null ? "" : v; }
+
 	public java.util.Set<Integer> getUserItems() { return userItems; }
 	public void setUserItems(java.util.Collection<Integer> ids) { userItems = new java.util.LinkedHashSet<>(ids); }
 
@@ -56,6 +61,7 @@ public class BankOrganizerProfile
 		StringBuilder sb = new StringBuilder();
 		sb.append(name).append("\n");
 		sb.append("VER:").append(defaultsVersion).append("\n");
+		sb.append("RET:").append(retiredVersion).append("\n");
 		sb.append("USER:");
 		boolean firstUser = true;
 		for (Integer id : userItems)
@@ -119,6 +125,10 @@ public class BankOrganizerProfile
 			{
 				profile.defaultsVersion = line.substring(4).trim();
 			}
+			else if (line.startsWith("RET:"))
+			{
+				profile.retiredVersion = line.substring(4).trim();
+			}
 			else if (line.startsWith("USER:"))
 			{
 				for (String id : line.substring(5).split(","))
@@ -171,6 +181,7 @@ public class BankOrganizerProfile
 	{
 		BankOrganizerProfile p = new BankOrganizerProfile("Default Layout");
 		p.defaultsVersion = BankOrganizerPlugin.VERSION;
+		p.retiredVersion = BankOrganizerPlugin.VERSION;
 		// Tab mappings match BankOrganizerConfig defaults
 		p.tabMappings.put("tab0", "CURRENCY");
 		p.tabMappings.put("tab1", "TELEPORTS");

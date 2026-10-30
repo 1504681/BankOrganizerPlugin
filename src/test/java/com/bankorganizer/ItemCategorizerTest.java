@@ -777,4 +777,75 @@ public class ItemCategorizerTest
 		// max cape teleports but is worn gear
 		assertNotEquals(ItemCategory.TELEPORTS, categorizer.categorize("Max cape", 90007));
 	}
+
+	@Test
+	public void testDrinksSplitPotionsAndFood()
+	{
+		Map<Integer, String[]> acts = new HashMap<>();
+		String[] drink = {"Drink", null, null, null, "Drop"};
+		for (int id = 90100; id < 90106; id++) acts.put(id, drink);
+		categorizer.setActionsProvider(acts::get);
+		assertEquals(ItemCategory.POTIONS, categorizer.categorize("Nectar (4)", 90100));
+		assertEquals(ItemCategory.POTIONS, categorizer.categorize("Elder (-)(2)", 90101));
+		assertEquals(ItemCategory.POTIONS, categorizer.categorize("Extended anti-venom+(1)", 90102));
+		assertEquals(ItemCategory.FOOD, categorizer.categorize("Asgarnian ale(m2)", 90103));
+		assertEquals(ItemCategory.FOOD, categorizer.categorize("Greenman's ale(m)", 90104));
+		assertEquals(ItemCategory.FOOD, categorizer.categorize("Cider(1)", 90105));
+	}
+
+	@Test
+	public void testOverrideReportedFixes()
+	{
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Mixed hide base", 29292));
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Mixed hide armour set", 31166));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Bucket of water", 1929));
+		assertNotEquals(ItemCategory.HIGH_ALCH, categorizer.categorize("Adamant brutal", 4798));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Large oak hull parts", 32065));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Godsword shard 2", 11820));
+		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Elkhorn coral", 31481));
+	}
+
+	@Test
+	public void testPlaceholderUsesRealItem()
+	{
+		// 14129 = Rune kiteshield placeholder, 1201 = Rune kiteshield
+		categorizer.setCanonicalizer(id -> id == 14129 ? 1201 : id);
+		categorizer.setManualOverride(1201, ItemCategory.HIGH_ALCH);
+		assertEquals(ItemCategory.HIGH_ALCH, categorizer.categorize("Rune kiteshield", 14129));
+		// an override set on the placeholder lands on the real item
+		categorizer.setManualOverride(14129, ItemCategory.GEAR);
+		assertEquals(ItemCategory.GEAR, categorizer.categorize("Rune kiteshield", 1201));
+		categorizer.removeManualOverride(14129);
+		assertFalse(categorizer.hasManualOverride(1201));
+	}
+
+	@Test
+	public void testRetiredDefaultsDropped()
+	{
+		String retired = "# comment\n1.1.1|7:QUEST_MISC\n1.2.2|1635:QUEST_MISC,892:HIGH_ALCH\n";
+		assertEquals(3, ProfileManager.parseRetired(retired, "").size());
+		assertEquals(2, ProfileManager.parseRetired(retired, "1.2.1").size());
+		assertEquals(0, ProfileManager.parseRetired(retired, "1.2.2").size());
+
+		Map<Integer, ItemCategory> shipped = new HashMap<>(); shipped.put(892, ItemCategory.GEAR);
+		Map<Integer, ItemCategory> cur = new HashMap<>();
+		cur.put(1635, ItemCategory.QUEST_MISC); // stale shipped default
+		cur.put(892, ItemCategory.HIGH_ALCH);   // stale shipped default
+		cur.put(1637, ItemCategory.RAW_MATERIALS); // the user's own
+		java.util.Set<Integer> user = new java.util.HashSet<>(java.util.Arrays.asList(1635, 892, 1637));
+		ProfileManager.MergeResult m = ProfileManager.mergeDefaults(shipped, new HashMap<>(), cur, new HashMap<>(), user, false,
+			ProfileManager.parseRetired(retired, ""));
+		assertNull(m.categories.get(1635));
+		assertEquals(ItemCategory.GEAR, m.categories.get(892));
+		assertEquals(ItemCategory.RAW_MATERIALS, m.categories.get(1637));
+		assertEquals(java.util.Collections.singleton(1637), m.userItems);
+	}
+
+	@Test
+	public void testProfileRetiredVersionRoundTrip()
+	{
+		BankOrganizerProfile p = new BankOrganizerProfile("x");
+		p.setRetiredVersion("1.2.3");
+		assertEquals("1.2.3", BankOrganizerProfile.deserialize(p.serialize()).getRetiredVersion());
+	}
 }

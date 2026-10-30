@@ -194,6 +194,17 @@ public class BankOrganizerPlugin extends Plugin
 			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(id);
 			return comp != null && !comp.isTradeable() && !comp.isStackable();
 		});
+		// Placeholders and noted items share the real item's category and overrides
+		java.util.Map<Integer, Integer> canonCache = new java.util.concurrent.ConcurrentHashMap<>();
+		categorizer.setCanonicalizer(id ->
+		{
+			Integer c = canonCache.get(id);
+			if (c != null) return c;
+			if (!client.isClientThread()) return id;
+			int canonical = itemManager.canonicalize(id);
+			canonCache.put(id, canonical);
+			return canonical;
+		});
 		categorizer.setActionsProvider(id ->
 		{
 			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(id);
@@ -571,7 +582,7 @@ public class BankOrganizerPlugin extends Plugin
 			int itemId = event.getId();
 			categorizer.removeManualOverride(itemId);
 			categorizer.removeSubCategoryOverride(itemId);
-			userTouched.add(itemId);
+			userTouched.add(categorizer.canonicalId(itemId));
 			saveOverridesToConfig();
 			saveSubOverridesToConfig();
 			log.info("Removed overrides for item ID {}", itemId);
@@ -607,7 +618,7 @@ public class BankOrganizerPlugin extends Plugin
 				if (cat.getDisplayName().equals(categoryName))
 				{
 					categorizer.setManualOverride(itemId, cat);
-					userTouched.add(itemId);
+					userTouched.add(categorizer.canonicalId(itemId));
 					saveOverridesToConfig();
 					log.info("Set item ID {} to category {}", itemId, cat);
 					// Update overlay immediately
@@ -642,7 +653,7 @@ public class BankOrganizerPlugin extends Plugin
 				if (ItemCategorizer.SKILL_NAMES[i].equals(subName))
 				{
 					categorizer.setSubCategoryOverride(itemId, i);
-					userTouched.add(itemId);
+					userTouched.add(categorizer.canonicalId(itemId));
 					saveSubOverridesToConfig();
 					log.info("Set item ID {} to subcategory {} ({})", itemId, i, subName);
 					break;
@@ -772,7 +783,7 @@ public class BankOrganizerPlugin extends Plugin
 						int id = Integer.parseInt(parts[0].trim());
 						ItemCategory cat = ItemCategory.valueOf(parts[1].trim());
 						categorizer.setManualOverride(id, cat);
-						userTouched.add(id);
+						userTouched.add(categorizer.canonicalId(id));
 						imported++;
 					}
 					catch (Exception ignored)
@@ -993,7 +1004,8 @@ public class BankOrganizerPlugin extends Plugin
 		BankOrganizerProfile profile = profileManager.getActiveProfile();
 		if (profile == null) return;
 		String v = profile.getDefaultsVersion();
-		if (BankOrganizerProfile.DEFAULTS_NONE.equals(v) || VERSION.equals(v)) return;
+		if (BankOrganizerProfile.DEFAULTS_NONE.equals(v)) return;
+		if (VERSION.equals(v) && VERSION.equals(profile.getRetiredVersion())) return;
 		int[] counts = reapplyDefaults();
 		log.info("Profile '{}' upgraded from defaults v{} to v{}: {} default overrides applied, {} user overrides preserved",
 			profile.getName(), v.isEmpty() ? "?" : v, VERSION, counts[0], counts[1]);
@@ -1015,7 +1027,9 @@ public class BankOrganizerPlugin extends Plugin
 		Map<Integer, Integer> curSub = new HashMap<>(categorizer.getSubCategoryOverrides());
 
 		boolean legacy = userTouched.isEmpty() && !VERSION.equals(profile.getDefaultsVersion());
-		ProfileManager.MergeResult m = ProfileManager.mergeDefaults(shippedCat, shippedSub, curCat, curSub, userTouched, legacy);
+		Map<Integer, java.util.Set<ItemCategory>> retired = ProfileManager.parseRetired(
+			profileManager.readDefaultResource("retired_overrides.txt"), profile.getRetiredVersion());
+		ProfileManager.MergeResult m = ProfileManager.mergeDefaults(shippedCat, shippedSub, curCat, curSub, userTouched, legacy, retired);
 		Map<Integer, ItemCategory> mergedCat = m.categories;
 		Map<Integer, Integer> mergedSub = m.subCategories;
 		userTouched.clear();
@@ -1027,6 +1041,7 @@ public class BankOrganizerPlugin extends Plugin
 		saveOverridesToConfig();
 		saveSubOverridesToConfig();
 		profile.setDefaultsVersion(VERSION);
+		profile.setRetiredVersion(VERSION);
 		profileManager.saveCurrentState(
 			buildOverrideString(categorizer.getManualOverrides()),
 			buildSubOverrideString(categorizer.getSubCategoryOverrides()),
@@ -1124,7 +1139,7 @@ public class BankOrganizerPlugin extends Plugin
 			if (itemId <= 0) continue;
 
 			categorizer.setManualOverride(itemId, category);
-			userTouched.add(itemId);
+			userTouched.add(categorizer.canonicalId(itemId));
 			count++;
 		}
 

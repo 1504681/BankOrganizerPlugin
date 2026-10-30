@@ -190,6 +190,17 @@ public class ProfileManager
 		Map<Integer, ItemCategory> curCat, Map<Integer, Integer> curSub,
 		java.util.Set<Integer> userItems, boolean legacy)
 	{
+		return mergeDefaults(shippedCat, shippedSub, curCat, curSub, userItems, legacy, java.util.Collections.emptyMap());
+	}
+
+	/**
+	 * @param retired defaults that shipped in an older version than the profile's and were removed since;
+	 *                an override still holding one of those values is a leftover, not the user's choice
+	 */
+	public static MergeResult mergeDefaults(Map<Integer, ItemCategory> shippedCat, Map<Integer, Integer> shippedSub,
+		Map<Integer, ItemCategory> curCat, Map<Integer, Integer> curSub,
+		java.util.Set<Integer> userItems, boolean legacy, Map<Integer, java.util.Set<ItemCategory>> retired)
+	{
 		java.util.Set<Integer> user = new java.util.LinkedHashSet<>(userItems);
 		if (legacy)
 		{
@@ -202,6 +213,11 @@ public class ProfileManager
 				if (!e.getValue().equals(shippedSub.get(e.getKey()))) user.add(e.getKey());
 			}
 		}
+		user.removeIf(id ->
+		{
+			ItemCategory c = curCat.get(id);
+			return c != null && retired.getOrDefault(id, java.util.Collections.emptySet()).contains(c);
+		});
 		Map<Integer, ItemCategory> mergedCat = new HashMap<>(shippedCat);
 		Map<Integer, Integer> mergedSub = new HashMap<>(shippedSub);
 		for (Integer id : user)
@@ -212,6 +228,46 @@ public class ProfileManager
 			if (sub != null) mergedSub.put(id, sub); else mergedSub.remove(id);
 		}
 		return new MergeResult(mergedCat, mergedSub, user);
+	}
+
+	/**
+	 * Defaults retired after {@code profileVersion} (from retired_overrides.txt: "version|id:CAT,...").
+	 * An empty or "none" version means the profile predates version tracking, so every retired default applies.
+	 */
+	public static Map<Integer, java.util.Set<ItemCategory>> parseRetired(String data, String profileVersion)
+	{
+		Map<Integer, java.util.Set<ItemCategory>> out = new HashMap<>();
+		boolean untracked = profileVersion == null || profileVersion.isEmpty()
+			|| BankOrganizerProfile.DEFAULTS_NONE.equals(profileVersion);
+		for (String line : data.split("\\R"))
+		{
+			line = line.trim();
+			int bar = line.indexOf('|');
+			if (line.isEmpty() || line.startsWith("#") || bar < 0) continue;
+			if (!untracked && compareVersions(profileVersion, line.substring(0, bar)) >= 0) continue;
+			for (Map.Entry<Integer, ItemCategory> e : ItemCategorizer.parseCategoryOverrides(line.substring(bar + 1)).entrySet())
+			{
+				out.computeIfAbsent(e.getKey(), k -> java.util.EnumSet.noneOf(ItemCategory.class)).add(e.getValue());
+			}
+		}
+		return out;
+	}
+
+	/** Compares dotted versions numerically ("1.2.10" > "1.2.9"); non-numeric parts count as 0. */
+	static int compareVersions(String a, String b)
+	{
+		String[] x = a.split("\\."), y = b.split("\\.");
+		for (int i = 0; i < Math.max(x.length, y.length); i++)
+		{
+			int p = i < x.length ? parseIntOr0(x[i]) : 0, q = i < y.length ? parseIntOr0(y[i]) : 0;
+			if (p != q) return Integer.compare(p, q);
+		}
+		return 0;
+	}
+
+	private static int parseIntOr0(String s)
+	{
+		try { return Integer.parseInt(s.trim()); } catch (NumberFormatException e) { return 0; }
 	}
 
 	public String readDefaultResource(String name)
@@ -235,6 +291,7 @@ public class ProfileManager
 		BankOrganizerProfile profile = BankOrganizerProfile.createDefault();
 		profile.setName(name);
 		profile.setDefaultsVersion(BankOrganizerPlugin.VERSION);
+		profile.setRetiredVersion(BankOrganizerPlugin.VERSION);
 
 		// Copy default overrides from resource files
 		try
