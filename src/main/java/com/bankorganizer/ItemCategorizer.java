@@ -35,6 +35,7 @@ public class ItemCategorizer
 	private java.util.function.IntPredicate questHint;
 	private java.util.function.IntFunction<String[]> actionsProvider;
 	private java.util.function.IntUnaryOperator canonicalizer;
+	private boolean runePouchFirst;
 
 	// Skilling outfit pieces — checked before the generic keyword loop so that
 	// "Rogue gloves" / "Angler boots" etc. don't get caught by GEAR keywords like "gloves".
@@ -1034,7 +1035,15 @@ public class ItemCategorizer
 
 		// Keyword fallbacks for items not in ID sets
 		String lowerName = itemName.toLowerCase();
-		if (lowerName.contains("rune"))
+		if (getTeleportCapeOrder(lowerName) >= 0)
+		{
+			return TeleportSubCategory.OTHER; // "Runecraft cape" is not a rune
+		}
+		if (jewelryFamily(lowerName) >= 0)
+		{
+			return TeleportSubCategory.JEWELRY; // "Ring of wealth (5)", "Ring of wealth" (uncharged), "Amulet of glory (t4)"...
+		}
+		if (lowerName.endsWith(" rune") || lowerName.endsWith(" runes"))
 		{
 			return TeleportSubCategory.RUNES;
 		}
@@ -1182,6 +1191,12 @@ public class ItemCategorizer
 		TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER
 	};
 
+	/** Rune pouches go to the very top of the Teleports tab instead of leading the runes group. */
+	public void setRunePouchFirst(boolean first)
+	{
+		this.runePouchFirst = first;
+	}
+
 	/** Set the group order used by TeleportSortMode.CUSTOM. Duplicates are ignored, missing groups appended. */
 	public void setCustomTeleportOrder(TeleportSubCategory... order)
 	{
@@ -1200,7 +1215,7 @@ public class ItemCategorizer
 			case TABLETS_FIRST:
 				return new TeleportSubCategory[]{ TeleportSubCategory.TABLETS, TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.OTHER };
 			case TELEPORT_ITEMS_FIRST:
-				return new TeleportSubCategory[]{ TeleportSubCategory.OTHER, TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.TABLETS };
+				return new TeleportSubCategory[]{ TeleportSubCategory.OTHER, TeleportSubCategory.TABLETS, TeleportSubCategory.JEWELRY, TeleportSubCategory.RUNES };
 			case CUSTOM:
 				return customTeleportOrder;
 			case RUNES_FIRST:
@@ -1226,7 +1241,9 @@ public class ItemCategorizer
 
 	/**
 	 * Full sort key for teleport items.
-	 * Priority: rune pouch → skill capes → other teleport items → runes/jewelry/tablets
+	 * Groups in the sort mode's order (default: teleport items, tablets, jewellery, runes); inside teleport items:
+	 * capes → farming-patch teleports → diary items → the rest A-Z → crystals. Items that can't teleport go last.
+	 * Rune pouches lead the runes group, or the whole tab with setRunePouchFirst(true).
 	 */
 	public long getTeleportFullSortKey(String itemName, int itemId, TeleportSortMode mode)
 	{
@@ -1243,7 +1260,7 @@ public class ItemCategorizer
 		{
 			case RUNES:
 				// Rune pouches lead the runes group, then elemental > catalytic
-				typeOrder = runePouch ? 0 : 1 + getRuneSortOrder(itemId);
+				typeOrder = runePouch ? 0 : 1 + getRuneSortOrder(itemId, lower);
 				break;
 			case JEWELRY:
 				typeOrder = getJewelryTypeOrder(itemId, itemName);
@@ -1252,33 +1269,113 @@ public class ItemCategorizer
 			case TABLETS:
 				typeOrder = getTabletOrder(itemName);
 				break;
-			default: // OTHER: construction cape, farming cape, other skillcapes, other teleport items, crystals last
-				if (lower.contains("construct") && (lower.contains("cape") || lower.contains("hood")))
-				{
-					typeOrder = 0; chargeOrder = lower.contains("(t)") ? 0 : 1;
-				}
-				else if (lower.contains("farming") && (lower.contains("cape") || lower.contains("hood")))
-				{
-					typeOrder = 1; chargeOrder = lower.contains("(t)") ? 0 : 1;
-				}
-				else if ((lower.contains("cape") || lower.contains("hood")) && lower.contains("(t)") || lower.contains("skillcape"))
-				{
-					typeOrder = 2;
-				}
-				else if (lower.contains("teleport crystal") || lower.contains("crystal teleport seed") || lower.contains("eternal teleport"))
-				{
-					typeOrder = 9;
-				}
-				else
-				{
-					typeOrder = 3;
-				}
+			default: // OTHER
+				typeOrder = getTeleportItemOrder(lower);
+				chargeOrder = getTeleportCapeOrder(lower) >= 0 ? (lower.contains("(t)") ? 1 : 0) : getChargeOrder(itemName);
 				break;
 		}
 
+		// Items with nothing to click that teleports (Blighted sacks, Kandarin headgear 1, empty scroll books)
+		// sink below every group. Runes and uncharged jewellery stay with their own group.
+		if ((sub == TeleportSubCategory.OTHER || sub == TeleportSubCategory.TABLETS)
+			&& !hasTeleportUse(actionsProvider != null ? actionsProvider.apply(itemId) : null))
+		{
+			groupOrder = TeleportSubCategory.values().length;
+		}
+
+		if (runePouch && runePouchFirst)
+		{
+			groupOrder = -1; // above everything
+		}
+
 		// group(8) | typeOrder(12) | chargeOrder(8) | itemId(16)
-		return ((long) (1 + groupOrder) << 44) | ((long) (typeOrder & 0xFFF) << 24)
+		return ((long) (2 + groupOrder) << 44) | ((long) (typeOrder & 0xFFF) << 24)
 			| ((long) (chargeOrder & 0xFF) << 16) | (itemId & 0xFFFF);
+	}
+
+	// Skillcapes in the Teleports tab: construction and farming first (house and patch teleports),
+	// then every other skillcape, then quest point, achievement diary and music capes
+	private static final Pattern SKILLCAPE = Pattern.compile(
+		"^(attack|strength|defence|ranging|prayer|magic|runecraft|hitpoints|agility|herblore|thieving|crafting|fletching"
+		+ "|slayer|construct\\.|mining|smithing|fishing|cooking|firemaking|woodcut\\.|farming|hunter|sailing) (cape|hood)(\\s*\\(t\\))?$");
+
+	/** 0..5 for teleporting capes (and their hoods), -1 otherwise. */
+	static int getTeleportCapeOrder(String lower)
+	{
+		if (lower.startsWith("construct. ") && SKILLCAPE.matcher(lower).matches()) return 0;
+		if (lower.startsWith("farming ") && SKILLCAPE.matcher(lower).matches()) return 1;
+		if (SKILLCAPE.matcher(lower).matches()) return 2;
+		if (lower.startsWith("quest point ")) return 3;
+		if (lower.startsWith("achievement diary ")) return 4;
+		if (lower.startsWith("music ")) return 5;
+		return -1;
+	}
+
+	// Teleports to (or next to) farming patches, in a rough herb-run order
+	private static final String[] FARMING_TELEPORTS = {
+		"ardougne cloak", "explorer's ring", "ectophial", "morytania legs", "xeric's talisman", "kharedst's memoirs",
+		"book of the dead", "rada's blessing", "stony basalt", "icy basalt", "amulet of nature"
+	};
+	// Other achievement diary rewards that teleport
+	private static final String[] DIARY_TELEPORTS = {
+		"karamja gloves", "desert amulet", "fremennik sea boots", "kandarin headgear", "western banner", "wilderness sword"
+	};
+
+	/**
+	 * Order inside the teleport-items group: capes, farming-patch teleports, other diary items, every other
+	 * teleport item (alphabetical by name, so families stay together), teleport crystals last.
+	 */
+	static int getTeleportItemOrder(String lower)
+	{
+		switch (getTeleportCapeOrder(lower))
+		{
+			case 0: return 0;                       // Construct. cape
+			case 1: return 1;                       // Farming cape
+			case 2: return 10 + alphaOrder(lower);  // other skillcapes A-Z, each next to its (t)
+			case 3: return 800;                     // Quest point cape
+			case 4: return 801;                     // Achievement diary cape
+			case 5: return 802;                     // Music cape
+			default: break;
+		}
+		for (int i = 0; i < FARMING_TELEPORTS.length; i++) if (lower.startsWith(FARMING_TELEPORTS[i])) return 900 + i;
+		for (int i = 0; i < DIARY_TELEPORTS.length; i++) if (lower.startsWith(DIARY_TELEPORTS[i])) return 950 + i;
+		if (lower.contains("teleport crystal") || lower.contains("crystal teleport seed") || lower.contains("eternal teleport"))
+		{
+			return 2000;
+		}
+		return 1000 + alphaOrder(lower);
+	}
+
+	/** First two letters as a number (0..728) so unrelated teleport items sort alphabetically. */
+	private static int alphaOrder(String lower)
+	{
+		int a = lower.length() > 0 ? letter(lower.charAt(0)) : 0;
+		int b = lower.length() > 1 ? letter(lower.charAt(1)) : 0;
+		return a * 27 + b;
+	}
+
+	private static int letter(char c)
+	{
+		return c >= 'a' && c <= 'z' ? c - 'a' + 1 : 0;
+	}
+
+	// Options that never teleport; anything else on the item (Teleport, Rub, Break, Read, Commune, Empty on the
+	// Ectophial, "Monastery Teleport", "Gem Mine"...) counts as a teleport
+	private static final Set<String> NON_TELEPORT_ACTIONS = new HashSet<>(Arrays.asList(
+		"drop", "destroy", "wear", "wield", "equip", "remove", "check", "check-charge", "check-charges", "check charges",
+		"uncharge", "charge", "dismantle", "inspect", "features", "revert", "trim", "untrim", "toggle", "configure",
+		"config", "open", "craft", "locate", "hold", "convert", "functions", "examine", "eat", "drink"
+	));
+
+	/** True when an item has an inventory option that can teleport; unknown actions (null) count as true. */
+	static boolean hasTeleportUse(String[] actions)
+	{
+		if (actions == null) return true;
+		for (String a : actions)
+		{
+			if (a != null && !a.isEmpty() && !NON_TELEPORT_ACTIONS.contains(a.toLowerCase())) return true;
+		}
+		return false;
 	}
 
 	private int getRuneSortOrder(int itemId)
@@ -1309,39 +1406,63 @@ public class ItemCategorizer
 			case 565: return 28; // Blood rune
 			case 566: return 29; // Soul rune
 			case 21880: return 30; // Wrath rune
-			default: return 50;
+			default: break;
 		}
+		return 50;
+	}
+
+	// Combination runes after the elementals, newer runes after wrath; by name so every id variant matches
+	private static final String[] RUNE_NAME_ORDER = {
+		"mist rune", "dust rune", "mud rune", "smoke rune", "steam rune", "lava rune", "sunfire rune", "aether rune"
+	};
+	private static final int[] RUNE_NAME_SLOT = { 10, 11, 12, 13, 14, 15, 31, 32 };
+
+	private int getRuneSortOrder(int itemId, String lower)
+	{
+		int byId = getRuneSortOrder(itemId);
+		if (byId != 50) return byId;
+		for (int i = 0; i < RUNE_NAME_ORDER.length; i++) if (lower.equals(RUNE_NAME_ORDER[i])) return RUNE_NAME_SLOT[i];
+		return lower.endsWith(" rune") ? 40 : 60;
+	}
+
+	// Teleport jewellery families in sort order: skills necklace (Farming Guild) first, then the everyday ones
+	private static final String[] JEWELRY_FAMILIES = {
+		"skills necklace", "glory", "ring of dueling", "games necklace", "combat bracelet", "ring of wealth",
+		"necklace of passage", "burning amulet", "digsite pendant", "pendant of ates", "slayer ring", "ring of returning",
+		"ring of shadows", "ring of the elements", "amulet of the eye", "camulet", "giantsoul amulet"
+	};
+
+	/** Index into JEWELRY_FAMILIES, or -1. Scrolls and imbue/mould items aren't jewellery. */
+	static int jewelryFamily(String lower)
+	{
+		if (lower.contains("scroll") || lower.contains("mould") || lower.contains("(u)")) return -1;
+		for (int i = 0; i < JEWELRY_FAMILIES.length; i++)
+		{
+			if (lower.contains(JEWELRY_FAMILIES[i])) return i;
+		}
+		return -1;
 	}
 
 	private int getJewelryTypeOrder(int itemId, String itemName)
 	{
-		String lower = itemName.toLowerCase();
-		// Group jewelry by type
-		if (lower.contains("ring of dueling")) return 0;
-		if (lower.contains("games necklace")) return 1;
-		if (lower.contains("ring of wealth")) return 2;
-		if (lower.contains("glory")) return 3;
-		if (lower.contains("skills necklace")) return 4;
-		if (lower.contains("combat bracelet")) return 5;
-		if (lower.contains("necklace of passage")) return 6;
-		if (lower.contains("burning amulet")) return 7;
-		if (lower.contains("digsite pendant")) return 8;
-		if (lower.contains("slayer ring")) return 9;
-		if (lower.contains("ring of returning")) return 10;
-		if (lower.contains("ring of shadows")) return 11;
-		return 50;
+		int family = jewelryFamily(itemName.toLowerCase());
+		return family >= 0 ? family : 50;
 	}
+
+	// "Glory(4)", "Ring of wealth (i5)", "Amulet of glory (t4)", or a trailing tier: "Ardougne cloak 4"
+	private static final Pattern CHARGES = Pattern.compile("\\([a-z]?(\\d+)\\)|\\s(\\d)$");
 
 	private int getChargeOrder(String itemName)
 	{
 		// Extract charge number from name like "Glory(4)" — higher charges first
-		java.util.regex.Matcher m = java.util.regex.Pattern.compile("\\((\\d+)\\)").matcher(itemName);
+		java.util.regex.Matcher m = CHARGES.matcher(itemName);
 		if (m.find())
 		{
-			int charges = Integer.parseInt(m.group(1));
-			return 99 - charges; // Invert so higher charges = lower sort key
+			int charges = Math.min(Integer.parseInt(m.group(1) != null ? m.group(1) : m.group(2)), 99);
+			// Invert so higher charges / tiers sort first; imbued "(i5)" after the plain ones
+			return (itemName.toLowerCase().contains("(i") ? 199 : 99) - charges;
 		}
-		return 100; // Uncharged sorts LAST (after all charged variants)
+		return 255; // Uncharged sorts LAST (after all charged variants)
 	}
 
 	private int getTabletOrder(String itemName)

@@ -1181,6 +1181,7 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		categorizer.setCustomTeleportOrder(config.teleportOrder1(), config.teleportOrder2(),
 			config.teleportOrder3(), config.teleportOrder4());
+		categorizer.setRunePouchFirst(config.runePouchFirst());
 	}
 
 	private void updateRegexFromConfig()

@@ -12,3 +12,4 @@
 - 1.2.3 placeholders: a Rune kiteshield placeholder shows High Alch like the real item; setting a category on a placeholder moves the real item too.
 - 1.2.3 cleanup: on first start, Gold ring / Rune hasta / Bronze axe leave Misc (log line "default overrides applied"); your own overrides (Cape of legends → Misc, Sapphire ring → Materials) stay.
 - 1.2.3 ales are Food, Nectar/Xeric's aid are Potions; pets are Main Tab; Steam rune is a Teleport.
+- 1.2.3 Teleports order: capes → Ardougne cloak/Explorer's ring/Ectophial → other items A-Z → tablets → skills necklace, glory, dueling... → runes; Ring of wealth (5) sits with Ring of wealth, uncharged Ring of wealth last in it; Blighted sacks at the very bottom. Rune pouch first on → pouches top.

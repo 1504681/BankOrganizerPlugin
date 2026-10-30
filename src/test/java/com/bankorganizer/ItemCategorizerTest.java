@@ -214,7 +214,8 @@ public class ItemCategorizerTest
 		TeleportSortMode mode = TeleportSortMode.TELEPORT_ITEMS_FIRST;
 		assertTrue(teleKey("Ectophial", 4251, mode) < teleKey("Law rune", 563, mode));
 		assertTrue(teleKey("Construct. cape(t)", 9790, mode) < teleKey("Ectophial", 4251, mode));
-		assertTrue(teleKey("Law rune", 563, mode) < teleKey("Amulet of glory(4)", 1712, mode));
+		assertTrue(teleKey("Varrock teleport", 8007, mode) < teleKey("Amulet of glory(4)", 1712, mode));
+		assertTrue(teleKey("Amulet of glory(4)", 1712, mode) < teleKey("Law rune", 563, mode));
 
 		categorizer.setCustomTeleportOrder(TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER);
 		TeleportSortMode c = TeleportSortMode.CUSTOM;
@@ -847,5 +848,56 @@ public class ItemCategorizerTest
 		BankOrganizerProfile p = new BankOrganizerProfile("x");
 		p.setRetiredVersion("1.2.3");
 		assertEquals("1.2.3", BankOrganizerProfile.deserialize(p.serialize()).getRetiredVersion());
+	}
+
+	@Test
+	public void testTeleportTabOrder()
+	{
+		TeleportSortMode m = TeleportSortMode.TELEPORT_ITEMS_FIRST;
+		Map<Integer, String[]> acts = new HashMap<>();
+		acts.put(24621, new String[]{null, null, null, null, "Drop"});           // Blighted vengeance sack
+		acts.put(13124, new String[]{null, "Wear", "Monastery Teleport", "Farm Teleport", "Drop"});
+		acts.put(13122, new String[]{null, "Wear", "Monastery Teleport", "Farm Teleport", "Drop"});
+		acts.put(11105, new String[]{null, "Wear", "Rub", null, "Drop"});
+		acts.put(9781, new String[]{null, "Wear", "Teleport", null, "Drop"});
+		acts.put(9813, new String[]{null, "Wear", "Teleport", "Trim", "Drop"});
+		acts.put(19564, new String[]{null, null, null, "Commune", "Drop"});
+		categorizer.setActionsProvider(acts::get);
+
+		// capes → quest cape → farming teleports → other items → tablets → jewellery → runes → no-teleport items
+		long craftingCape = teleKey("Crafting cape", 9781, m);
+		long questCape = teleKey("Quest point cape", 9813, m);
+		long ardyCloak = teleKey("Ardougne cloak 4", 13124, m);
+		long zulTele = teleKey("Royal seed pod", 19564, m);
+		long varrockTab = teleKey("Varrock teleport", 8007, m);
+		long skills = teleKey("Skills necklace(4)", 11105, m);
+		long rowCharged = teleKey("Ring of wealth (5)", 11980, m);
+		long rowEmpty = teleKey("Ring of wealth", 2572, m);
+		long gloryCharged = teleKey("Amulet of glory(4)", 1712, m);
+		long law = teleKey("Law rune", 563, m);
+		long sack = teleKey("Blighted vengeance sack", 24621, m);
+		assertTrue(craftingCape < questCape);
+		assertTrue(questCape < ardyCloak);
+		assertTrue(ardyCloak < teleKey("Ardougne cloak 2", 13122, m));
+		assertTrue(ardyCloak < zulTele);
+		assertTrue(zulTele < varrockTab);
+		assertTrue(varrockTab < skills);
+		assertTrue(skills < gloryCharged);
+		assertTrue(gloryCharged < rowCharged);
+		assertTrue(rowCharged < rowEmpty);        // uncharged ring of wealth ends its own family...
+		assertTrue(rowEmpty < law);               // ...still inside the jewellery group
+		assertTrue(law < sack);                   // can't teleport -> bottom
+		assertEquals(TeleportSubCategory.JEWELRY, categorizer.getTeleportSubCategory("Ring of wealth (i3)", 20786));
+		assertEquals(TeleportSubCategory.OTHER, categorizer.getTeleportSubCategory("Runecraft cape", 9765));
+	}
+
+	@Test
+	public void testRunePouchFirstToggle()
+	{
+		TeleportSortMode m = TeleportSortMode.TELEPORT_ITEMS_FIRST;
+		assertTrue(teleKey("Construct. cape", 9789, m) < teleKey("Rune pouch", 12791, m));
+		assertTrue(teleKey("Rune pouch", 12791, m) < teleKey("Air rune", 556, m));
+		categorizer.setRunePouchFirst(true);
+		assertTrue(teleKey("Rune pouch", 12791, m) < teleKey("Construct. cape", 9789, m));
 	}
 }
