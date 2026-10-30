@@ -1343,12 +1343,22 @@ public class ItemCategorizer
 			default: // OTHER
 				typeOrder = getTeleportItemOrder(lower);
 				chargeOrder = getTeleportCapeOrder(lower) >= 0 ? (lower.contains("(t)") ? 1 : 0) : getChargeOrder(itemName);
+				int family = teleportItemJewelleryIndex(lower);
+				if (family >= 0)
+				{
+					// Charged piece, then its inert/uncharged version right after it (they never interleave
+					// with each other: 100+ is past every plain charge count)
+					boolean uncharged = lower.contains("(inert)") || lower.contains("(uncharged)")
+						|| !hasTeleportUse(actionsProvider != null ? actionsProvider.apply(itemId) : null);
+					chargeOrder = 100 + family * 2 + (uncharged ? 1 : 0);
+				}
 				break;
 		}
 
 		// Items with nothing to click that teleports (Blighted sacks, Kandarin headgear 1, empty scroll books)
-		// sink below every group. Runes and uncharged jewellery stay with their own group.
+		// sink below every group. Runes and uncharged jewellery (incl. inert Pendant of Ates...) stay with their own group.
 		if ((sub == TeleportSubCategory.OTHER || sub == TeleportSubCategory.TABLETS)
+			&& !isTeleportItemJewellery(lower)
 			&& !hasTeleportUse(actionsProvider != null ? actionsProvider.apply(itemId) : null))
 		{
 			groupOrder = TeleportSubCategory.values().length;
@@ -1509,11 +1519,16 @@ public class ItemCategorizer
 
 	static boolean isTeleportItemJewellery(String lower)
 	{
-		for (String s : TELEPORT_ITEM_JEWELLERY)
+		return teleportItemJewelleryIndex(lower) >= 0;
+	}
+
+	private static int teleportItemJewelleryIndex(String lower)
+	{
+		for (int i = 0; i < TELEPORT_ITEM_JEWELLERY.length; i++)
 		{
-			if (lower.contains(s)) return true;
+			if (lower.contains(TELEPORT_ITEM_JEWELLERY[i])) return i;
 		}
-		return false;
+		return -1;
 	}
 
 	/** Index into JEWELRY_FAMILIES, or -1. Scrolls and imbue/mould items aren't jewellery. */

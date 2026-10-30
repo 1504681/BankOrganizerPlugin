@@ -1037,4 +1037,27 @@ public class ItemCategorizerTest
 		assertEquals(TeleportSubCategory.JEWELRY, categorizer.getTeleportSubCategory("Amulet of glory(4)", 1712));
 		assertEquals(TeleportSubCategory.JEWELRY, categorizer.getTeleportSubCategory("Ring of dueling(8)", 2552));
 	}
+
+	@Test
+	public void testInertTeleportJewelleryFollowsChargedVersion()
+	{
+		Map<Integer, String[]> actions = new HashMap<>();
+		actions.put(29893, new String[]{null, "Wear", "Rub", "Check", "Uncharge"});
+		actions.put(29892, new String[]{null, "Wear", "Check", "Dismantle", "Drop"});
+		actions.put(30638, new String[]{null, "Wear", "Check", "Rub", "Drop"});
+		actions.put(30637, new String[]{null, "Wear", "Charge", null, "Drop"});
+		actions.put(24621, new String[]{"Open", null, null, null, "Drop"});
+		categorizer.setActionsProvider(actions::get);
+		TeleportSortMode m = TeleportSortMode.TELEPORT_ITEMS_FIRST;
+		long ates = teleKey("Pendant of Ates", 29893, m);
+		long inert = teleKey("Pendant of Ates (inert)", 29892, m);
+		long giant = teleKey("Giantsoul amulet", 30638, m);
+		long giantU = teleKey("Giantsoul amulet (uncharged)", 30637, m);
+		long sack = teleKey("Blighted vengeance sack", 24621, m);
+		assertTrue(ates < inert);
+		assertTrue(giant < giantU);
+		assertTrue(giantU < ates); // A-Z: Giantsoul before Pendant
+		assertTrue(inert < sack);
+		assertTrue(inert < teleKey("Varrock teleport", 8007, m)); // still with the teleport items, before tablets
+	}
 }
