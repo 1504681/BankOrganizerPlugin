@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import javax.inject.Inject;
 import net.runelite.api.Client;
+import net.runelite.api.ItemComposition;
 import net.runelite.api.widgets.Widget;
 import net.runelite.api.widgets.ComponentID;
 import net.runelite.client.ui.overlay.Overlay;
@@ -59,6 +60,11 @@ public class BankOrganizerOverlay extends Overlay
 			drawMisplacedItems(graphics);
 		}
 
+		if (plugin.getConfig().seedVaultReminder())
+		{
+			drawSeedVaultReminder(graphics);
+		}
+
 		// Highlight items without subcategory if toggle is on
 		if (plugin.isHighlightUntagged())
 		{
@@ -66,6 +72,45 @@ public class BankOrganizerOverlay extends Overlay
 		}
 
 		return null;
+	}
+
+	// Seeds belong in the seed vault: green outline = store it there, red = a seed placeholder to release
+	private void drawSeedVaultReminder(Graphics2D graphics)
+	{
+		Widget bankItemContainer = client.getWidget(ComponentID.BANK_ITEM_CONTAINER);
+		if (bankItemContainer == null || bankItemContainer.isHidden()) return;
+		Widget[] children = bankItemContainer.getDynamicChildren();
+		if (children == null) return;
+		Rectangle containerBounds = bankItemContainer.getBounds();
+		Stroke oldStroke = graphics.getStroke();
+		graphics.setStroke(new BasicStroke(2));
+
+		for (Widget child : children)
+		{
+			if (child == null || child.isHidden()) continue;
+			int itemId = child.getItemId();
+			if (itemId <= 0) continue;
+
+			Rectangle bounds = child.getBounds();
+			if (bounds == null || bounds.width <= 0) continue;
+			if (containerBounds != null && !containerBounds.intersects(bounds)) continue;
+
+			ItemComposition comp = plugin.getItemManager().getItemComposition(itemId);
+			boolean placeholder = comp.getPlaceholderTemplateId() != -1;
+			if (placeholder)
+			{
+				comp = plugin.getItemManager().getItemComposition(comp.getPlaceholderId());
+			}
+			String itemName = comp.getName();
+			if (itemName == null || !ItemCategorizer.isFarmingSeed(itemName.toLowerCase())) continue;
+
+			Color color = placeholder ? new Color(255, 60, 60) : new Color(60, 220, 90);
+			graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 50));
+			graphics.fill(bounds);
+			graphics.setColor(color);
+			graphics.drawRect(bounds.x + 1, bounds.y + 1, bounds.width - 2, bounds.height - 2);
+		}
+		graphics.setStroke(oldStroke);
 	}
 
 	private void drawUntaggedItems(Graphics2D graphics)

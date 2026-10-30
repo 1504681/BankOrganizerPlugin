@@ -74,7 +74,7 @@ public class ItemCategorizerTest
 	@Test
 	public void testPickaxeMatchesTools()
 	{
-		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Bronze pickaxe", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Dragon pickaxe", 99999));
 	}
 
 	@Test
@@ -294,8 +294,11 @@ public class ItemCategorizerTest
 		assertEquals(ItemCategory.HIGH_ALCH, categorizer.categorize("Mithril kiteshield", 99999));
 		assertEquals(ItemCategory.GEAR, categorizer.categorize("Adamant bolts", 99999));
 		assertEquals(ItemCategory.GEAR, categorizer.categorize("Mithril arrow", 99999));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Rune pickaxe", 99999));
+		assertEquals(ItemCategory.QUEST_MISC, categorizer.categorize("Mithril axe", 99999));
+		categorizer.setKeepLowTierTools(true);
 		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Adamant pickaxe", 99999));
-		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Mithril axe", 99999));
+		categorizer.setKeepLowTierTools(false);
 		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Mithril ore", 99999));
 		assertEquals(ItemCategory.RAW_MATERIALS, categorizer.categorize("Adamantite bar", 99999));
 	}
@@ -410,7 +413,7 @@ public class ItemCategorizerTest
 		assertTrue(BankOrganizerPlugin.hasSortRules(ItemCategory.GEAR));
 		assertTrue(BankOrganizerPlugin.hasSortRules(ItemCategory.POTIONS));
 		assertFalse(BankOrganizerPlugin.hasSortRules(ItemCategory.QUEST_MISC));
-		assertFalse(BankOrganizerPlugin.hasSortRules(ItemCategory.CURRENCY));
+		assertTrue(BankOrganizerPlugin.hasSortRules(ItemCategory.CURRENCY));
 		assertFalse(BankOrganizerPlugin.hasSortRules(ItemCategory.HIGH_ALCH));
 	}
 
@@ -899,5 +902,103 @@ public class ItemCategorizerTest
 		assertTrue(teleKey("Rune pouch", 12791, m) < teleKey("Air rune", 556, m));
 		categorizer.setRunePouchFirst(true);
 		assertTrue(teleKey("Rune pouch", 12791, m) < teleKey("Construct. cape", 9789, m));
+	}
+
+	@Test
+	public void testLowTierToolsGoToMisc()
+	{
+		assertEquals(ItemCategory.QUEST_MISC, categorizer.categorize("Bronze pickaxe", 1265));
+		assertEquals(ItemCategory.QUEST_MISC, categorizer.categorize("Adamant axe", 1357));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Rune pickaxe", 1275));
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Dragon axe", 6739));
+		categorizer.setKeepLowTierTools(true);
+		assertEquals(ItemCategory.SKILLING, categorizer.categorize("Bronze pickaxe", 1265));
+	}
+
+	@Test
+	public void testFoodOrder()
+	{
+		Map<Integer, String[]> actions = new HashMap<>();
+		actions.put(1993, new String[]{"Drink", null, null, null, "Drop"});
+		categorizer.setActionsProvider(actions::get);
+		long manta = categorizer.getFoodFullSortKey("Manta ray", 391);
+		long shark = categorizer.getFoodFullSortKey("Shark", 385);
+		long wine = categorizer.getFoodFullSortKey("Jug of wine", 1993);
+		long dough = categorizer.getFoodFullSortKey("Uncooked pizza", 2287);
+		long burnt = categorizer.getFoodFullSortKey("Burnt shark", 387);
+		assertTrue(manta < shark);
+		assertTrue(shark < wine);
+		assertTrue(wine < dough);
+		assertTrue(dough < burnt);
+	}
+
+	@Test
+	public void testPotionGroups()
+	{
+		long combat = categorizer.getPotionFullSortKey("Super combat potion(4)", 12695);
+		long brew = categorizer.getPotionFullSortKey("Saradomin brew(4)", 6685);
+		long agility = categorizer.getPotionFullSortKey("Agility potion(4)", 3032);
+		long mix = categorizer.getPotionFullSortKey("Super restore mix(2)", 11493);
+		long raid = categorizer.getPotionFullSortKey("Overload (+)(4)", 20996);
+		assertTrue(combat < brew);
+		assertTrue(brew < agility);
+		assertTrue(agility < mix);
+		assertTrue(mix < raid);
+	}
+
+	@Test
+	public void testMainTabOrder()
+	{
+		long coins = categorizer.getMainTabSortKey("Coins", 995);
+		long token = categorizer.getMainTabSortKey("Platinum token", 13204);
+		long pet = categorizer.getMainTabSortKey("Baby mole", 12646);
+		long casket = categorizer.getMainTabSortKey("Reward casket (hard)", 20544);
+		long box = categorizer.getMainTabSortKey("Scroll box (easy)", 24362);
+		long clueEasy = categorizer.getMainTabSortKey("Clue scroll (easy)", 2677);
+		long clueHard = categorizer.getMainTabSortKey("Clue scroll (hard)", 2722);
+		assertTrue(coins < token);
+		assertTrue(token < pet);
+		assertTrue(pet < casket);
+		assertTrue(casket < box);
+		assertTrue(box < clueEasy);
+		assertTrue(clueEasy < clueHard);
+	}
+
+	@Test
+	public void testGearSetGrouping()
+	{
+		GearSortMode mode = GearSortMode.values()[0];
+		long torva = categorizer.getGearFullSortKey("Torva platebody", 26384, bodyArmour(), mode);
+		long torvaLegs = categorizer.getGearFullSortKey("Torva platelegs", 26386, legs(), mode);
+		long rune = categorizer.getGearFullSortKey("Rune platebody", 1127, bodyArmour(), mode);
+		categorizer.setGroupGearSets(true);
+		long torvaSet = categorizer.getGearFullSortKey("Torva platebody", 26384, bodyArmour(), mode);
+		long torvaLegsSet = categorizer.getGearFullSortKey("Torva platelegs", 26386, legs(), mode);
+		long runeSet = categorizer.getGearFullSortKey("Rune platebody", 1127, bodyArmour(), mode);
+		assertTrue(torvaSet < runeSet);
+		assertTrue(torvaLegsSet < runeSet);
+		assertTrue(torvaSet < torvaLegsSet);
+		assertNotEquals(torva, torvaSet);
+		assertNotEquals(torvaLegs, torvaLegsSet);
+		assertTrue(rune < runeSet); // loose items move after the sets
+	}
+
+	private static ItemEquipmentStats legs()
+	{
+		return ItemEquipmentStats.builder().slot(7).dstab(80).dslash(80).dcrush(80).build();
+	}
+
+	@Test
+	public void testSeedsLastInMaterials()
+	{
+		assertTrue(mat("Ranarr seed") > mat("Grimy ranarr weed"));
+		assertTrue(mat("Ranarr seed") > mat("Supercompost"));
+		assertTrue(mat("Mushroom spore") > mat("Big bones"));
+		assertTrue(mat("Potato seed") < mat("Ranarr seed"));
+		assertEquals(0, categorizer.getMaterialGroupIndex("Ranarr seed", 5295));
+		assertTrue(ItemCategorizer.isFarmingSeed("snape grass seed"));
+		assertFalse(ItemCategorizer.isFarmingSeed("crystal armour seed"));
+		assertFalse(ItemCategorizer.isFarmingSeed("mithril seeds"));
+		assertFalse(ItemCategorizer.isFarmingSeed("golovanova seed"));
 	}
 }

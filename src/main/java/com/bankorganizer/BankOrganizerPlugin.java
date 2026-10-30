@@ -852,6 +852,10 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			categoryKey = categorizer.getFoodFullSortKey(item.name, item.itemId);
 		}
+		else if (tabCategory == ItemCategory.CURRENCY)
+		{
+			categoryKey = categorizer.getMainTabSortKey(item.name, item.itemId);
+		}
 
 		// All sort key methods now include item ID for guaranteed uniqueness
 		return (group << 56) | (categoryKey & ((1L << 56) - 1));
@@ -1182,6 +1186,8 @@ public class BankOrganizerPlugin extends Plugin
 		categorizer.setCustomTeleportOrder(config.teleportOrder1(), config.teleportOrder2(),
 			config.teleportOrder3(), config.teleportOrder4());
 		categorizer.setRunePouchFirst(config.runePouchFirst());
+		categorizer.setKeepLowTierTools(config.keepLowTierTools());
+		categorizer.setGroupGearSets(config.groupGearSets());
 	}
 
 	private void updateRegexFromConfig()
@@ -1395,7 +1401,7 @@ public class BankOrganizerPlugin extends Plugin
 	{
 		switch (c)
 		{
-			case GEAR: case TELEPORTS: case RAW_MATERIALS: case SKILLING: case POTIONS: case FOOD: return true;
+			case GEAR: case TELEPORTS: case RAW_MATERIALS: case SKILLING: case POTIONS: case FOOD: case CURRENCY: return true;
 			default: return false;
 		}
 	}
@@ -1759,6 +1765,20 @@ public class BankOrganizerPlugin extends Plugin
 			{
 				return ItemCategorizer.SKILL_NAMES[idx];
 			}
+		}
+		else if (tabCategory == ItemCategory.FOOD)
+		{
+			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(item.itemId);
+			return ItemCategorizer.FOOD_TIER_NAMES[ItemCategorizer.getFoodTier(item.name.toLowerCase(),
+				comp != null ? comp.getInventoryActions() : null)];
+		}
+		else if (tabCategory == ItemCategory.POTIONS)
+		{
+			return ItemCategorizer.POTION_GROUP_NAMES[ItemCategorizer.getPotionGroup(item.name.toLowerCase())];
+		}
+		else if (tabCategory == ItemCategory.CURRENCY)
+		{
+			return ItemCategorizer.MAIN_TAB_GROUP_NAMES[categorizer.getMainTabGroup(item.name, item.itemId)];
 		}
 		return "";
 	}

@@ -45,6 +45,24 @@ public interface BankOrganizerConfig extends Config
 	default boolean showPatterns() { return true; }
 
 	@ConfigItem(
+		keyName = "keepLowTierTools",
+		name = "Low-tier tools in Skilling",
+		description = "Keep bronze to adamant pickaxes and axes in Skilling. Off: they go to Misc and only rune and better stay",
+		position = 4,
+		section = generalSection
+	)
+	default boolean keepLowTierTools() { return false; }
+
+	@ConfigItem(
+		keyName = "seedVaultReminder",
+		name = "Seed vault reminder",
+		description = "Whenever the bank is open: farming seeds get a green outline (store them in the seed vault) and seed placeholders a red one (release the placeholder)",
+		position = 5,
+		section = generalSection
+	)
+	default boolean seedVaultReminder() { return false; }
+
+	@ConfigItem(
 		keyName = "overlayOpacity",
 		name = "Overlay Opacity",
 		description = "Opacity of category overlay boxes (0-100)",
@@ -159,22 +177,25 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(keyName = "gearSortMode", name = "Gear Sort Mode", description = "How gear is sorted within the Gear tab", position = 0, section = sortingSection)
 	default GearSortMode gearSortMode() { return GearSortMode.COMBAT_STYLE; }
 
-	@ConfigItem(keyName = "teleportSortMode", name = "Teleport Sort Mode", description = "Which group comes first in the Teleports tab. Pick 'Custom' to use the four order settings below.", position = 1, section = sortingSection)
+	@ConfigItem(keyName = "groupGearSets", name = "Keep armour sets together", description = "Combat tab: Barrows, Void, Torva, Ancestral... pieces sit together, set by set, before the loose items", position = 1, section = sortingSection)
+	default boolean groupGearSets() { return false; }
+
+	@ConfigItem(keyName = "teleportSortMode", name = "Teleport Sort Mode", description = "Which group comes first in the Teleports tab. Pick 'Custom' to use the four order settings below.", position = 2, section = sortingSection)
 	default TeleportSortMode teleportSortMode() { return TeleportSortMode.TELEPORT_ITEMS_FIRST; }
 
-	@ConfigItem(keyName = "runePouchFirst", name = "Rune pouch first", description = "Put rune pouches at the very top of the Teleports tab instead of at the start of the runes", position = 2, section = sortingSection)
+	@ConfigItem(keyName = "runePouchFirst", name = "Rune pouch first", description = "Put rune pouches at the very top of the Teleports tab instead of at the start of the runes", position = 3, section = sortingSection)
 	default boolean runePouchFirst() { return false; }
 
-	@ConfigItem(keyName = "teleportOrder1", name = "Custom order: 1st", description = "First group in the Teleports tab (Custom mode)", position = 3, section = sortingSection)
+	@ConfigItem(keyName = "teleportOrder1", name = "Custom order: 1st", description = "First group in the Teleports tab (Custom mode)", position = 4, section = sortingSection)
 	default TeleportSubCategory teleportOrder1() { return TeleportSubCategory.OTHER; }
 
-	@ConfigItem(keyName = "teleportOrder2", name = "Custom order: 2nd", description = "Second group in the Teleports tab (Custom mode)", position = 4, section = sortingSection)
+	@ConfigItem(keyName = "teleportOrder2", name = "Custom order: 2nd", description = "Second group in the Teleports tab (Custom mode)", position = 5, section = sortingSection)
 	default TeleportSubCategory teleportOrder2() { return TeleportSubCategory.TABLETS; }
 
-	@ConfigItem(keyName = "teleportOrder3", name = "Custom order: 3rd", description = "Third group in the Teleports tab (Custom mode)", position = 5, section = sortingSection)
+	@ConfigItem(keyName = "teleportOrder3", name = "Custom order: 3rd", description = "Third group in the Teleports tab (Custom mode)", position = 6, section = sortingSection)
 	default TeleportSubCategory teleportOrder3() { return TeleportSubCategory.JEWELRY; }
 
-	@ConfigItem(keyName = "teleportOrder4", name = "Custom order: 4th", description = "Fourth group in the Teleports tab (Custom mode). Groups you don't list are appended in default order.", position = 6, section = sortingSection)
+	@ConfigItem(keyName = "teleportOrder4", name = "Custom order: 4th", description = "Fourth group in the Teleports tab (Custom mode). Groups you don't list are appended in default order.", position = 7, section = sortingSection)
 	default TeleportSubCategory teleportOrder4() { return TeleportSubCategory.RUNES; }
 
 	// --- Colors ---

@@ -36,6 +36,8 @@ public class ItemCategorizer
 	private java.util.function.IntFunction<String[]> actionsProvider;
 	private java.util.function.IntUnaryOperator canonicalizer;
 	private boolean runePouchFirst;
+	private boolean keepLowTierTools;
+	private boolean groupGearSets;
 
 	// Skilling outfit pieces — checked before the generic keyword loop so that
 	// "Rogue gloves" / "Angler boots" etc. don't get caught by GEAR keywords like "gloves".
@@ -564,6 +566,12 @@ public class ItemCategorizer
 		if (override != null)
 		{
 			return override;
+		}
+
+		// Bronze..adamant pickaxes/axes are clutter once you have rune or better
+		if (!keepLowTierTools && isLowTierTool(itemName.toLowerCase()))
+		{
+			return ItemCategory.QUEST_MISC;
 		}
 
 		// Priority 1: Hardcoded item ID
@@ -1145,9 +1153,41 @@ public class ItemCategorizer
 		long invertedStat = 999999 - statValue;
 		if (invertedStat < 0) invertedStat = 0;
 
+		if (groupGearSets)
+		{
+			int set = gearSetIndex(itemName.toLowerCase());
+			if (set >= 0)
+			{
+				// Set pieces first, set by set, each in slot order
+				return ((long) subOrder << 44) | ((long) ((set << 8) | slotOrder) << 16) | (itemId & 0xFFFF);
+			}
+			slotOrder++; // loose items after the sets
+		}
+
 		// Pack into long with enough bits: subOrder (8 bits) | slotOrder (8 bits) | invertedStat (20 bits)
 		// Pack: subOrder(8) | slotOrder(8) | invertedStat(20) | itemId(16) for uniqueness
 		return ((long) subOrder << 44) | ((long) slotOrder << 36) | ((long)(invertedStat & 0xFFFFF) << 16) | (itemId & 0xFFFF);
+	}
+
+	// Armour sets kept together when groupGearSets is on; aliases share an index
+	private static final String[][] GEAR_SETS = {
+		{ "torva " }, { "ancestral " }, { "masori " }, { "virtus " }, { "oathplate ", "radiant oathplate " },
+		{ "justiciar " }, { "inquisitor's " }, { "bandos " }, { "armadyl " },
+		{ "ahrim's " }, { "dharok's " }, { "guthan's " }, { "karil's " }, { "torag's " }, { "verac's " },
+		{ "void knight ", "elite void ", "void mage ", "void ranger ", "void melee " },
+		{ "crystal helm", "crystal body", "crystal legs" }, { "blood moon " }, { "blue moon " }, { "eclipse moon " },
+		{ "dagon'hai " }, { "swampbark " }, { "bloodbark " }, { "elder chaos " }, { "infinity " }, { "obsidian " },
+		{ "sunfire fanatic " }, { "dizana's " }, { "mystic " }
+	};
+
+	/** Index of the armour set an item belongs to, or -1. */
+	static int gearSetIndex(String lower)
+	{
+		for (int i = 0; i < GEAR_SETS.length; i++)
+		{
+			for (String prefix : GEAR_SETS[i]) if (lower.startsWith(prefix)) return i;
+		}
+		return -1;
 	}
 
 	public int getGearSortOrder(GearSubCategory sub, GearSortMode mode)
@@ -1190,6 +1230,27 @@ public class ItemCategorizer
 	private TeleportSubCategory[] customTeleportOrder = {
 		TeleportSubCategory.RUNES, TeleportSubCategory.JEWELRY, TeleportSubCategory.TABLETS, TeleportSubCategory.OTHER
 	};
+
+	private static final Pattern LOW_TIER_TOOL = Pattern.compile(
+		"^(bronze|iron|steel|black|mithril|adamant) (pickaxe|axe|felling axe|axe head)( \\(nz\\))?$");
+
+	/** "Bronze pickaxe", "Adamant felling axe", "Iron pickaxe (nz)", "Mithril axe head"; rune and better are not. */
+	public static boolean isLowTierTool(String lower)
+	{
+		return LOW_TIER_TOOL.matcher(lower).matches();
+	}
+
+	/** Keep bronze..adamant pickaxes and axes in Skilling instead of Misc. */
+	public void setKeepLowTierTools(boolean keep)
+	{
+		this.keepLowTierTools = keep;
+	}
+
+	/** Combat tab: keep armour sets (Barrows, Void, Torva...) together instead of splitting them by slot. */
+	public void setGroupGearSets(boolean group)
+	{
+		this.groupGearSets = group;
+	}
 
 	/** Rune pouches go to the very top of the Teleports tab instead of leading the runes group. */
 	public void setRunePouchFirst(boolean first)
@@ -1313,12 +1374,12 @@ public class ItemCategorizer
 
 	// Teleports to (or next to) farming patches, in a rough herb-run order
 	private static final String[] FARMING_TELEPORTS = {
-		"ardougne cloak", "explorer's ring", "ectophial", "morytania legs", "xeric's talisman", "kharedst's memoirs",
+		"ardougne cloak", "explorer's ring", "ectophial", "xeric's talisman", "kharedst's memoirs",
 		"book of the dead", "rada's blessing", "stony basalt", "icy basalt", "amulet of nature"
 	};
 	// Other achievement diary rewards that teleport
 	private static final String[] DIARY_TELEPORTS = {
-		"karamja gloves", "desert amulet", "fremennik sea boots", "kandarin headgear", "western banner", "wilderness sword"
+		"morytania legs", "karamja gloves", "desert amulet", "fremennik sea boots", "kandarin headgear", "western banner", "wilderness sword"
 	};
 
 	/**
@@ -1556,11 +1617,106 @@ public class ItemCategorizer
 	public long getFoodFullSortKey(String itemName, int itemId)
 	{
 		itemId = canon(itemId);
-		int healAmount = getFoodHealAmount(itemName.toLowerCase());
-		// Invert so highest healing sorts first
-		// Pack with item ID for uniqueness
-		return ((long)(999 - healAmount) << 16) | (itemId & 0xFFFF);
+		String lower = itemName.toLowerCase();
+		int tier = getFoodTier(lower, actionsProvider != null ? actionsProvider.apply(itemId) : null);
+		int healAmount = getFoodHealAmount(lower);
+		// tier(4) | inverted heal | itemId(16): highest healing first inside each tier
+		return ((long) tier << 40) | ((long) (999 - healAmount) << 16) | (itemId & 0xFFFF);
 	}
+
+	static final String[] MAIN_TAB_GROUP_NAMES = { "Currencies", "Pets", "Caskets", "Scroll boxes", "Clue scrolls" };
+
+	private static final Set<Integer> PET_IDS = new HashSet<>();
+	static
+	{
+		try (java.io.InputStream is = ItemCategorizer.class.getResourceAsStream("/com/bankorganizer/pets.txt"))
+		{
+			if (is != null)
+			{
+				for (String line : new String(is.readAllBytes(), java.nio.charset.StandardCharsets.UTF_8).split("\\R"))
+				{
+					if (line.startsWith("#")) continue;
+					for (String id : line.split(","))
+					{
+						if (!id.trim().isEmpty()) PET_IDS.add(Integer.parseInt(id.trim()));
+					}
+				}
+			}
+		}
+		catch (Exception ignored)
+		{
+		}
+	}
+
+	public static boolean isPet(int itemId)
+	{
+		return PET_IDS.contains(itemId);
+	}
+
+	/** 0 currencies, 1 pets, 2 caskets, 3 scroll boxes (and clue geodes/bottles/nests), 4 clue scrolls. */
+	public int getMainTabGroup(String itemName, int itemId)
+	{
+		itemId = canon(itemId);
+		String lower = itemName.toLowerCase();
+		if (PET_IDS.contains(itemId)) return 1;
+		if (lower.contains("casket")) return 2;
+		if (lower.startsWith("scroll box") || lower.startsWith("clue geode") || lower.startsWith("clue bottle")
+			|| lower.startsWith("clue nest"))
+		{
+			return 3;
+		}
+		if (lower.startsWith("clue scroll") || lower.startsWith("challenge scroll") || lower.startsWith("puzzle box")
+			|| lower.startsWith("light box") || lower.startsWith("torn clue"))
+		{
+			return 4;
+		}
+		return 0;
+	}
+
+	private static final String[] CLUE_TIERS = { "beginner", "easy", "medium", "hard", "elite", "master" };
+
+	/** Currencies (coins, platinum tokens, then A-Z), pets, caskets, scroll boxes, clue scrolls; clues beginner → master. */
+	public long getMainTabSortKey(String itemName, int itemId)
+	{
+		itemId = canon(itemId);
+		String lower = itemName.toLowerCase();
+		int group = getMainTabGroup(itemName, itemId);
+		int order;
+		if (group == 0)
+		{
+			order = lower.equals("coins") ? 0 : lower.equals("platinum token") ? 1 : 2 + alphaOrder(lower);
+		}
+		else if (group == 1)
+		{
+			order = alphaOrder(lower);
+		}
+		else
+		{
+			order = CLUE_TIERS.length;
+			for (int i = 0; i < CLUE_TIERS.length; i++) if (lower.contains(CLUE_TIERS[i])) { order = i; break; }
+		}
+		return ((long) group << 40) | ((long) order << 16) | (itemId & 0xFFFF);
+	}
+
+	static final String[] FOOD_TIER_NAMES = { "Food", "Drinks", "Part-made", "Burnt" };
+
+	/** 0 food, 1 drinks (ales, wine, cocktails, tea), 2 part-made/uncooked, 3 burnt. */
+	static int getFoodTier(String lower, String[] actions)
+	{
+		if (lower.startsWith("burnt ")) return 3;
+		if (lower.startsWith("uncooked ") || lower.startsWith("incomplete ") || lower.startsWith("part ")
+			|| lower.startsWith("unfinished ")
+			|| lower.endsWith(" dough") || lower.equals("pizza base") || lower.equals("pie shell"))
+		{
+			return 2;
+		}
+		if (actions != null ? hasAction(actions, "drink") : DRINK_NAME.matcher(lower).find()) return 1;
+		return 0;
+	}
+
+	// Fallback when inventory actions aren't known (tests, offline tools)
+	private static final Pattern DRINK_NAME = Pattern.compile(
+		"( ale|beer|wine|cider|stout|mead|cocktail|tea|rum|whisky|vodka|gin|brandy|grog|bitter|punch|blast|mind bomb)(\\(|$|\\s)");
 
 	private int getFoodHealAmount(String lower)
 	{
@@ -1605,12 +1761,49 @@ public class ItemCategorizer
 	{
 		itemId = canon(itemId);
 		String lower = itemName.toLowerCase();
-		int isDivine = lower.contains("divine") ? 0 : 1; // Divine potions first
+		int group = getPotionGroup(lower);
 		int potionPriority = getPotionPriority(lower);
-		int doseOrder = getChargeOrder(itemName); // Reuse charge extraction — (4) before (3) etc.
+		int isDivine = lower.contains("divine") ? 0 : 1; // Divine version right before the plain one
+		int doseOrder = getChargeOrder(itemName); // (4) before (3) etc.
 
-		// Pack: isDivine(4) | potionPriority(12) | doseOrder(8) | itemId(16)
-		return ((long) isDivine << 36) | ((long) potionPriority << 24) | ((long)(doseOrder & 0xFF) << 16) | (itemId & 0xFFFF);
+		// group(4) | potionPriority(12) | isDivine(4) | doseOrder(8) | itemId(16)
+		return ((long) group << 44) | ((long) potionPriority << 32) | ((long) isDivine << 28)
+			| ((long) (doseOrder & 0xFF) << 16) | (itemId & 0xFFFF);
+	}
+
+	static final String[] POTION_GROUP_NAMES = { "Combat boosts", "Brews & restores", "Antidotes", "Energy", "Skilling & other", "Mixes", "Raid potions" };
+
+	/** Combat boosts, brews/restores, anti-poison/venom/fire, stamina/energy, skilling & other, barbarian mixes, raid-only. */
+	static int getPotionGroup(String lower)
+	{
+		if (lower.startsWith("overload") || lower.startsWith("xeric's aid") || lower.startsWith("elder (")
+			|| lower.startsWith("twisted (") || lower.startsWith("kodai (") || lower.startsWith("revitalisation")
+			|| lower.startsWith("prayer enhance") || lower.startsWith("nectar") || lower.startsWith("ambrosia")
+			|| lower.startsWith("tears of elidinis") || lower.startsWith("liquid adrenaline") || lower.startsWith("smelling salts")
+			|| lower.startsWith("silk dressing") || lower.startsWith("blessed crystal scarab"))
+		{
+			return 6;
+		}
+		if (lower.contains(" mix(") || lower.contains(" mix (")) return 5;
+		if (lower.contains("saradomin brew") || lower.contains("super restore") || lower.contains("prayer potion")
+			|| lower.contains("sanfew") || lower.contains("prayer regeneration") || lower.contains("menaphite")
+			|| lower.startsWith("restore potion"))
+		{
+			return 1;
+		}
+		if (lower.contains("venom") || lower.contains("antipoison") || lower.contains("anti-poison")
+			|| lower.contains("antidote") || lower.contains("antifire"))
+		{
+			return 2;
+		}
+		if (lower.contains("stamina") || lower.contains("energy")) return 3;
+		if (lower.contains("combat") || lower.contains("ranging") || lower.contains("bastion") || lower.contains("battlemage")
+			|| lower.contains("magic potion") || lower.contains("attack") || lower.contains("strength")
+			|| lower.contains("defence") || lower.contains("zamorak brew") || lower.contains("super magic"))
+		{
+			return 0;
+		}
+		return 4;
 	}
 
 	private int getPotionPriority(String lower)
@@ -1619,6 +1812,7 @@ public class ItemCategorizer
 		if (lower.contains("super combat")) return 0;
 		if (lower.contains("ranging potion")) return 1;
 		if (lower.contains("bastion potion")) return 2;
+		if (lower.contains("battlemage")) return 3;
 		if (lower.contains("saradomin brew")) return 3;
 		if (lower.contains("super restore")) return 4;
 		if (lower.contains("blighted super restore")) return 3; // Same tier as super restore
@@ -1815,8 +2009,11 @@ public class ItemCategorizer
 			skillGroup = subOverride;
 		}
 
-		// Pack: skillGroup(8) | typeOrder(4) | tierOrder(8) | itemId(16)
-		return ((long) skillGroup << 28) | ((long)(typeOrder & 0xF) << 24)
+		// Farming seeds go below every group: they belong in the seed vault, not the bank
+		long seedFlag = subOverride == null && isFarmingSeed(lower) ? 1L << 40 : 0;
+
+		// Pack: seedFlag | skillGroup(8) | typeOrder(4) | tierOrder(8) | itemId(16)
+		return seedFlag | ((long) skillGroup << 28) | ((long)(typeOrder & 0xF) << 24)
 			| ((long)(tierOrder & 0xFF) << 16) | (itemId & 0xFFFF);
 	}
 
@@ -1962,6 +2159,29 @@ public class ItemCategorizer
 		if (lower.contains("zenyte")) return 9;
 		if (lower.equals("amethyst")) return 10;
 		return 50;
+	}
+
+	// Seed-named items that aren't farming seeds (no seed vault, not plantable in a patch)
+	private static final String[] NOT_FARMING_SEEDS = {
+		"crystal", "mithril seeds", "adamant seeds", "bone seeds", "consecration seed", "white pearl seed",
+		"odd bird seed", "golovanova", "bologano", "logavano", "yommi tree", "kelda seed", "enriched snapdragon"
+	};
+
+	/** A plantable farming seed or spore: sorted last in Materials and flagged by the seed vault reminder. */
+	public static boolean isFarmingSeed(String lower)
+	{
+		if (!(lower.endsWith(" seed") || lower.endsWith(" seeds") || lower.endsWith(" spore")))
+		{
+			return false;
+		}
+		for (String s : NOT_FARMING_SEEDS)
+		{
+			if (lower.contains(s))
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 
 	private int getSeedTier(String lower)
@@ -2242,7 +2462,7 @@ public class ItemCategorizer
 	{
 		itemId = canon(itemId);
 		long key = getMaterialFullSortKey(itemName, itemId);
-		return (int)(key >> 28);
+		return (int)(key >> 28) & 0xFF;
 	}
 
 	private int getTalismanOrder(String lower)
