@@ -6,6 +6,7 @@ import java.awt.Dimension;
 import java.awt.Font;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
+import java.awt.RenderingHints;
 import java.awt.Stroke;
 import java.util.List;
 import java.util.Map;
@@ -450,7 +451,62 @@ public class BankOrganizerOverlay extends Overlay
 			}
 		}
 
+		if (plugin.getConfig().orderingArrow())
+		{
+			drawMoveArrow(graphics, children, containerBounds, step);
+		}
+
 		graphics.setStroke(oldStroke);
+	}
+
+	private static final int ARROW_HEAD = 9;
+
+	/**
+	 * Arrow from the item to move to the item to drop it on. When one end is scrolled out of view the arrow
+	 * stops at the edge of the bank, pointing the way to scroll.
+	 */
+	private void drawMoveArrow(Graphics2D graphics, Widget[] children, Rectangle view, BankOrganizerPlugin.OrderStep step)
+	{
+		Rectangle from = null;
+		Rectangle to = null;
+		for (Widget child : children)
+		{
+			if (child == null || child.isHidden()) continue;
+			if (from == null && child.getItemId() == step.itemId) from = child.getBounds();
+			else if (to == null && child.getItemId() == step.targetItemId) to = child.getBounds();
+		}
+		if (from == null || to == null || view == null) return;
+		boolean fromVisible = view.contains(from.getCenterX(), from.getCenterY());
+		boolean toVisible = view.contains(to.getCenterX(), to.getCenterY());
+		if (!fromVisible && !toVisible) return;
+
+		double x1 = from.getCenterX();
+		double y1 = clampY(from.getCenterY(), view);
+		double x2 = to.getCenterX();
+		double y2 = clampY(to.getCenterY(), view);
+		if (Math.hypot(x2 - x1, y2 - y1) < ARROW_HEAD) return;
+		double angle = Math.atan2(y2 - y1, x2 - x1);
+
+		Object aa = graphics.getRenderingHint(RenderingHints.KEY_ANTIALIASING);
+		Stroke stroke = graphics.getStroke();
+		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+		Color color = new Color(255, 255, 0, 230);
+		for (int pass = 0; pass < 2; pass++)
+		{
+			// black underneath so it reads over any item
+			graphics.setColor(pass == 0 ? new Color(0, 0, 0, color.getAlpha()) : color);
+			graphics.setStroke(new BasicStroke(pass == 0 ? 5 : 3, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+			graphics.drawLine((int) x1, (int) y1, (int) x2, (int) y2);
+			graphics.drawLine((int) x2, (int) y2, (int) (x2 - ARROW_HEAD * Math.cos(angle - 0.5)), (int) (y2 - ARROW_HEAD * Math.sin(angle - 0.5)));
+			graphics.drawLine((int) x2, (int) y2, (int) (x2 - ARROW_HEAD * Math.cos(angle + 0.5)), (int) (y2 - ARROW_HEAD * Math.sin(angle + 0.5)));
+		}
+		graphics.setStroke(stroke);
+		graphics.setRenderingHint(RenderingHints.KEY_ANTIALIASING, aa);
+	}
+
+	private static double clampY(double y, Rectangle view)
+	{
+		return Math.max(view.y + 6, Math.min(view.y + view.height - 6, y));
 	}
 
 	private void drawSwapModeWarning(Graphics2D graphics, Rectangle area)

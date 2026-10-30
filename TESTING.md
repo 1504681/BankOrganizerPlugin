@@ -23,3 +23,4 @@
 - 1.2.3 Teleports: Ring of the elements, Pendant of Ates, Giantsoul amulet, Amulet of the Eye sit with the teleport items (A-Z among them), not between glory and dueling; Pendant of Ates (inert) right after Pendant of Ates, Giantsoul amulet (uncharged) right after Giantsoul amulet.
 - 1.2.3 Fewest drags: put a Blighted sack at the top of the Teleports tab, Start Ordering → it says drag it down onto the last item ("INSERT AFTER"); after the drag it sits right after that item and the next step appears.
 - 1.2.3 Fillers: a tab with two or more bank fillers orders to the end without looping; the fillers are never highlighted to move, and Scan doesn't flag them.
+- 1.2.3 Ordering arrow: yellow arrow with a black outline from MOVE to the drop target; scroll so the target is off screen → the arrow stops at the top/bottom edge pointing that way; Sorting → Ordering arrow off hides it.
