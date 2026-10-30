@@ -85,17 +85,6 @@ Item categorization is data-driven. If items land in the wrong tab, open a "Wron
 issue with the item names, or — better — organise your bank, use the plugin's **Export** button
 and post the result in a "Share my profile" issue. Good profiles get merged into the defaults.
 
-## Building from Source
-
-```bash
-./gradlew build
-```
-
-To run in development mode:
-```bash
-./gradlew run
-```
-
 ## Configuration
 
 All settings are in the RuneLite plugin configuration panel:

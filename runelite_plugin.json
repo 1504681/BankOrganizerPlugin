@@ -4,13 +4,14 @@
   ],
   "displayName": "Bank Tab Organizer",
   "author": "1504681",
-  "description": "Scans bank items and highlights misplaced ones based on category presets",
+  "description": "Organize your bank with category overlays, item sorting by stats/skill, and step-by-step reordering",
   "tags": [
     "bank",
     "organizer",
     "sort",
     "tab",
-    "category"
+    "category",
+    "overlay"
   ],
   "version": "1.2.3"
 }
