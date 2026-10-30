@@ -1025,4 +1025,16 @@ public class ItemCategorizerTest
 		assertTrue(mat("Runite ore") < mat("Clay"));
 		assertTrue(categorizer.getSkillingFullSortKey("Rune pickaxe", 1275) < categorizer.getSkillingFullSortKey("Dragon pickaxe", 11920));
 	}
+
+	@Test
+	public void testTeleportJewelleryItemsSitWithTeleportItems()
+	{
+		assertEquals(TeleportSubCategory.OTHER, categorizer.getTeleportSubCategory("Ring of the elements", 26818));
+		assertEquals(TeleportSubCategory.OTHER, categorizer.getTeleportSubCategory("Pendant of Ates", 29893));
+		assertEquals(TeleportSubCategory.OTHER, categorizer.getTeleportSubCategory("Giantsoul amulet", 30638));
+		assertEquals(TeleportSubCategory.OTHER, categorizer.getTeleportSubCategory("Amulet of the Eye", 26914));
+		assertEquals(TeleportSubCategory.OTHER, categorizer.getTeleportSubCategory("Camulet", 6707));
+		assertEquals(TeleportSubCategory.JEWELRY, categorizer.getTeleportSubCategory("Amulet of glory(4)", 1712));
+		assertEquals(TeleportSubCategory.JEWELRY, categorizer.getTeleportSubCategory("Ring of dueling(8)", 2552));
+	}
 }

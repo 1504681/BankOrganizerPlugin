@@ -441,7 +441,7 @@ public class BankOrganizerOverlay extends Overlay
 				Font oldFont = graphics.getFont();
 				graphics.setFont(graphics.getFont().deriveFont(Font.BOLD, 10f));
 				graphics.setColor(false ? new Color(100, 220, 255) : new Color(255, 255, 100));
-				String label = false ? "SWAP" : "INSERT BEFORE";
+				String label = step.insertAfter ? "INSERT AFTER" : "INSERT BEFORE";
 				int textX = targetBounds.x + (targetBounds.width - graphics.getFontMetrics().stringWidth(label)) / 2;
 				int textY = targetBounds.y - 3;
 				graphics.drawString(label, textX, textY);

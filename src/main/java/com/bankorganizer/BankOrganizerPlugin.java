@@ -1525,90 +1525,7 @@ public class BankOrganizerPlugin extends Plugin
 			return;
 		}
 
-		OrderStep nextStep = null;
-
-		// Simple front-to-back: find first wrong position and insert correct item
-		// This builds a sorted prefix that never gets disturbed by subsequent inserts
-		{
-			for (int idealPos = 0; idealPos < n; idealPos++)
-			{
-				BankItem idealItem = idealOrder.get(idealPos);
-
-				// Skip if already in correct position
-				if (idealPos < currentItems.size()
-					&& currentItems.get(idealPos).itemId == idealItem.itemId)
-				{
-					continue;
-				}
-
-				// Log the mismatch for debugging
-				if (idealPos < currentItems.size())
-				{
-					log.debug("Pos {}: expected {} (ID:{}), got {} (ID:{})",
-						idealPos, idealItem.name, idealItem.itemId,
-						currentItems.get(idealPos).name, currentItems.get(idealPos).itemId);
-				}
-
-				ItemCategory ruleCat = ruleCategory(idealItem, tabCategory);
-				// Skip items without subcategory (group 99)
-				if (ruleCat == ItemCategory.SKILLING)
-				{
-					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
-					if (skillIdx >= 99) continue;
-				}
-				else if (ruleCat == ItemCategory.RAW_MATERIALS)
-				{
-					int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
-					if (grpIdx >= 99) continue;
-				}
-
-				BankItem currentAtTarget = currentItems.get(idealPos);
-				String subCatName = getSubCategoryName(idealItem, ruleCat);
-
-				// Build phase description
-				String phase = "Sorting";
-				if (ruleCat != tabCategory) phase = ruleCat.getDisplayName() + ": sorting";
-				if (ruleCat == ItemCategory.SKILLING)
-				{
-					int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
-					if (skillIdx < ItemCategorizer.SKILL_NAMES.length)
-					{
-						phase = "Grouping " + ItemCategorizer.SKILL_NAMES[skillIdx] + " items";
-					}
-				}
-				else if (ruleCat == ItemCategory.RAW_MATERIALS)
-				{
-					int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
-					if (grpIdx < ItemCategorizer.SKILL_NAMES.length)
-					{
-						phase = "Grouping " + ItemCategorizer.SKILL_NAMES[grpIdx];
-					}
-				}
-				else if (ruleCat == ItemCategory.GEAR)
-				{
-				phase = "Grouping " + subCatName;
-				}
-				else if (ruleCat == ItemCategory.TELEPORTS)
-				{
-					phase = "Grouping " + subCatName;
-				}
-
-				int outOfPlace = 0;
-				for (int k = 0; k < n; k++)
-				{
-					if (perm[k] != k) outOfPlace++;
-				}
-
-				nextStep = new OrderStep(
-					idealItem.itemId, idealItem.name, idealPos,
-					"Insert " + idealItem.name + " before " + currentAtTarget.name,
-					subCatName,
-					currentAtTarget.itemId,
-					phase, outOfPlace
-				);
-				break;
-			}
-		}
+		OrderStep nextStep = planOrderStep(currentItems, idealOrder, perm, tabCategory, -1);
 
 		if (nextStep != null)
 		{
@@ -1620,38 +1537,7 @@ public class BankOrganizerPlugin extends Plugin
 				{
 					// Skip this item and find the next one
 					log.warn("Stuck on item {} (ID:{}), skipping", nextStep.itemName, nextStep.itemId);
-					// Mark this position as handled by continuing past it
-					// Find the NEXT out-of-place item after this one
-					OrderStep skippedStep = nextStep;
-					nextStep = null;
-					for (int pos = skippedStep.targetSlot + 1; pos < n; pos++)
-					{
-						if (pos < currentItems.size() && pos < idealOrder.size()
-							&& currentItems.get(pos).itemId != idealOrder.get(pos).itemId)
-						{
-							BankItem idealItem = idealOrder.get(pos);
-							ItemCategory ruleCat = ruleCategory(idealItem, tabCategory);
-							if (ruleCat == ItemCategory.SKILLING)
-							{
-								int skillIdx = categorizer.getSkillGroupIndex(idealItem.name, idealItem.itemId);
-								if (skillIdx >= 99) continue;
-							}
-							else if (ruleCat == ItemCategory.RAW_MATERIALS)
-							{
-								int grpIdx = categorizer.getMaterialGroupIndex(idealItem.name, idealItem.itemId);
-								if (grpIdx >= 99) continue;
-							}
-							BankItem currentAtTarget = currentItems.get(pos);
-							nextStep = new OrderStep(
-								idealItem.itemId, idealItem.name, pos,
-								"Insert " + idealItem.name + " before " + currentAtTarget.name,
-								getSubCategoryName(idealItem, ruleCat),
-								currentAtTarget.itemId,
-								"Sorting", perm[pos] != pos ? 1 : 0
-							);
-							break;
-						}
-					}
+					nextStep = planOrderStep(currentItems, idealOrder, perm, tabCategory, nextStep.itemId);
 					stuckCounter = 0;
 				}
 			}
@@ -1690,12 +1576,105 @@ public class BankOrganizerPlugin extends Plugin
 		}
 	}
 
+	/** Items with no subcategory (group 99) are left where they are. */
+	private boolean isSortable(BankItem item, ItemCategory ruleCat)
+	{
+		if (ruleCat == ItemCategory.SKILLING)
+		{
+			return categorizer.getSkillGroupIndex(item.name, item.itemId) < 99;
+		}
+		if (ruleCat == ItemCategory.RAW_MATERIALS)
+		{
+			return categorizer.getMaterialGroupIndex(item.name, item.itemId) < 99;
+		}
+		return true;
+	}
+
+	private OrderStep planOrderStep(List<BankItem> currentItems, List<BankItem> idealOrder, int[] perm,
+		ItemCategory tabCategory, int skipItemId)
+	{
+		int n = perm.length;
+		boolean[] movable = new boolean[n];
+		for (int p = 0; p < n; p++)
+		{
+			BankItem item = idealOrder.get(p);
+			movable[p] = item.itemId != skipItemId && isSortable(item, ruleCategory(item, tabCategory));
+		}
+		int[] move = nextMove(perm, movable);
+		if (move == null) return null;
+
+		BankItem item = currentItems.get(move[0]);
+		BankItem target = currentItems.get(move[1]);
+		boolean after = move[2] == 1;
+		int idealPos = perm[move[0]];
+		ItemCategory ruleCat = ruleCategory(item, tabCategory);
+		String subCatName = getSubCategoryName(item, ruleCat);
+
+		String phase = "Sorting";
+		if (ruleCat != tabCategory) phase = ruleCat.getDisplayName() + ": sorting";
+		if (ruleCat == ItemCategory.SKILLING || ruleCat == ItemCategory.RAW_MATERIALS)
+		{
+			int idx = ruleCat == ItemCategory.SKILLING
+				? categorizer.getSkillGroupIndex(item.name, item.itemId)
+				: categorizer.getMaterialGroupIndex(item.name, item.itemId);
+			if (idx < ItemCategorizer.SKILL_NAMES.length)
+			{
+				phase = "Grouping " + ItemCategorizer.SKILL_NAMES[idx] + (ruleCat == ItemCategory.SKILLING ? " items" : "");
+			}
+		}
+		else if (ruleCat == ItemCategory.GEAR || ruleCat == ItemCategory.TELEPORTS)
+		{
+			phase = "Grouping " + subCatName;
+		}
+
+		return new OrderStep(item.itemId, item.name, idealPos,
+			(after ? "Drag " + item.name + " down onto " : "Insert " + item.name + " before ") + target.name,
+			subCatName, target.itemId, phase, move[3], after);
+	}
+
+	/**
+	 * Fewest drags: the longest run of items already in relative order (LIS) stays put and every other item is
+	 * dragged once, straight next to that run. Dragging up onto the next kept item inserts before it; dragging
+	 * down onto the previous kept item lands after it (insert mode shifts the items in between up).
+	 * perm[i] = ideal position of the item at index i. Returns {item index, target index, 1 = after, moves left}
+	 * for the topmost (in ideal order) movable item, or null when nothing movable is out of place.
+	 */
+	static int[] nextMove(int[] perm, boolean[] movableByIdeal)
+	{
+		int n = perm.length;
+		Set<Integer> keep = computeLIS(perm);
+		int[] keptAt = new int[n];
+		int[] curIdx = new int[n];
+		java.util.Arrays.fill(keptAt, -1);
+		for (int i = 0; i < n; i++) curIdx[perm[i]] = i;
+		for (int i : keep) keptAt[perm[i]] = i;
+		int movesLeft = n - keep.size();
+
+		for (int p = 0; p < n; p++)
+		{
+			if (keptAt[p] >= 0 || !movableByIdeal[p]) continue;
+			int prev = -1, next = -1;
+			for (int q = p - 1; q >= 0 && prev < 0; q--) if (keptAt[q] >= 0) prev = keptAt[q];
+			for (int q = p + 1; q < n && next < 0; q++) if (keptAt[q] >= 0) next = keptAt[q];
+			int cur = curIdx[p];
+			if (next >= 0 && (cur > next || prev < 0))
+			{
+				return new int[]{cur, next, 0, movesLeft};
+			}
+			if (prev >= 0)
+			{
+				return new int[]{cur, prev, 1, movesLeft};
+			}
+		}
+		return null;
+	}
+
 	/**
 	 * Compute the Longest Increasing Subsequence of a permutation.
 	 * Returns the set of INDICES in the input array that form the LIS.
 	 * O(n log n) using patience sorting.
 	 */
-	private Set<Integer> computeLIS(int[] perm)
+	static Set<Integer> computeLIS(int[] perm)
 	{
 		int n = perm.length;
 		if (n == 0) return new java.util.HashSet<>();
@@ -1903,10 +1882,13 @@ public class BankOrganizerPlugin extends Plugin
 		public final int targetItemId;
 		public final String phaseDescription;
 		public final int totalOutOfPlace;
+		/** Drop onto the target while dragging down: the item lands after it, not before. */
+		public final boolean insertAfter;
 
 		public OrderStep(int itemId, String itemName, int targetSlot, String instruction,
-			String subCategory, int targetItemId, String phaseDescription, int totalOutOfPlace)
+			String subCategory, int targetItemId, String phaseDescription, int totalOutOfPlace, boolean insertAfter)
 		{
+			this.insertAfter = insertAfter;
 			this.itemId = itemId;
 			this.itemName = itemName;
 			this.targetSlot = targetSlot;

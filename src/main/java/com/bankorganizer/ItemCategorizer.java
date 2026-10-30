@@ -1033,6 +1033,10 @@ public class ItemCategorizer
 		{
 			return TeleportSubCategory.RUNES;
 		}
+		if (isTeleportItemJewellery(itemName.toLowerCase()))
+		{
+			return TeleportSubCategory.OTHER;
+		}
 		if (JEWELRY_IDS.contains(itemId))
 		{
 			return TeleportSubCategory.JEWELRY;
@@ -1495,9 +1499,22 @@ public class ItemCategorizer
 	// Teleport jewellery families in sort order: skills necklace (Farming Guild) first, then the everyday ones
 	private static final String[] JEWELRY_FAMILIES = {
 		"skills necklace", "glory", "ring of dueling", "games necklace", "combat bracelet", "ring of wealth",
-		"necklace of passage", "burning amulet", "digsite pendant", "pendant of ates", "slayer ring", "ring of returning",
-		"ring of shadows", "ring of the elements", "amulet of the eye", "camulet", "giantsoul amulet"
+		"necklace of passage", "burning amulet", "digsite pendant", "slayer ring", "ring of returning"
 	};
+
+	// Teleport items that happen to be jewellery: they sit with the teleport items, not the enchanted jewellery
+	private static final String[] TELEPORT_ITEM_JEWELLERY = {
+		"pendant of ates", "ring of shadows", "ring of the elements", "amulet of the eye", "camulet", "giantsoul amulet"
+	};
+
+	static boolean isTeleportItemJewellery(String lower)
+	{
+		for (String s : TELEPORT_ITEM_JEWELLERY)
+		{
+			if (lower.contains(s)) return true;
+		}
+		return false;
+	}
 
 	/** Index into JEWELRY_FAMILIES, or -1. Scrolls and imbue/mould items aren't jewellery. */
 	static int jewelryFamily(String lower)
