@@ -116,6 +116,8 @@ public class BankOrganizerPlugin extends Plugin
 	private int currentOrderStep = 0;
 	private int lastStepItemId = -1;
 	private int stuckCounter = 0;
+	// Tab layouts seen during this ordering run: coming back to one means the guide is going in circles
+	private final java.util.Set<List<Integer>> seenLayouts = new java.util.HashSet<>();
 	private List<Integer> lastSeenItemOrder = new ArrayList<>();
 	private boolean previewMode = false;
 	private boolean overlayEnabled = false;
@@ -1394,6 +1396,7 @@ public class BankOrganizerPlugin extends Plugin
 			insertMode = client.getVarbitValue(net.runelite.api.gameval.VarbitID.BANK_INSERTMODE) == 1;
 			lastStepItemId = -1;
 			stuckCounter = 0;
+			seenLayouts.clear();
 			computeNextOrderStep();
 		});
 	}
@@ -1523,6 +1526,25 @@ public class BankOrganizerPlugin extends Plugin
 		}
 
 		OrderStep nextStep = planOrderStep(currentItems, idealOrder, perm, tabCategory, -1);
+
+		List<Integer> layout = new ArrayList<>(n);
+		for (BankItem item : currentItems) layout.add(item.itemId);
+		if (nextStep != null && !seenLayouts.add(layout))
+		{
+			// Every planned drag makes the tab strictly more sorted, so a repeat means the sort keys changed
+			// between two plans. Dump the plan so the cause can be found from the user's client.log.
+			StringBuilder dump = new StringBuilder();
+			for (int i = 0; i < n; i++)
+			{
+				BankItem item = currentItems.get(i);
+				dump.append(String.format("%n  %3d -> %3d  %6d  %016x  %s", i, perm[i], item.itemId, keys[i], item.name));
+			}
+			log.warn("Ordering loop on tab {} ({}), next step '{}'. Slot -> ideal, id, key, name:{}",
+				currentTab, tabCategory, nextStep.instruction, dump);
+			finishOrdering("The guide went in circles, so it stopped. Please send the RuneLite client.log"
+				+ " (it has the details) to the plugin's GitHub issues.");
+			return;
+		}
 
 		if (nextStep != null)
 		{
