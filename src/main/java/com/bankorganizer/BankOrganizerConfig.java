@@ -38,7 +38,7 @@ public interface BankOrganizerConfig extends Config
 	@ConfigItem(
 		keyName = "showPatterns",
 		name = "Category Patterns",
-		description = "Draw stripes (Potions, Food, Materials, Misc) or crosshatch (Main Tab, High Alch) over the overlay so categories with similar colours stay distinguishable",
+		description = "Pattern the edge of each item box and the tab bars: stripes (Potions, Materials, Misc), crosshatch (Main Tab, High Alch), dots (Quest)",
 		position = 3,
 		section = generalSection
 	)
@@ -186,11 +186,11 @@ public interface BankOrganizerConfig extends Config
 
 	@Alpha
 	@ConfigItem(keyName = "colorPotions", name = "Potions", description = "Overlay color for Potions", position = 2, section = colorsSection)
-	default Color colorPotions() { return new Color(190, 90, 255); }
+	default Color colorPotions() { return new Color(180, 90, 255); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorFood", name = "Food", description = "Overlay color for Food", position = 3, section = colorsSection)
-	default Color colorFood() { return new Color(255, 225, 0); }
+	default Color colorFood() { return new Color(100, 220, 60); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorSkilling", name = "Skilling", description = "Overlay color for Skilling", position = 4, section = colorsSection)
@@ -198,22 +198,27 @@ public interface BankOrganizerConfig extends Config
 
 	@Alpha
 	@ConfigItem(keyName = "colorMaterials", name = "Materials", description = "Overlay color for Materials", position = 5, section = colorsSection)
-	default Color colorMaterials() { return new Color(0, 225, 210); }
+	default Color colorMaterials() { return new Color(0, 215, 200); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorHighAlch", name = "High Alch", description = "Overlay color for High Alch", position = 6, section = colorsSection)
-	default Color colorHighAlch() { return new Color(255, 60, 190); }
+	default Color colorHighAlch() { return new Color(255, 70, 200); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorCurrency", name = "Main Tab", description = "Overlay color for Main Tab (currency, clues, valuables)", position = 7, section = colorsSection)
-	default Color colorCurrency() { return new Color(255, 255, 255); }
+	default Color colorCurrency() { return new Color(255, 205, 0); }
 
 	@Alpha
 	@ConfigItem(keyName = "colorQuest", name = "Quest", description = "Overlay color for Quest", position = 8, section = colorsSection)
-	default Color colorQuest() { return new Color(60, 200, 60); }
+	default Color colorQuest() { return new Color(245, 245, 245); }
 
+	@Alpha
 	@ConfigItem(keyName = "colorQuestMisc", name = "Misc", description = "Overlay color for Misc", position = 9, section = colorsSection)
-	default Color colorQuestMisc() { return new Color(170, 170, 170); }
+	default Color colorQuestMisc() { return new Color(150, 150, 150); }
+
+	/** Which default colour scheme this install is pinned to; see BankOrganizerPlugin.PALETTE_VERSION. */
+	@ConfigItem(keyName = "paletteVersion", name = "", description = "", hidden = true)
+	default int paletteVersion() { return 0; }
 
 	// --- Manual overrides (stored as JSON string) ---
 

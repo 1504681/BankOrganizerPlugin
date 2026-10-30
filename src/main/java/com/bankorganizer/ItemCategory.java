@@ -26,14 +26,14 @@ public enum ItemCategory
 		"boots", "gloves", "vambraces", "bracelet", "amulet", "necklace", "ring",
 		"coif", "hood", "hat", "body", "chaps", "d'hide"
 	)),
-	POTIONS("Potions", new Color(190, 90, 255), Pattern.STRIPES, Arrays.asList(
+	POTIONS("Potions", new Color(180, 90, 255), Pattern.STRIPES, Arrays.asList(
 		"potion", "brew", "restore", "mix", "overload", "prayer renewal",
 		"antidote", "antifire", "antipoison", "antivenom", "battlemage",
 		"bastion", "saradomin brew", "super combat", "ranging potion",
 		"stamina", "energy", "sanfew serum", "super attack", "super strength", "super defence",
 		"super ranging", "super magic", "relicym's balm", "weapon poison", "remedy"
 	)),
-	FOOD("Food", new Color(255, 225, 0), Pattern.STRIPES, Arrays.asList(
+	FOOD("Food", new Color(100, 220, 60), Pattern.SOLID, Arrays.asList(
 		"shark", "lobster", "swordfish", "tuna", "salmon", "trout",
 		"monkfish", "manta ray", "dark crab", "anglerfish", "karambwan",
 		"bass", "shrimps", "anchovies", "sardine", "herring",
@@ -52,26 +52,26 @@ public enum ItemCategory
 		"prospector", "pyromancer", "rogue",
 		"axe", "harpoon", "net", "rod", "compost"
 	)),
-	RAW_MATERIALS("Materials", new Color(0, 225, 210), Pattern.STRIPES, Arrays.asList(
+	RAW_MATERIALS("Materials", new Color(0, 215, 200), Pattern.STRIPES, Arrays.asList(
 		" ore", "bronze bar", "iron bar", "steel bar", "mithril bar",
 		"adamantite bar", "runite bar", "gold bar", "silver bar",
 		"logs", "hide", "leather", "essence",
 		"seed", "grimy", "herb", "feather", "bone",
 		"wool", "flax", "clay", "sand"
 	)),
-	HIGH_ALCH("High Alch", new Color(255, 60, 190), Pattern.CROSSHATCH, Arrays.asList()),
-	CURRENCY("Main Tab", new Color(255, 255, 255), Pattern.CROSSHATCH, Arrays.asList(
+	HIGH_ALCH("High Alch", new Color(255, 70, 200), Pattern.CROSSHATCH, Arrays.asList()),
+	CURRENCY("Main Tab", new Color(255, 205, 0), Pattern.CROSSHATCH, Arrays.asList(
 		"coins", "platinum token", "tokkul", "trading sticks",
 		"numulite", "pieces of eight", "warrior guild token",
 		"mermaid's tear", "hallowed mark", "molch pearl",
 		"blood money", "golden nugget", "agility arena ticket"
 	)),
-	QUEST("Quest", new Color(60, 200, 60), Pattern.SOLID, Arrays.asList()),
+	QUEST("Quest", new Color(245, 245, 245), Pattern.DOTS, Arrays.asList()),
 	// Constant name kept for saved profiles and config; shown as "Misc" since 1.2.0 (Quest is its own category)
-	QUEST_MISC("Misc", new Color(170, 170, 170), Pattern.STRIPES, Arrays.asList());
+	QUEST_MISC("Misc", new Color(150, 150, 150), Pattern.STRIPES, Arrays.asList());
 
 	/** Fill pattern drawn over the colour so categories stay apart when hues are close at low opacity. */
-	public enum Pattern { SOLID, STRIPES, CROSSHATCH }
+	public enum Pattern { SOLID, STRIPES, CROSSHATCH, DOTS }
 
 	private final String displayName;
 	private final Color color;

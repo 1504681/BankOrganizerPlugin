@@ -72,6 +72,35 @@ public class BankOrganizerPanel extends PluginPanel
 		mainPanel.add(versionLabel);
 		mainPanel.add(Box.createVerticalStrut(4));
 
+		// New default colour scheme: existing installs keep their colours until they opt in here
+		if (plugin.isNewPaletteAvailable())
+		{
+			JPanel paletteSection = createSection("New colour scheme");
+			JLabel paletteInfo = new JLabel("<html>Clearer category colours and patterns. Your current colours stay until you switch.</html>");
+			paletteInfo.setFont(FontManager.getRunescapeSmallFont());
+			paletteInfo.setForeground(ColorScheme.LIGHT_GRAY_COLOR);
+			paletteInfo.setAlignmentX(Component.LEFT_ALIGNMENT);
+			paletteSection.add(paletteInfo);
+			paletteSection.add(Box.createVerticalStrut(3));
+			paletteSection.add(new PaletteSwatches());
+			paletteSection.add(Box.createVerticalStrut(3));
+			JButton useNew = makeButton("Use new colours", true);
+			useNew.addActionListener(e ->
+			{
+				int ok = JOptionPane.showConfirmDialog(this,
+					"Replace all category colours, including ones you picked yourself, with the new defaults?",
+					"Use new colours", JOptionPane.OK_CANCEL_OPTION);
+				if (ok != JOptionPane.OK_OPTION) return;
+				plugin.applyNewPalette();
+				paletteSection.setVisible(false);
+				refreshCategoryColors();
+				revalidate();
+			});
+			paletteSection.add(useNew);
+			mainPanel.add(paletteSection);
+			mainPanel.add(Box.createVerticalStrut(4));
+		}
+
 		// Profile selector
 		JPanel profileSection = createSection("Profile");
 
@@ -243,6 +272,7 @@ public class BankOrganizerPanel extends PluginPanel
 		for (ItemCategory category : ItemCategory.values())
 		{
 			JButton btn = makeFilterButton(category.getDisplayName(), category);
+			btn.putClientProperty(ItemCategory.class, category);
 			filterGrid.add(btn);
 			filterButtons.add(btn);
 		}
@@ -465,6 +495,54 @@ public class BankOrganizerPanel extends PluginPanel
 			profileInfoLabel.setToolTipText("This profile's defaults come from an older plugin version; "
 				+ "they are updated automatically on load. Use Manage Profiles > Re-apply Defaults to force it.");
 			profileInfoLabel.setForeground(new Color(240, 173, 78));
+		}
+	}
+
+	/** Re-read category colours after the user changes them (config or "Use new colours"). */
+	public void refreshCategoryColors()
+	{
+		for (JButton fb : filterButtons)
+		{
+			Object cat = fb.getClientProperty(ItemCategory.class);
+			if (cat != null) fb.setForeground(plugin.getColorForCategory((ItemCategory) cat));
+		}
+		repaint();
+	}
+
+	/** One swatch per category in the new default colours and patterns. */
+	private static class PaletteSwatches extends JPanel
+	{
+		private static final int W = 18, H = 12, GAP = 3;
+
+		PaletteSwatches()
+		{
+			setOpaque(false);
+			setAlignmentX(Component.LEFT_ALIGNMENT);
+			Dimension d = new Dimension(ItemCategory.values().length * (W + GAP), H + 1);
+			setPreferredSize(d);
+			setMaximumSize(new Dimension(Integer.MAX_VALUE, H + 1));
+			StringBuilder tip = new StringBuilder("<html>");
+			for (ItemCategory c : ItemCategory.values()) tip.append(c.getDisplayName()).append("<br>");
+			setToolTipText(tip.append("</html>").toString());
+		}
+
+		@Override
+		protected void paintComponent(java.awt.Graphics g)
+		{
+			super.paintComponent(g);
+			java.awt.Graphics2D g2 = (java.awt.Graphics2D) g;
+			int x = 0;
+			for (ItemCategory c : ItemCategory.values())
+			{
+				java.awt.Rectangle r = new java.awt.Rectangle(x, 0, W, H);
+				Color col = c.getColor();
+				g2.setColor(new Color(col.getRed(), col.getGreen(), col.getBlue(), 90));
+				g2.fill(r);
+				CategoryPatterns.fill(g2, r, c.getPattern(), new Color(col.getRed(), col.getGreen(), col.getBlue(), 220));
+				g2.setColor(col);
+				g2.drawRect(r.x, r.y, r.width - 1, r.height - 1);
+				x += W + GAP;
+			}
 		}
 	}
 

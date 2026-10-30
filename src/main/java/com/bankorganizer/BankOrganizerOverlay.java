@@ -155,13 +155,8 @@ public class BankOrganizerOverlay extends Overlay
 				continue;
 			}
 
-			Color color = plugin.getColorForCategory(category);
-			Color barColor = new Color(color.getRed(), color.getGreen(), color.getBlue(), 160);
-
-			int barHeight = 3;
-			graphics.setColor(barColor);
-			graphics.fillRect(tabBounds.x, tabBounds.y + tabBounds.height - barHeight,
-				tabBounds.width, barHeight);
+			CategoryPatterns.tabBar(graphics, tabBounds, category.getPattern(),
+				plugin.getColorForCategory(category), plugin.getConfig().showPatterns());
 		}
 	}
 
@@ -218,7 +213,7 @@ public class BankOrganizerOverlay extends Overlay
 
 			graphics.setColor(fillColor);
 			graphics.fill(bounds);
-			drawPattern(graphics, bounds, category, color, Math.min(255, fillAlpha + 50));
+			drawPattern(graphics, bounds, category, color, fillAlpha + 110);
 			graphics.setColor(borderColor);
 			graphics.draw(bounds);
 		}
@@ -226,35 +221,11 @@ public class BankOrganizerOverlay extends Overlay
 		graphics.setClip(oldClip);
 	}
 
-	private static final int PATTERN_SPACING = 6;
-
-	/** Diagonal stripes or crosshatch inside bounds, so categories with close hues still read apart. */
+	/** Stripes / crosshatch / dots along the edge of the item box, so close hues still read apart. */
 	private void drawPattern(Graphics2D graphics, Rectangle bounds, ItemCategory category, Color color, int alpha)
 	{
-		ItemCategory.Pattern pattern = category.getPattern();
-		if (pattern == ItemCategory.Pattern.SOLID || !plugin.getConfig().showPatterns())
-		{
-			return;
-		}
-
-		java.awt.Shape oldClip = graphics.getClip();
-		graphics.clip(bounds);
-		graphics.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), alpha));
-		int x0 = bounds.x;
-		int y0 = bounds.y;
-		int h = bounds.height;
-		int spacing = pattern == ItemCategory.Pattern.CROSSHATCH ? PATTERN_SPACING + 2 : PATTERN_SPACING;
-		for (int d = -h; d < bounds.width; d += spacing)
-		{
-			// "/" lines
-			graphics.drawLine(x0 + d, y0 + h, x0 + d + h, y0);
-			if (pattern == ItemCategory.Pattern.CROSSHATCH)
-			{
-				// "\" lines
-				graphics.drawLine(x0 + d, y0, x0 + d + h, y0 + h);
-			}
-		}
-		graphics.setClip(oldClip);
+		if (!plugin.getConfig().showPatterns()) return;
+		CategoryPatterns.edgeBand(graphics, bounds, category.getPattern(), CategoryPatterns.withAlpha(color, alpha));
 	}
 
 	private void drawMisplacedItems(Graphics2D graphics)
@@ -324,7 +295,7 @@ public class BankOrganizerOverlay extends Overlay
 
 			graphics.setColor(fillColor);
 			graphics.fill(bounds);
-			drawPattern(graphics, bounds, correctCategory, color, 120);
+			drawPattern(graphics, bounds, correctCategory, color, 200);
 			graphics.setColor(borderColor);
 			graphics.draw(bounds);
 		}

@@ -103,10 +103,12 @@ All settings are in the RuneLite plugin configuration panel:
 | Tab Mappings | Assign categories to the main (All) tab and bank tabs 1-9 |
 | Merge Categories | Per category, which other category's tab it shares. Quest → Misc by default; set it to Keep separate and map a tab to Quest for a dedicated quest tab |
 | Sorting | Gear sort mode (Combat Style / Equipment Type), Teleport sort mode + custom group order |
-| Colors | Customize overlay color for each category |
+| Colors | Customize overlay color for each category (**Use new colours** in the panel resets them to the current defaults) |
 | Custom Regex | Add regex patterns for advanced item matching |
 
 ## Changelog
+
+1.2.3: patterns sit on a thin band around each item box so the item stays fully visible, and the bank tab bars show the same patterns. New default colours: Food green, Main Tab gold, Quest white with dots, Misc grey. New installs get them; existing installs keep their current colours until you press **Use new colours** at the top of the panel.
 
 1.2.2: new default colours so no two categories look alike (Potions was black, Skilling and Main Tab were both orange, Food and Quest both green-ish). Potions, Food, Materials and Misc are striped, Main Tab and High Alch crosshatched; turn it off with General → Category Patterns. Teleports and Combat keep their colours; colours you changed yourself are kept. Fruit and veg (and their baskets/sacks) are Food; herblore-only berries and Zamorak's grapes stay Materials. Categorisation audit of ~700 common items: 81 shipped defaults that sent real gear to Misc are gone (Dragon 2h sword, Magic longbow, Amulet of the damned, Ring of life, Brimstone ring, Salve amulet, enchanted bolts...); super attack/strength/defence, Sanfew serum, Relicym's balm and weapon poison are Potions; pies, pizzas, kebabs, sweets, curry, rainbow fish and cave eel are Food; moulds, hunter snares, RC pouches, Lobster pot, Karambwan vessel and beekeeper's outfit are Skilling; ensouled heads, unstrung bows, stocks/limbs, demonic ashes, leaping fish, sacred/infernal eels, silk, snakeskin and granite are Materials; Ring of the elements, eternal glory, Western banner, crafting/farming/construction capes, divine rune pouch and Dorgesh-kaan spheres are Teleports. Soulreaper and zombie axes, Confliction gauntlets and every Avernic treads variant are Combat, Spiked manacles and kebbit spikes are no longer Food; PvP ancient emblems/totems/relics, blood money, golden nuggets and agility arena tickets are Main Tab; Varlamore moths and antelope fur are Materials, Calcified moth is a Teleport. Mithril/adamant gloves are Combat, rune arrows/pickaxe/axe no longer High Alch, Mark of grace is Main Tab.
 

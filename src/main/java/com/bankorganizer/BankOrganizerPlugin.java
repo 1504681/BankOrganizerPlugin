@@ -43,7 +43,26 @@ import net.runelite.client.util.ImageUtil;
 public class BankOrganizerPlugin extends Plugin
 {
 	/** Plugin version — keep in sync with build.gradle. Shown in the sidebar and stamped on profiles. */
-	public static final String VERSION = "1.2.2";
+	public static final String VERSION = "1.2.3";
+
+	/**
+	 * Default colour scheme generation. New installs get the current defaults; existing installs are pinned to the
+	 * scheme they were using until the user presses "Use new colours" in the panel. Bump when the defaults change and
+	 * add the outgoing scheme to PREVIOUS_PALETTE.
+	 */
+	public static final int PALETTE_VERSION = 2;
+	static final String CONFIG_GROUP = "bankorganizer";
+	/** Colour config keys, and the 1.2.2 defaults (palette 1) that existing installs keep until they opt in. */
+	static final String[] COLOR_KEYS = {
+		"colorTeleports", "colorCombat", "colorPotions", "colorFood", "colorSkilling",
+		"colorMaterials", "colorHighAlch", "colorCurrency", "colorQuest", "colorQuestMisc"
+	};
+	private static final java.awt.Color[] PREVIOUS_PALETTE = {
+		new java.awt.Color(0, 150, 255), new java.awt.Color(220, 50, 50), new java.awt.Color(190, 90, 255),
+		new java.awt.Color(255, 225, 0), new java.awt.Color(255, 140, 0), new java.awt.Color(0, 225, 210),
+		new java.awt.Color(255, 60, 190), new java.awt.Color(255, 255, 255), new java.awt.Color(60, 200, 60),
+		new java.awt.Color(170, 170, 170)
+	};
 
 	private static final Logger log = LoggerFactory.getLogger(BankOrganizerPlugin.class);
 	private static final String MENU_SET_PREFIX = "Set: ";
@@ -172,6 +191,7 @@ public class BankOrganizerPlugin extends Plugin
 			net.runelite.api.ItemComposition comp = itemManager.getItemComposition(id);
 			return comp != null && !comp.isTradeable() && !comp.isStackable();
 		});
+		migratePalette();
 		profileManager = new ProfileManager(config);
 		profileManager.loadProfiles();
 		updateRegexFromConfig();
@@ -235,6 +255,10 @@ public class BankOrganizerPlugin extends Plugin
 		{
 			updateRegexFromConfig();
 			updateTeleportOrderFromConfig();
+			if (event.getKey().startsWith("color") && panel != null)
+			{
+				SwingUtilities.invokeLater(panel::refreshCategoryColors);
+			}
 
 			// Toggle sidebar icon
 			if ("showSidebarIcon".equals(event.getKey()))
@@ -895,6 +919,49 @@ public class BankOrganizerPlugin extends Plugin
 		userTouched.clear();
 		userTouched.addAll(profile.getUserItems());
 		applyDefaultsIfOutdated();
+	}
+
+	// === Colour scheme ===
+
+	/**
+	 * First start on a palette-aware version: a fresh install (no saved profiles yet) takes the current defaults;
+	 * an existing install writes the old defaults into every colour it never customised, so nothing changes under it.
+	 */
+	private void migratePalette()
+	{
+		if (config.paletteVersion() != 0) return;
+		boolean existingInstall = !config.profileData().isEmpty();
+		colorsToPin(existingInstall, key -> configManager.getConfiguration(CONFIG_GROUP, key) != null)
+			.forEach((key, color) -> configManager.setConfiguration(CONFIG_GROUP, key, color));
+		configManager.setConfiguration(CONFIG_GROUP, "paletteVersion", existingInstall ? 1 : PALETTE_VERSION);
+	}
+
+	/** Colours to write so an existing install keeps its look: the old default for every colour it never set. */
+	static Map<String, java.awt.Color> colorsToPin(boolean existingInstall, java.util.function.Predicate<String> isSet)
+	{
+		Map<String, java.awt.Color> pin = new java.util.LinkedHashMap<>();
+		if (!existingInstall) return pin;
+		for (int i = 0; i < COLOR_KEYS.length; i++)
+		{
+			if (!isSet.test(COLOR_KEYS[i])) pin.put(COLOR_KEYS[i], PREVIOUS_PALETTE[i]);
+		}
+		return pin;
+	}
+
+	public boolean isNewPaletteAvailable()
+	{
+		return config.paletteVersion() < PALETTE_VERSION;
+	}
+
+	/** "Use new colours": drop every colour override (old scheme and hand-picked alike) so the current defaults apply. */
+	public void applyNewPalette()
+	{
+		for (String key : COLOR_KEYS)
+		{
+			configManager.unsetConfiguration(CONFIG_GROUP, key);
+		}
+		configManager.setConfiguration(CONFIG_GROUP, "paletteVersion", PALETTE_VERSION);
+		if (panel != null) refreshPanel();
 	}
 
 	// === Defaults upgrade ===
