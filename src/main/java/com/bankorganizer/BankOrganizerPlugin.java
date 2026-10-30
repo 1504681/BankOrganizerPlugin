@@ -13,6 +13,7 @@ import javax.swing.SwingUtilities;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import net.runelite.api.Client;
+import net.runelite.api.gameval.ItemID;
 import net.runelite.api.MenuAction;
 import net.runelite.api.MenuEntry;
 import net.runelite.api.InventoryID;
@@ -1140,7 +1141,7 @@ public class BankOrganizerPlugin extends Plugin
 			Widget child = children[slot];
 			if (child == null || child.isHidden() || !isSlotInTab(currentTab, slot)) continue;
 			int itemId = child.getItemId();
-			if (itemId <= 0) continue;
+			if (itemId <= 0 || itemId == ItemID.BANK_FILLER) continue; // fillers are deliberate gaps, not items to sort
 
 			categorizer.setManualOverride(itemId, category);
 			userTouched.add(categorizer.canonicalId(itemId));
@@ -1475,7 +1476,7 @@ public class BankOrganizerPlugin extends Plugin
 			Widget child = children[slot];
 			if (child == null || child.isHidden() || !isSlotInTab(currentTab, slot)) continue;
 			int itemId = child.getItemId();
-			if (itemId <= 0) continue;
+			if (itemId <= 0 || itemId == ItemID.BANK_FILLER) continue; // fillers are deliberate gaps, not items to sort
 			String name = itemManager.getItemComposition(itemId).getName();
 			if (name == null || name.equals("null")) continue;
 			currentItems.add(new BankItem(itemId, name, slot));
@@ -1497,26 +1498,22 @@ public class BankOrganizerPlugin extends Plugin
 		GearSortMode gearMode = config.gearSortMode();
 		TeleportSortMode teleportMode = config.teleportSortMode();
 
-		List<BankItem> idealOrder = new ArrayList<>(currentItems);
-		idealOrder.sort(Comparator.comparingLong(item ->
-			getItemSortKey(item, tabCategory, gearMode, teleportMode)
-		));
-
-		// Build permutation: perm[i] = ideal position of item currently at position i
-		Map<Integer, Integer> idealPosMap = new HashMap<>();
-		for (int i = 0; i < idealOrder.size(); i++)
+		// Positions, not item ids: an id -> position map collapses duplicate ids into a broken
+		// permutation and the planner then sends an item back and forth forever
+		long[] keys = new long[n];
+		for (int i = 0; i < n; i++)
 		{
-			idealPosMap.put(idealOrder.get(i).itemId, i);
+			keys[i] = getItemSortKey(currentItems.get(i), tabCategory, gearMode, teleportMode);
 		}
-
-		int[] perm = new int[n];
+		int[] perm = idealPositions(keys);
+		BankItem[] ideal = new BankItem[n];
 		boolean allCorrect = true;
 		for (int i = 0; i < n; i++)
 		{
-			Integer pos = idealPosMap.get(currentItems.get(i).itemId);
-			perm[i] = pos != null ? pos : i;
+			ideal[perm[i]] = currentItems.get(i);
 			if (perm[i] != i) allCorrect = false;
 		}
+		List<BankItem> idealOrder = java.util.Arrays.asList(ideal);
 
 		if (allCorrect)
 		{
@@ -1574,6 +1571,21 @@ public class BankOrganizerPlugin extends Plugin
 				: "All items are now in order!";
 			finishOrdering(msg + foreignItemsNote(currentItems, tabCategory));
 		}
+	}
+
+	/**
+	 * perm[i] = ideal position of the item at position i. Sorts positions, not item ids: equal keys keep their
+	 * current order, so the result is always a permutation even when a tab holds the same item id twice.
+	 */
+	static int[] idealPositions(long[] keys)
+	{
+		int n = keys.length;
+		Integer[] order = new Integer[n];
+		for (int i = 0; i < n; i++) order[i] = i;
+		java.util.Arrays.sort(order, Comparator.<Integer>comparingLong(i -> keys[i]).thenComparingInt(i -> i));
+		int[] perm = new int[n];
+		for (int p = 0; p < n; p++) perm[order[p]] = p;
+		return perm;
 	}
 
 	/** Items with no subcategory (group 99) are left where they are. */
@@ -1819,7 +1831,7 @@ public class BankOrganizerPlugin extends Plugin
 				Widget child = children[slot];
 				if (child == null || child.isHidden() || !isSlotInTab(currentTab, slot)) continue;
 				int itemId = child.getItemId();
-				if (itemId <= 0) continue;
+				if (itemId <= 0 || itemId == ItemID.BANK_FILLER) continue; // fillers are deliberate gaps, not items to sort
 				String name = itemManager.getItemComposition(itemId).getName();
 				if (name == null || name.equals("null")) continue;
 				items.add(new BankItem(itemId, name, slot));

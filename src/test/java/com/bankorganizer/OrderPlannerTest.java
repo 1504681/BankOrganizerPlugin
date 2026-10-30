@@ -80,4 +80,19 @@ public class OrderPlannerTest
 		Arrays.fill(b, true);
 		return b;
 	}
+
+	@Test
+	public void testDuplicateItemsDoNotLoop()
+	{
+		// Construct. cape, Farming cape, X, Crafting cape, Ectophial, X, Pharaoh's sceptre, Xeric's talisman
+		// where X is the same item twice: the old id -> position map looped "cape after Ectophial" /
+		// "cape before Farming cape" forever
+		long[] keys = {0, 1, 4, 2, 3, 4, 5, 6};
+		int[] perm = BankOrganizerPlugin.idealPositions(keys);
+		assertEquals(0, perm[0]); // the cape is already first
+		assertEquals(1, drags(perm)); // only the first X moves, down after Ectophial
+		boolean[] seen = new boolean[perm.length];
+		for (int v : perm) seen[v] = true;
+		for (boolean b : seen) assertTrue(b);
+	}
 }

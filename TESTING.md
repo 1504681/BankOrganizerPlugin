@@ -22,3 +22,4 @@
 - 1.2.3 Highest tier first (default on): Materials Mining starts Runite ore … Copper ore, then Clay/Soft clay/Dynamite, then Runite bar … Bronze bar; Magic logs before Logs; Dragon pickaxe before Rune. Off: reversed, clay still after the ores.
 - 1.2.3 Teleports: Ring of the elements, Pendant of Ates, Giantsoul amulet, Amulet of the Eye sit with the teleport items (A-Z among them), not between glory and dueling; Pendant of Ates (inert) right after Pendant of Ates, Giantsoul amulet (uncharged) right after Giantsoul amulet.
 - 1.2.3 Fewest drags: put a Blighted sack at the top of the Teleports tab, Start Ordering → it says drag it down onto the last item ("INSERT AFTER"); after the drag it sits right after that item and the next step appears.
+- 1.2.3 Fillers: a tab with two or more bank fillers orders to the end without looping; the fillers are never highlighted to move, and Scan doesn't flag them.
