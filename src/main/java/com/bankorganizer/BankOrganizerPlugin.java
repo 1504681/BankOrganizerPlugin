@@ -44,7 +44,7 @@ import net.runelite.client.util.ImageUtil;
 public class BankOrganizerPlugin extends Plugin
 {
 	/** Plugin version — keep in sync with build.gradle. Shown in the sidebar and stamped on profiles. */
-	public static final String VERSION = "1.2.3";
+	public static final String VERSION = "1.2.4";
 
 	/**
 	 * Default colour scheme generation. New installs get the current defaults; existing installs are pinned to the
@@ -116,8 +116,11 @@ public class BankOrganizerPlugin extends Plugin
 	private int currentOrderStep = 0;
 	private int lastStepItemId = -1;
 	private int stuckCounter = 0;
-	// Tab layouts seen during this ordering run: coming back to one means the guide is going in circles
-	private final java.util.Set<List<Integer>> seenLayouts = new java.util.HashSet<>();
+	// Times each tab layout was reached during this ordering run: reaching one again and again means the guide
+	// is going in circles. Re-planning the layout planned last (two bank events for one drag) doesn't count.
+	private final Map<List<Integer>, Integer> seenLayouts = new java.util.HashMap<>();
+	private List<Integer> lastPlannedLayout = null;
+	private static final int LOOP_LIMIT = 3;
 	private List<Integer> lastSeenItemOrder = new ArrayList<>();
 	private boolean previewMode = false;
 	private boolean overlayEnabled = false;
@@ -1397,6 +1400,7 @@ public class BankOrganizerPlugin extends Plugin
 			lastStepItemId = -1;
 			stuckCounter = 0;
 			seenLayouts.clear();
+			lastPlannedLayout = null;
 			computeNextOrderStep();
 		});
 	}
@@ -1529,10 +1533,13 @@ public class BankOrganizerPlugin extends Plugin
 
 		List<Integer> layout = new ArrayList<>(n);
 		for (BankItem item : currentItems) layout.add(item.itemId);
-		if (nextStep != null && !seenLayouts.add(layout))
+		boolean newLayout = !layout.equals(lastPlannedLayout);
+		lastPlannedLayout = layout;
+		if (nextStep != null && newLayout && seenLayouts.merge(layout, 1, Integer::sum) >= LOOP_LIMIT)
 		{
 			// Every planned drag makes the tab strictly more sorted, so a repeat means the sort keys changed
-			// between two plans. Dump the plan so the cause can be found from the user's client.log.
+			// between two plans (one undone drag only reaches a layout twice). Dump the plan so the cause can be
+			// found from the user's client.log.
 			StringBuilder dump = new StringBuilder();
 			for (int i = 0; i < n; i++)
 			{

@@ -52,6 +52,21 @@ public class OrderPlannerTest
 	}
 
 	@Test
+	public void testIssue7TabsFinish()
+	{
+		// Ideal positions from the two "Ordering loop" dumps in issue #7 (main tab mapped to Currency, then
+		// Teleports): the planner sorts both, so those stops were the guard tripping on a re-plan, not a loop
+		int[] currency = {0,67,66,46,17,72,68,40,3,81,26,31,7,18,27,42,54,16,21,13,28,49,61,43,14,20,58,50,83,38,37,44,
+			11,71,51,55,6,5,4,45,25,57,73,76,10,29,30,41,15,23,22,33,32,48,56,34,35,63,64,65,62,79,69,70,9,47,52,59,75,1,
+			19,36,24,53,2,8,12,39,60,74,77,78,80,82};
+		int[] teleports = {65,78,77,15,64,16,39,68,40,41,42,43,0,8,9,2,70,49,52,56,57,10,4,76,71,50,51,54,55,3,13,14,72,
+			53,58,48,44,25,26,27,73,45,46,47,19,1,11,69,34,35,36,30,7,59,6,31,32,28,29,33,5,82,37,38,18,20,21,22,23,24,12,
+			66,74,61,62,63,67,60,75,79,80,81,17,83};
+		drags(currency);
+		drags(teleports);
+	}
+
+	@Test
 	public void testRandomTabsUseTheMinimumDrags()
 	{
 		Random r = new Random(7);
